@@ -1,0 +1,17 @@
+# ninja log v6
+6103	7341	7621944003899308	Babble.exe	c3ddbf89f9264eb5
+732	6103	7621943950188136	CMakeFiles/Babble.dir/main.cpp.obj	d1c116aa5ca139a0
+10	680	7621943942964566	Babble_autogen/timestamp	51d42d2f37da7cfe
+10	680	7621943942964566	Babble_autogen/mocs_compilation.cpp	51d42d2f37da7cfe
+10	680	7621943942964566	D:/Babble/cmake-build-debug/Babble_autogen/mocs_compilation.cpp	51d42d2f37da7cfe
+10	680	7621943942964566	D:/Babble/cmake-build-debug/Babble_autogen/timestamp	51d42d2f37da7cfe
+681	1055	7621943949679299	CMakeFiles/Babble.dir/Babble_autogen/mocs_compilation.cpp.obj	3d3a94c523b52007
+536	5520	7621924123905820	CMakeFiles/Babble.dir/main_window.cpp.obj	eed016a2d8032311
+5	1908	7621944947890889	build.ninja	b7f98e5316e09d87
+10	380	7621946246818881	Babble_autogen/timestamp	51d42d2f37da7cfe
+10	380	7621946246818881	Babble_autogen/mocs_compilation.cpp	51d42d2f37da7cfe
+10	380	7621946246818881	D:/Babble/cmake-build-debug/Babble_autogen/timestamp	51d42d2f37da7cfe
+10	380	7621946246818881	D:/Babble/cmake-build-debug/Babble_autogen/mocs_compilation.cpp	51d42d2f37da7cfe
+431	5488	7621946251027468	CMakeFiles/Babble.dir/main_window.cpp.obj	7d6a82174e9244b7
+381	5775	7621946250543186	CMakeFiles/Babble.dir/main.cpp.obj	d1c116aa5ca139a0
+5775	7064	7621946304476305	Babble.exe	12905764884b2e9f

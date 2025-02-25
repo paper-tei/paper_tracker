@@ -1,0 +1,5 @@
+D:/Babble/cmake-build-debug/CMakeFiles/Babble.dir
+D:/Babble/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/Babble/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+D:/Babble/cmake-build-debug/CMakeFiles/Babble_autogen_timestamp_deps.dir
+D:/Babble/cmake-build-debug/CMakeFiles/Babble_autogen.dir
