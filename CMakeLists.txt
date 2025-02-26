@@ -15,34 +15,80 @@ find_package(Qt6 COMPONENTS
     REQUIRED)
 
 find_package(CURL REQUIRED)
-find_package(OpenCV REQUIRED)
+#find_package(OpenCV CONFIG REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
 
-add_executable(Babble main.cpp
-    main_window.ui
-    main_window.cpp
-    include/camera.hpp
-    camera.cpp
-        include/serial.hpp
-        serial.cpp
+#message all opencv info
+message(STATUS "OpenCV library status:" )
+message(STATUS "    version: ${OpenCV_VERSION}" )
+message(STATUS "    libraries: ${OpenCV_LIBS}" )
+message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}" )
+
+
+#add_executable(Babble main.cpp
+#    main_window.ui
+#    main_window.cpp
+#    include/camera.hpp
+#    camera.cpp
+#    include/serial.hpp
+#    serial.cpp
+##        include/inference.hpp
+##        inference.cpp
+#)
+#
+#target_include_directories(
+#    Babble PUBLIC
+#    include
+#)
+#
+#
+#target_link_libraries(Babble
+#    Qt::Core
+#    Qt::Gui
+#    Qt::Widgets
+#    CURL::libcurl
+#    ${OpenCV_LIBS}
+#    Eigen3::Eigen
+#    #add windows library
+#    Setupapi
+#    User32
+#)
+
+add_executable(VideoInferTest
+        inference.cpp
+        inference_test.cpp
 )
 
 target_include_directories(
-    Babble PUBLIC
-    include
-    ${OpenCV_INCLUDE_DIRS}
+        VideoInferTest PUBLIC
+        include
+        3rdparty/include/opencv4
 )
 
-
-target_link_libraries(Babble
-    Qt::Core
-    Qt::Gui
-    Qt::Widgets
-    CURL::libcurl
-    ${OpenCV_LIBS}
-    #add windows library
-    Setupapi
-    User32
+target_link_directories(
+        VideoInferTest PUBLIC
+        3rdparty/lib
 )
+
+target_link_libraries(
+        VideoInferTest PUBLIC
+        Eigen3::Eigen
+        opencv_core4
+        opencv_imgproc4
+        opencv_highgui4
+        opencv_imgcodecs4
+        opencv_videoio4
+        opencv_video4
+        opencv_dnn4
+        opencv_calib3d4
+        opencv_features2d4
+        opencv_flann4
+        opencv_objdetect4
+        opencv_ml4
+        opencv_photo4
+        opencv_stitching4
+)
+
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(DEBUG_SUFFIX)
