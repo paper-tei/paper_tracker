@@ -9,6 +9,6 @@ int main(int argc, char *argv[]) {
 
     PaperTrackMainWindow window;
     window.show();
-
+    // minilog::log_info("Paper Track启动");
     return QApplication::exec();
 }

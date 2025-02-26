@@ -6,20 +6,24 @@
 #define MAIN_WINDOW_HPP
 
 #include "ui_main_window.h"
+#include "serial.hpp"
 
-class PaperTrackMainWindow: public QWidget {
+class PaperTrackMainWindow final : public QWidget {
 public:
-    PaperTrackMainWindow(QWidget *parent = nullptr) :
+    explicit PaperTrackMainWindow(QWidget *parent = nullptr) :
         QWidget(parent) {
         ui.setupUi(this);
         bound_pages();
     }
 
+
+
 private:
     void bound_pages();
 
+    SerialPortManager serial_port_manager_;
 
-    Ui_PaperTrackMainWindow ui;
+    Ui_PaperTrackMainWindow ui{};
 };
 
 

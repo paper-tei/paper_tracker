@@ -9,25 +9,39 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/Qt/6.8.2/mingw_64/lib/cmake")
 
 find_package(Qt6 COMPONENTS
-  Core
-  Gui
-  Widgets
-  REQUIRED)
+    Core
+    Gui
+    Widgets
+    REQUIRED)
+
+find_package(CURL REQUIRED)
+find_package(OpenCV REQUIRED)
 
 add_executable(Babble main.cpp
-        main_window.ui
-        main_window.cpp
+    main_window.ui
+    main_window.cpp
+    include/camera.hpp
+    camera.cpp
+        include/serial.hpp
+        serial.cpp
 )
 
 target_include_directories(
-        Babble PUBLIC
-        include
+    Babble PUBLIC
+    include
+    ${OpenCV_INCLUDE_DIRS}
 )
 
+
 target_link_libraries(Babble
-  Qt::Core
-  Qt::Gui
-  Qt::Widgets
+    Qt::Core
+    Qt::Gui
+    Qt::Widgets
+    CURL::libcurl
+    ${OpenCV_LIBS}
+    #add windows library
+    Setupapi
+    User32
 )
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
