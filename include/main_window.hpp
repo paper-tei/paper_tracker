@@ -35,7 +35,8 @@ public:
                 {
                     break;
                 }
-                inference.inference(frame);
+                auto infer_frame = frame.clone();
+                inference.inference(infer_frame);
                 cv::resize(frame, frame, cv::Size(361, 251));
                 // show frame on the label
                 cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);

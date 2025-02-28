@@ -20,10 +20,11 @@ void Inference::inference(cv::Mat& image) {
     {
         return ;
     }
-
     preprocess(image);
     run_model(image);
 }
+
+
 
 void Inference::run_model(cv::Mat& image) {
     if (!image.isContinuous())
@@ -36,11 +37,15 @@ void Inference::run_model(cv::Mat& image) {
     size_t num_output_nodes = session_->GetOutputCount();
     std::vector<const char*> input_names;
     for (size_t i = 0; i < num_input_nodes; i++) {
-        char* input_name = session_->GetInputName(i, allocator);
-        input_names.push_back(input_name);
-        allocator.Free(input_name);  // 需要手动释放
+        auto input_name = session_->GetInputNameAllocated(i, allocator);
+        input_names.push_back(input_name.get());
     }
 
+    std::vector<const char*> output_names;
+    for (size_t i = 0; i < num_output_nodes; i++) {
+        auto output_name = session_->GetOutputNameAllocated(i, allocator);
+        output_names.push_back(output_name.get());
+    }
 
     float* data_ptr = image.ptr<float>();
     std::size_t data_size = image.total() * image.channels();
@@ -61,17 +66,27 @@ void Inference::run_model(cv::Mat& image) {
         input_shape.size()
     );
 
-    std::vector<const char *> input_names = {"input"};
-    std::vector<const char *> output_names = {"output"};
+    std::vector<Ort::Value> output_tensors;
 
-    auto output_tensors = session_->Run(
-        Ort::RunOptions{nullptr},  // 运行选项（默认可空）
-        input_names.data(),        // 输入名称数组
-        &input_tensor,             // 输入张量指针数组
-        1,           // 输入数量
-        output_names.data(),       // 输出名称数组
-        1           // 输出数量
-    );
+    try
+    {
+        output_tensors = session_->Run(
+            Ort::RunOptions{nullptr},  // 运行选项（默认可空）
+            input_names.data(),        // 输入名称数组
+            &input_tensor,             // 输入张量指针数组
+            num_input_nodes,           // 输入数量
+            output_names.data(),       // 输出名称数组
+            num_output_nodes           // 输出数量
+        );
+    } catch (std::exception& e)
+    {
+        std::cout << "Error: " << e.what() << std::endl;
+    }
+
+    if (output_tensors.empty())
+    {
+        return ;
+    }
     Ort::Value& output_tensor = output_tensors.front();
     float* output_data = output_tensor.GetTensorMutableData<float>();
 

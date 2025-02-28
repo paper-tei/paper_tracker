@@ -20,7 +20,8 @@ public:
      void inference(cv::Mat& image);
 
      void show_result();
-private:
+
+ private:
      void preprocess(cv::Mat& image);
 
      void run_model(cv::Mat& image);
