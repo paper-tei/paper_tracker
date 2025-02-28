@@ -7,7 +7,6 @@
 
 #include <string>
 #include <vector>
-#include <curl/curl.h>
 
 
 class Camera {

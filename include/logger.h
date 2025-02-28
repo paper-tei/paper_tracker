@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdint>
+#include <QPlainTextEdit>
 
 namespace minilog {
 
@@ -104,15 +105,24 @@ inline std::ofstream g_log_file = [] () -> std::ofstream {
     return std::ofstream();
 } ();
 
-inline void output_log(log_level lev, std::string msg, std::source_location const &loc) {
+inline void output_log(QPlainTextEdit* log_window, log_level lev, std::string msg, std::source_location const &loc) {
     std::chrono::zoned_time now{std::chrono::current_zone(), std::chrono::system_clock::now()};
     msg = std::format("{} {}:{} [{}] {}", now, loc.file_name(), loc.line(), details::log_level_name(lev), msg);
     if (g_log_file) {
         g_log_file << msg + '\n';
     }
     if (lev >= g_max_level) {
-        std::cout << _MINILOG_IF_HAS_ANSI_COLORS(k_level_ansi_colors[(std::uint8_t)lev] +)
-                    msg _MINILOG_IF_HAS_ANSI_COLORS(+ k_reset_ansi_color) + '\n';
+        auto output = _MINILOG_IF_HAS_ANSI_COLORS(k_level_ansi_colors[(std::uint8_t)lev] +)
+            msg _MINILOG_IF_HAS_ANSI_COLORS(+ k_reset_ansi_color) + '\n';
+        if (log_window) {
+            log_window->moveCursor(QTextCursor::End);
+            log_window->appendPlainText(QString::fromStdString(output));
+        } else
+        {
+            std::cout << output;
+        }
+
+
     }
 }
 
@@ -127,16 +137,16 @@ inline void set_log_level(log_level lev) {
 }
 
 template <typename... Args>
-void generic_log(log_level lev, details::with_source_location<std::format_string<Args...>> fmt, Args &&...args) {
+void generic_log(QPlainTextEdit* log_window, log_level lev, details::with_source_location<std::format_string<Args...>> fmt, Args &&...args) {
     auto const &loc = fmt.location();
     auto msg = std::vformat(fmt.format().get(), std::make_format_args(args...));
-    details::output_log(lev, std::move(msg), loc);
+    details::output_log(log_window, lev, std::move(msg), loc);
 }
 
 #define _FUNCTION(name) \
 template <typename... Args> \
-void log_##name(details::with_source_location<std::format_string<Args...>> fmt, Args &&...args) { \
-    return generic_log(log_level::name, std::move(fmt), std::forward<Args>(args)...); \
+void log_##name(QPlainTextEdit* log_window, details::with_source_location<std::format_string<Args...>> fmt, Args &&...args) { \
+    return generic_log(log_window, log_level::name, std::move(fmt), std::forward<Args>(args)...); \
 }
 MINILOG_FOREACH_LOG_LEVEL(_FUNCTION)
 #undef _FUNCTION

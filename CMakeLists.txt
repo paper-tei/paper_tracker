@@ -6,7 +6,13 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/Qt/6.8.2/mingw_64/lib/cmake")
+# if toolchain is mingw
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/QtMVSC/6.8.2/msvc2022_64")
+set(OpenCV_DIR "D:/Babble3rdParty/opencv-mvsc/opencv/build")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
+set(ONNXRUNTIME_ROOT "D:/Babble3rdParty/onnxruntime-win-x64-1.20.1/onnxruntime-win-x64-1.20.1")
+
+find_package(OpenCV CONFIG REQUIRED)
 
 find_package(Qt6 COMPONENTS
     Core
@@ -14,81 +20,37 @@ find_package(Qt6 COMPONENTS
     Widgets
     REQUIRED)
 
-find_package(CURL REQUIRED)
-#find_package(OpenCV CONFIG REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-
-#message all opencv info
-message(STATUS "OpenCV library status:" )
-message(STATUS "    version: ${OpenCV_VERSION}" )
-message(STATUS "    libraries: ${OpenCV_LIBS}" )
-message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}" )
-
-
-#add_executable(Babble main.cpp
-#    main_window.ui
-#    main_window.cpp
-#    include/camera.hpp
-#    camera.cpp
-#    include/serial.hpp
-#    serial.cpp
-##        include/inference.hpp
-##        inference.cpp
-#)
-#
-#target_include_directories(
-#    Babble PUBLIC
-#    include
-#)
-#
-#
-#target_link_libraries(Babble
-#    Qt::Core
-#    Qt::Gui
-#    Qt::Widgets
-#    CURL::libcurl
-#    ${OpenCV_LIBS}
-#    Eigen3::Eigen
-#    #add windows library
-#    Setupapi
-#    User32
-#)
-
-add_executable(VideoInferTest
-        inference.cpp
-        inference_test.cpp
+add_executable(Babble main.cpp
+    main_window.ui
+    main_window.cpp
+    camera.cpp
+    serial.cpp
+    video_reader.cpp
+    inference.cpp
 )
 
 target_include_directories(
-        VideoInferTest PUBLIC
-        include
-        3rdparty/include/opencv4
+    Babble PUBLIC
+    include
+    ${OpenCV_INCLUDE_DIRS}
+    ${ONNXRUNTIME_ROOT}/include
 )
 
 target_link_directories(
-        VideoInferTest PUBLIC
-        3rdparty/lib
+    Babble PUBLIC
+    ${ONNXRUNTIME_ROOT}/lib
 )
 
-target_link_libraries(
-        VideoInferTest PUBLIC
-        Eigen3::Eigen
-        opencv_core4
-        opencv_imgproc4
-        opencv_highgui4
-        opencv_imgcodecs4
-        opencv_videoio4
-        opencv_video4
-        opencv_dnn4
-        opencv_calib3d4
-        opencv_features2d4
-        opencv_flann4
-        opencv_objdetect4
-        opencv_ml4
-        opencv_photo4
-        opencv_stitching4
+target_link_libraries(Babble PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    ${OpenCV_LIBS}
+    onnxruntime
+    #add windows library
+    Setupapi
+    User32
 )
-
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(DEBUG_SUFFIX)

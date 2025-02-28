@@ -5,25 +5,63 @@
 #ifndef MAIN_WINDOW_HPP
 #define MAIN_WINDOW_HPP
 
+#include <inference.hpp>
+#include <thread>
+
 #include "ui_main_window.h"
-#include "serial.hpp"
+#include "video_reader.hpp"
 
 class PaperTrackMainWindow final : public QWidget {
 public:
     explicit PaperTrackMainWindow(QWidget *parent = nullptr) :
         QWidget(parent) {
         ui.setupUi(this);
+        ui.LogText->setMaximumBlockCount(200);
         bound_pages();
+        video_reader.open_video("D:/Babble/test_video.mkv");
+        if (!video_reader.is_opened())
+        {
+            minilog::log_error(ui.LogText, "Video is not opened");
+            exit(1);
+        }
+
+        inference.load_model("D:/Babble/model/model.onnx");
+
+        show_video_thread = std::thread([this]() {
+            cv::Mat frame;
+            while (true) {
+                frame = video_reader.get_image();
+                if (frame.empty())
+                {
+                    break;
+                }
+                inference.inference(frame);
+                cv::resize(frame, frame, cv::Size(361, 251));
+                // show frame on the label
+                cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+                QImage qimage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888);
+                ui.ImageLabel->setPixmap(QPixmap::fromImage(qimage));
+                ui.ImageLabel->setScaledContents(true);
+                ui.ImageLabel->update();
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 30));
+            }
+        });
     }
 
-
+    ~PaperTrackMainWindow()
+    {
+        show_video_thread.join();
+    }
 
 private:
+    std::thread show_video_thread;
+
     void bound_pages();
 
-    SerialPortManager serial_port_manager_;
+    VideoReader video_reader;
+    Inference inference;
 
-    Ui_PaperTrackMainWindow ui{};
+    Ui_PaperTrackerMainWindow ui{};
 };
 
 
