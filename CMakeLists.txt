@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.30)
 project(Babble)
 
 set(CMAKE_CXX_STANDARD 20)
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -51,6 +52,10 @@ target_link_libraries(Babble PRIVATE
     Setupapi
     User32
 )
+
+# install dir model to the same dir as the executable
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/model/  DESTINATION ${CMAKE_BINARY_DIR}/model)
+
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(DEBUG_SUFFIX)

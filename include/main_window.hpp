@@ -25,7 +25,7 @@ public:
             exit(1);
         }
 
-        inference.load_model("D:/Babble/model/model.onnx");
+        inference.load_model("./model/model.onnx");
 
         show_video_thread = std::thread([this]() {
             cv::Mat frame;
@@ -44,7 +44,7 @@ public:
                 ui.ImageLabel->setPixmap(QPixmap::fromImage(qimage));
                 ui.ImageLabel->setScaledContents(true);
                 ui.ImageLabel->update();
-                cv::waitKey(30);
+                cv::waitKey(20);
             }
         });
     }
