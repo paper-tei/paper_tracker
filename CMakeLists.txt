@@ -11,7 +11,9 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/QtMVSC/6.8.2/msvc2022_64")
 set(OpenCV_DIR "D:/Babble3rdParty/opencv-mvsc/opencv/build")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
-set(ONNXRUNTIME_ROOT "D:/Babble3rdParty/onnxruntime-win-x64-1.20.1/onnxruntime-win-x64-1.20.1")
+#set(ONNXRUNTIME_ROOT "D:/Babble3rdParty/onnxruntime-win-x64-1.20.1/onnxruntime-win-x64-1.20.1")
+set(ONNXRUNTIME_ROOT "D:/Babble3rdParty/onnxruntime-win-x64-gpu-1.20.1")
+
 
 find_package(OpenCV CONFIG REQUIRED)
 

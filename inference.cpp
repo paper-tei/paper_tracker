@@ -42,6 +42,14 @@ void Inference::load_model(const std::string &model_path) {
         session_options.DisableMemPattern();
         // self.opts.add_session_config_entry("session.intra_op.allow_spinning", "0")
 
+        // // enable cuda
+        // OrtCUDAProviderOptions cuda_options;
+        // cuda_options.device_id = 0;                        // 使用 GPU 0
+        // cuda_options.arena_extend_strategy = 0;            // 内存分配策略
+        // cuda_options.gpu_mem_limit = SIZE_MAX;             // GPU 内存限制
+        // cuda_options.cudnn_conv_algo_search = OrtCudnnConvAlgoSearchExhaustive;  // cuDNN 算法搜索策略
+        // cuda_options.do_copy_in_default_stream = 1;
+        // session_options.AppendExecutionProvider_CUDA(cuda_options);
         // 转换为宽字符路径
         std::wstring wmodel_path = utf8_to_wstring(actual_model_path);
 
@@ -202,15 +210,28 @@ void Inference::run_model() {
             input_shapes_[0].size()
         );
 
-        // 运行模型
-        output_tensors_ = session_->Run(
-            Ort::RunOptions{nullptr},
-            input_name_ptrs_.data(),
-            &input_tensor_,
-            input_name_ptrs_.size(),
-            output_name_ptrs_.data(),
-            output_name_ptrs_.size()
-        );
+        static Ort::IoBinding io_binding{*session_};
+        // 绑定输入
+        io_binding.BindInput(input_name_ptrs_[0], input_tensor_);
+        // 绑定输出
+        for (size_t i = 0; i < output_name_ptrs_.size(); i++) {
+            io_binding.BindOutput(output_name_ptrs_[i], memory_info_);
+        }
+        // 运行推理
+        session_->Run(Ort::RunOptions{nullptr}, io_binding);
+        // 获取输出
+        output_tensors_ = io_binding.GetOutputValues();
+        // // 运行模型
+        // output_tensors_ = session_->Run(
+        //     Ort::RunOptions{nullptr},
+        //     input_name_ptrs_.data(),
+        //     &input_tensor_,
+        //     input_name_ptrs_.size(),
+        //     output_name_ptrs_.data(),
+        //     output_name_ptrs_.size()
+        // );
+
+
 
         // 处理结果
         process_results();

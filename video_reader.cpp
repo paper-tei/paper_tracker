@@ -2,6 +2,7 @@
 // Created by JellyfishKnight on 25-2-28.
 //
 #include "video_reader.hpp"
+#include "opencv2/videoio.hpp"
 
 VideoReader::VideoReader(const std::string &video_path) : video_path(video_path){
 }
@@ -11,7 +12,8 @@ void VideoReader::open_video(const std::string &video_path) {
         minilog::log_error(nullptr, "Video path is empty");
         return;
     }
-    cap.open(0);
+    cap.open(0, cv::CAP_DSHOW);
+
     this->video_path = video_path;
 }
 

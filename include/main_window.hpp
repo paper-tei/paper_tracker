@@ -5,6 +5,7 @@
 #ifndef MAIN_WINDOW_HPP
 #define MAIN_WINDOW_HPP
 
+#include <future>
 #include <inference.hpp>
 #include <thread>
 
@@ -18,18 +19,25 @@ public:
         ui.setupUi(this);
         ui.LogText->setMaximumBlockCount(200);
         bound_pages();
-        video_reader.open_video("D:/Babble/test_video.mkv");
-        if (!video_reader.is_opened())
+        auto fu = std::async(std::launch::async, [this]()
         {
-            minilog::log_error(ui.LogText, "Video is not opened");
-            exit(1);
-        }
+            video_reader.open_video("D:/Babble/test_video.mkv");
+            if (!video_reader.is_opened())
+            {
+                minilog::log_error(ui.LogText, "Video is not opened");
+                exit(1);
+            }
+        });
 
         inference.load_model("./model/model.onnx");
 
         show_video_thread = std::thread([this]() {
             cv::Mat frame;
             while (true) {
+                if (!video_reader.is_opened())
+                {
+                    continue;
+                }
                 frame = std::move(video_reader.get_image());
                 if (frame.empty())
                 {
