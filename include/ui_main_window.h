@@ -29,6 +29,7 @@ public:
     QScrollBar *BrightnessBar;
     QLabel *ImageLabel;
     QLabel *label;
+    QLabel *label_2;
 
     void setupUi(QWidget *PaperTrackerMainWindow)
     {
@@ -40,7 +41,7 @@ public:
         SSIDText->setGeometry(QRect(470, 30, 221, 41));
         LogText = new QPlainTextEdit(PaperTrackerMainWindow);
         LogText->setObjectName("LogText");
-        LogText->setGeometry(QRect(10, 320, 371, 211));
+        LogText->setGeometry(QRect(10, 320, 821, 211));
         LogText->setReadOnly(true);
         PasswordText = new QPlainTextEdit(PaperTrackerMainWindow);
         PasswordText->setObjectName("PasswordText");
@@ -58,6 +59,9 @@ public:
         label = new QLabel(PaperTrackerMainWindow);
         label->setObjectName("label");
         label->setGeometry(QRect(480, 140, 51, 31));
+        label_2 = new QLabel(PaperTrackerMainWindow);
+        label_2->setObjectName("label_2");
+        label_2->setGeometry(QRect(10, 290, 111, 31));
 
         retranslateUi(PaperTrackerMainWindow);
 
@@ -72,6 +76,7 @@ public:
         pushButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\345\217\221\351\200\201", nullptr));
         ImageLabel->setText(QString());
         label->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\344\272\256\345\272\246\350\260\203\346\225\264", nullptr));
+        label_2->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\227\245\345\277\227\347\252\227\345\217\243\357\274\232", nullptr));
     } // retranslateUi
 
 };

@@ -16,6 +16,7 @@ class PaperTrackMainWindow final : public QWidget {
 public:
     explicit PaperTrackMainWindow(QWidget *parent = nullptr) :
         QWidget(parent) {
+        setFixedSize(848, 538);
         ui.setupUi(this);
         ui.LogText->setMaximumBlockCount(200);
         bound_pages();
@@ -32,13 +33,12 @@ public:
         inference.load_model("./model/model.onnx");
 
         show_video_thread = std::thread([this]() {
-            cv::Mat frame;
-            while (true) {
+            while (!window_closed) {
                 if (!video_reader.is_opened())
                 {
                     continue;
                 }
-                frame = std::move(video_reader.get_image());
+                cv::Mat frame = std::move(video_reader.get_image());
                 if (frame.empty())
                 {
                     break;
@@ -59,10 +59,13 @@ public:
 
     ~PaperTrackMainWindow()
     {
+        window_closed = true;
         show_video_thread.join();
     }
 
 private:
+    bool window_closed = false;
+
     std::thread show_video_thread;
 
     void bound_pages();

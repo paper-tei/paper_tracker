@@ -31,7 +31,7 @@
     <rect>
      <x>10</x>
      <y>320</y>
-     <width>371</width>
+     <width>821</width>
      <height>211</height>
     </rect>
    </property>
@@ -102,6 +102,19 @@
    </property>
    <property name="text">
     <string>亮度调整</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>290</y>
+     <width>111</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>日志窗口：</string>
    </property>
   </widget>
  </widget>

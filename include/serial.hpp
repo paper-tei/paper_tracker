@@ -1,53 +1,65 @@
-// //
-// // Created by JellyfishKnight on 2025/2/26.
-// //
 //
-// #ifndef SERIAL_HPP
-// #define SERIAL_HPP
+// Created by Paper-tei on 2025/2/26.
 //
-// #include <windows.h>
-// #include <string>
-// #include <functional>
-// #include <queue>
-// #include <mutex>
-// #include <QWindow>
-//
-// class SerialPortManager {
-// public:
-//     SerialPortManager(QWidget* parent = nullptr);
-//     ~SerialPortManager();
-//     void start();
-//     void stopReading();  // ֹͣ���ڶ�ȡ
-//     void startReading(std::function<void(const std::string&)> logCallback);  // �������ڶ�ȡ
-//     void restartReading(std::function<void(const std::string&)> logCallback);  // �ָ����ڶ�ȡ
-//     void writeData(const std::string& data);  // ����д���ݵĽӿ�
-//     void writeThread();  // ���������е�д������
-//     HANDLE getHandle() { return hSerial; }
-//
-//     std::string FindEsp32S3Port();
-//
-//     void FlashWiFiToESP32(std::wstring ssid, std::wstring password);
-//
-//     void flashESP32();
-//
-//     void restart_esp32();
-//
-//     void FlashExposureToESP32(int exposure);
-//
-//     void FlashBrightnessToESP32(int brightness);
-//
-//     std::string extractIPFromSerialData(const std::string& serialData);
-//
-// private:
-//     HANDLE hSerial = INVALID_HANDLE_VALUE;  // ���ھ��
-//     bool running = true;  // �����߳��Ƿ�����
-//     std::queue<std::string> writeQueue;  // �������ݶ���
-//     std::mutex writeMutex;  // д������ʱ�Ļ�����
-//     static DWORD WINAPI readThread(LPVOID param);
-//     std::function<void(const std::string&)> logCallback;
-//     std::string port;//S3;
-//
-// };
-//
-//
-// #endif //SERIAL_HPP
+
+#ifndef SERIAL_HPP
+#define SERIAL_HPP
+
+#include <string>
+#include <functional>
+#include <windows.h>
+#include <queue>
+#include <mutex>
+#include <QPlainTextEdit>
+
+class SerialPortManager {
+public:
+    SerialPortManager();
+
+    ~SerialPortManager();
+
+    void start();
+
+    void add_read_callback(std::function<void(const std::string&)> logCallback);
+
+    void stop();
+
+    void write_data(const std::string& data);
+private:
+    std::string FindEsp32S3Port();
+
+    void FlashWiFiToESP32(std::wstring ssid, std::wstring password);
+
+    void flashESP32();
+
+    void restart_esp32();
+
+    void FlashExposureToESP32(int exposure);
+
+    void FlashBrightnessToESP32(int brightness);
+
+    std::string extractIPFromSerialData(const std::string& serialData);
+
+    static std::string base64_encode(const std::string& input);
+
+    static std::wstring string_to_wstring(const std::string& str);
+
+
+    QPlainTextEdit* log_window = nullptr;
+
+    HANDLE hSerial = INVALID_HANDLE_VALUE;
+    bool running = false;
+    std::queue<std::string> writeQueue;
+    std::mutex writeMutex;
+    std::string port;
+    std::function<void(const std::string&)> logCallback;
+
+    std::thread read_thread;
+    std::thread write_thread;
+};
+
+
+
+
+
+#endif //SERIAL_HPP
