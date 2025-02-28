@@ -4,6 +4,7 @@
 #include "inference.hpp"
 #include <iostream>
 #include <onnxruntime_cxx_api.h>
+#include <opencv2/highgui.hpp>
 
 void Inference::load_model(const std::string &model_path) {
     Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "ONNXRuntimeDemo");
@@ -24,9 +25,8 @@ void Inference::inference(cv::Mat& image) {
     run_model(image);
 }
 
-
-
 void Inference::run_model(cv::Mat& image) {
+
     if (!image.isContinuous())
     {
         image = image.clone();
@@ -35,16 +35,14 @@ void Inference::run_model(cv::Mat& image) {
     Ort::AllocatorWithDefaultOptions allocator;
     size_t num_input_nodes = session_->GetInputCount();
     size_t num_output_nodes = session_->GetOutputCount();
-    std::vector<const char*> input_names;
+    std::vector<const char*> input_names(num_input_nodes);
     for (size_t i = 0; i < num_input_nodes; i++) {
-        auto input_name = session_->GetInputNameAllocated(i, allocator);
-        input_names.push_back(input_name.get());
+        input_names[i] = session_->GetInputNameAllocated(i, allocator).get();
     }
 
-    std::vector<const char*> output_names;
+    std::vector<const char*> output_names(num_output_nodes);
     for (size_t i = 0; i < num_output_nodes; i++) {
-        auto output_name = session_->GetOutputNameAllocated(i, allocator);
-        output_names.push_back(output_name.get());
+        output_names[i] = session_->GetOutputNameAllocated(i, allocator).get();
     }
 
     float* data_ptr = image.ptr<float>();
@@ -81,10 +79,12 @@ void Inference::run_model(cv::Mat& image) {
     } catch (std::exception& e)
     {
         std::cout << "Error: " << e.what() << std::endl;
+        return ;
     }
 
     if (output_tensors.empty())
     {
+        std::cout << "No Target Found" << std::endl;
         return ;
     }
     Ort::Value& output_tensor = output_tensors.front();
@@ -100,8 +100,8 @@ void Inference::run_model(cv::Mat& image) {
     // 打印结果示例
     std::cout << "Output shape: ";
     for (auto dim : output_shape) std::cout << dim << " ";
-    std::cout << "\nFirst 10 values: ";
-    for (size_t i = 0; i < 10 && i < output_size; i++) {
+    std::cout << "\nModelValues: ";
+    for (size_t i = 0; i < output_size; i++) {
         std::cout << output_data[i] << " ";
     }
     std::cout << std::endl;

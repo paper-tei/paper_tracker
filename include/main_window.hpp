@@ -30,7 +30,7 @@ public:
         show_video_thread = std::thread([this]() {
             cv::Mat frame;
             while (true) {
-                frame = video_reader.get_image();
+                frame = std::move(video_reader.get_image());
                 if (frame.empty())
                 {
                     break;
@@ -44,7 +44,7 @@ public:
                 ui.ImageLabel->setPixmap(QPixmap::fromImage(qimage));
                 ui.ImageLabel->setScaledContents(true);
                 ui.ImageLabel->update();
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 30));
+                cv::waitKey(30);
             }
         });
     }
