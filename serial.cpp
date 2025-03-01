@@ -29,6 +29,8 @@ SerialPortManager::SerialPortManager(QPlainTextEdit* log_window) : hSerial(INVAL
 SerialPortManager::~SerialPortManager()
 {
     stop();
+    read_thread.join();
+    write_thread.join();
 }
 
 std::string SerialPortManager::FindEsp32S3Port()
