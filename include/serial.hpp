@@ -12,9 +12,19 @@
 #include <mutex>
 #include <QPlainTextEdit>
 
+enum PacketType {
+    PACKET_UNKNOWN = 0,
+    PACKET_WIFI_SETUP,
+    PACKET_WIFI_SSID_PWD,
+    PACKET_WIFI_CONFIRM,
+    PACKET_WIFI_ERROR,
+    PACKET_DEVICE_STATUS,
+    PACKET_LIGHT_CONTROL
+};
+
 class SerialPortManager {
 public:
-    SerialPortManager();
+    SerialPortManager(QPlainTextEdit* log_window);
 
     ~SerialPortManager();
 
@@ -32,18 +42,14 @@ private:
 
     void flashESP32();
 
-    void restart_esp32();
 
-    void FlashExposureToESP32(int exposure);
+    PacketType parsePacket(const std::string& packet);
 
-    void FlashBrightnessToESP32(int brightness);
+    void sendWiFiConfig(HANDLE hSerial, const std::string& ssid, const std::string& pwd);
 
-    std::string extractIPFromSerialData(const std::string& serialData);
+    void sendLightControl(HANDLE hSerial, int brightness);
 
-    static std::string base64_encode(const std::string& input);
-
-    static std::wstring string_to_wstring(const std::string& str);
-
+    HANDLE initSerialPort(const wchar_t* portName);
 
     QPlainTextEdit* log_window = nullptr;
 
@@ -52,8 +58,6 @@ private:
     std::queue<std::string> writeQueue;
     std::mutex writeMutex;
     std::string port;
-    std::function<void(const std::string&)> logCallback;
-
     std::thread read_thread;
     std::thread write_thread;
 };

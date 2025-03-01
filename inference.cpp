@@ -272,3 +272,35 @@ void Inference::process_results() {
 void Inference::show_result() {
     // 结果显示逻辑
 }
+
+std::vector<float> Inference::get_output() const
+{
+    if (output_tensors_.empty()) {
+        return std::vector<float>();
+    }
+
+    try {
+        // 获取第一个输出张量
+        const Ort::Value& output_tensor = output_tensors_.front();
+        const float* output_data = output_tensor.GetTensorData<float>();
+
+        // 获取输出形状
+        auto shape_info = output_tensor.GetTensorTypeAndShapeInfo();
+        auto output_shape = shape_info.GetShape();
+
+        // 计算输出大小
+        size_t output_size = 1;
+        for (auto dim : output_shape) {
+            output_size *= dim;
+        }
+
+        // 复制数据到结果向量
+        std::vector<float> result(output_data, output_data + output_size);
+        return result;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "获取输出数据错误: " << e.what() << std::endl;
+        return std::vector<float>();
+    }
+}
+

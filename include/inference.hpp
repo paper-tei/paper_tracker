@@ -25,6 +25,7 @@ public:
     // 显示结果
     void show_result();
 
+    std::vector<float> get_output() const;
 private:
     // 初始化输入输出名称
     void init_io_names();
