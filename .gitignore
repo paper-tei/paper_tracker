@@ -6,5 +6,11 @@ cmake-build-release/*
 
 *.mkv
 
-3rdParty/*
-3rdParty
+3rdParty/opencv-mvsc/*
+3rdParty/opencv-mvsc
+
+3rdParty/onnxruntime-win-x64-1.20.1/*
+3rdParty/onnxruntime-win-x64-1.20.1
+
+3rdParty/onnxruntime-win-x64-gpu-1.20.1/*
+3rdParty/onnxruntime-win-x64-gpu-1.20.1
