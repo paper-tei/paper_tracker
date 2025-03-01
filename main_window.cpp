@@ -23,6 +23,26 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect)
     {
         roi_rect = cv::Rect(rect.x(), rect.y(), rect.width(), rect.height());
+        // if end point is out of image, move rect
+        if (roi_rect.x < 0)
+        {
+            roi_rect.width += rect.x();
+            roi_rect.x = 0;
+        }
+        if (roi_rect.y < 0)
+        {
+            roi_rect.height += rect.y();
+            roi_rect.y = 0;
+        }
+        // if roi is bigger than image, resize rect
+        if (roi_rect.x + roi_rect.width > 361)
+        {
+            roi_rect.width = 361 - roi_rect.x;
+        }
+        if (roi_rect.y + roi_rect.height > 251)
+        {
+            roi_rect.height = 251 - roi_rect.y;
+        }
     },ui.ImageLabel);
     ui.ImageLabel->installEventFilter(roiFilter);
 
