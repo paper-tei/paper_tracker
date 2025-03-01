@@ -6,7 +6,7 @@
 #include <iostream>
 #include <winsock2.h>
 
-ROIEventFilter::ROIEventFilter(std::function<void(QRect rect)> func, QObject *parent)
+ROIEventFilter::ROIEventFilter(std::function<void(QRect rect, bool is_end)> func, QObject *parent)
     : QObject(parent), selecting(false)
 {
     this->func = func;
@@ -28,7 +28,7 @@ bool ROIEventFilter::eventFilter(QObject *obj, QEvent *event) {
     } else if (event->type() == QEvent::MouseMove && selecting) {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
         selectionRect = QRect(selectionStart, mouseEvent->pos()).normalized();
-        func(selectionRect);
+        func(selectionRect, false);
         label->update();  // 触发重绘，绘制选区
         return true;
     } else if (event->type() == QEvent::MouseButtonRelease && selecting) {
@@ -36,7 +36,7 @@ bool ROIEventFilter::eventFilter(QObject *obj, QEvent *event) {
         if (mouseEvent->button() == Qt::LeftButton) {
             selecting = false;
             selectionRect = QRect(selectionStart, mouseEvent->pos()).normalized();
-            func(selectionRect);
+            func(selectionRect, true);
             label->update();
             return true;
         }

@@ -34,6 +34,8 @@ private:
     Ui::PaperTrackerMainWindow ui{};
 
     cv::Rect roi_rect;
+    bool is_roi_end = true;
+
     VideoReader video_reader;
     std::thread show_video_thread;
 
