@@ -14,6 +14,7 @@
 #include "inference.hpp"
 #include "osc.hpp"
 #include "serial.hpp"
+#include "roi_event.hpp"
 
 class PaperTrackMainWindow : public QWidget {
    // Q_OBJECT // 这行非常重要，不能缺少
@@ -23,7 +24,7 @@ public:
     ~PaperTrackMainWindow() override;
 
     private slots:
-        void onSendButtonClicked();
+    void onSendButtonClicked();
     void onBrightnessChanged(int value);
 
 private:
@@ -32,7 +33,7 @@ private:
     // UI组件
     Ui::PaperTrackerMainWindow ui{};
 
-    // 视频处理
+    cv::Rect roi_rect;
     VideoReader video_reader;
     std::thread show_video_thread;
 

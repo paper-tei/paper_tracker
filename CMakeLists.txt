@@ -68,12 +68,12 @@ endif()
 add_executable(PaperTracker main.cpp
     main_window.ui
     main_window.cpp
-    camera.cpp
     serial.cpp
     video_reader.cpp
     inference.cpp
     include/osc.hpp
     osc.cpp
+    roi_event.cpp
 )
 
 target_include_directories(

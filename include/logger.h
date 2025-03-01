@@ -114,10 +114,11 @@ inline void output_log(QPlainTextEdit* log_window, log_level lev, std::string ms
     if (lev >= g_max_level) {
         auto output = _MINILOG_IF_HAS_ANSI_COLORS(k_level_ansi_colors[(std::uint8_t)lev] +)
             msg _MINILOG_IF_HAS_ANSI_COLORS(+ k_reset_ansi_color) + '\n';
-        if (log_window) {
+        if (log_window->isVisible()) {
             log_window->moveCursor(QTextCursor::End);
             log_window->appendPlainText(QString::fromStdString(output));
-        } else
+        }
+        else
         {
             std::cout << output;
         }
