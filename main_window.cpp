@@ -105,11 +105,10 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
 
                 // 获取视频帧
                 cv::Mat frame = video_reader.get_image();
-              
-
+                bool image_captured = true;
                 if (frame.empty()) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    continue;
+                    image_captured = false;
                 }
               
                 // 显示图像
@@ -123,21 +122,30 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 {
                     infer_frame = infer_frame(roi_rect);
                 }
+                if (image_captured)
+                {
+                    cv::rectangle(frame, roi_rect, cv::Scalar(0, 255, 0), 2);
+                    inference.inference(infer_frame);
+                    // 发送OSC数据
+                    std::vector<float> output = inference.get_output();
+                    if (!output.empty()) {
+                        osc_manager_.sendModelOutput(output);
+                    }
 
-                inference.inference(infer_frame);
-
-                // draw rect on frame
-                cv::rectangle(frame, roi_rect, cv::Scalar(0, 255, 0), 2);
-
-                inference.inference(infer_frame);
-
-                // 发送OSC数据
-                std::vector<float> output = inference.get_output();
-                if (!output.empty()) {
-                    osc_manager_.sendModelOutput(output);
                 }
-
-                QImage qimage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888);
+                // draw rect on frame
+                QImage qimage;
+                if (image_captured)
+                {
+                    qimage = QImage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888);
+                } else
+                {
+                    // default image which displays: "没有图像载入“
+                    cv::Mat default_frame = cv::Mat::zeros(251, 361, CV_8UC3);
+                    default_frame = cv::Scalar(255, 255, 255);
+                    cv::putText(default_frame, "No Image Loaded", cv::Point(10, 100), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 0), 2);
+                    qimage = QImage(default_frame.data, default_frame.cols, default_frame.rows, default_frame.step, QImage::Format_RGB888).copy();
+                }
 
                 // 使用Qt的线程安全方式更新UI
                 QMetaObject::invokeMethod(this, [this, qimage]() {
@@ -147,7 +155,8 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 }, Qt::QueuedConnection);
 
                 // 控制帧率
-                std::this_thread::sleep_for(std::chrono::milliseconds(33)); // ~30fps
+                cv::waitKey(33);
+                // std::this_thread::sleep_for(std::chrono::milliseconds(33)); // ~30fps
             } catch (const std::exception& e) {
                 // 使用Qt方式记录日志，而不是minilog
                 QString errorMsg = QString("视频处理异常: %1").arg(e.what());
