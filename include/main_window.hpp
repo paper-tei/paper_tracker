@@ -2,48 +2,48 @@
 // Created by JellyfishKnight on 2025/2/25.
 //
 
-#ifndef MAIN_WINDOW_HPP
-#define MAIN_WINDOW_HPP
+#pragma once
 
-#include <future>
-#include <inference.hpp>
+#include <QWidget>
 #include <thread>
+#include <future>
+#include <atomic>
 
-#include "osc.hpp"
 #include "ui_main_window.h"
 #include "video_reader.hpp"
+#include "inference.hpp"
+#include "osc.hpp"
 #include "serial.hpp"
 #include "roi_event.hpp"
 
-class PaperTrackMainWindow final : public QWidget {
+class PaperTrackMainWindow : public QWidget {
+   // Q_OBJECT // 这行非常重要，不能缺少
+
 public:
     explicit PaperTrackMainWindow(QWidget *parent = nullptr);
+    ~PaperTrackMainWindow() override;
 
-    ~PaperTrackMainWindow();
+    private slots:
+    void onSendButtonClicked();
+    void onBrightnessChanged(int value);
 
 private:
-    bool window_closed = false;
-
-    std::thread show_video_thread;
-
     void bound_pages();
 
-    VideoReader video_reader;
-    Inference inference;
-    SerialPortManager serial_port_manager_;
+    // UI组件
+    Ui::PaperTrackerMainWindow ui{};
 
     cv::Rect roi_rect;
+    VideoReader video_reader;
+    std::thread show_video_thread;
 
-    // OSC设置相关变量
+    // 推理和OSC通信
+    Inference inference;
     OscManager osc_manager_;
-    std::string osc_address_ = "127.0.0.1";
-    int osc_port_ = 8888;
-    std::string osc_prefix_ = "";
-    float osc_multiplier_ = 1.0f;
-    bool osc_enabled_ = true;
 
-    Ui_PaperTrackerMainWindow ui{};
+    // 串口通信
+    SerialPortManager serial_port_manager_;
+
+    // 线程控制
+    std::atomic<bool> window_closed{false};
 };
-
-
-#endif //MAIN_WINDOW_HPP
