@@ -18,6 +18,13 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     // 连接UI信号槽
     connect(ui.pushButton, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
     connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
+        
+    // 添加ROI事件
+    ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect)
+    {
+        roi_rect = cv::Rect(rect.x(), rect.y(), rect.width(), rect.height());
+    },ui.ImageLabel);
+    ui.ImageLabel->installEventFilter(roiFilter);
 
     // 初始化页面导航
     bound_pages();
@@ -77,13 +84,30 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
 
                 // 获取视频帧
                 cv::Mat frame = video_reader.get_image();
+              
+
                 if (frame.empty()) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     continue;
                 }
+              
+                // 显示图像
+                cv::resize(frame, frame, cv::Size(361, 251));
+                cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
 
                 // 推理处理
                 auto infer_frame = frame.clone();
+              
+                if (!roi_rect.empty())
+                {
+                    infer_frame = infer_frame(roi_rect);
+                }
+
+                inference.inference(infer_frame);
+
+                // draw rect on frame
+                cv::rectangle(frame, roi_rect, cv::Scalar(0, 255, 0), 2);
+
                 inference.inference(infer_frame);
 
                 // 发送OSC数据
@@ -92,9 +116,6 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     osc_manager_.sendModelOutput(output);
                 }
 
-                // 显示图像
-                cv::resize(frame, frame, cv::Size(361, 251));
-                cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
                 QImage qimage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888);
 
                 // 使用Qt的线程安全方式更新UI

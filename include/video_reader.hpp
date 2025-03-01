@@ -5,6 +5,7 @@
 #ifndef VIDEO_READER_HPP
 #define VIDEO_READER_HPP
 
+#include <QLabel>
 #include <string>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
