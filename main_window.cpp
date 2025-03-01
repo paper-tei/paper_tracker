@@ -20,8 +20,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
         
     // 添加ROI事件
-    ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect)
+    ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect, bool isEnd)
     {
+        is_roi_end = isEnd;
         roi_rect = cv::Rect(rect.x(), rect.y(), rect.width(), rect.height());
         // if end point is out of image, move rect
         if (roi_rect.x < 0)
@@ -118,9 +119,10 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 // 推理处理
                 auto infer_frame = frame.clone();
               
-                if (!roi_rect.empty())
+                if (!roi_rect.empty() && is_roi_end)
                 {
                     infer_frame = infer_frame(roi_rect);
+                    std::cout << "Use ROI" << std::endl;
                 }
 
                 inference.inference(infer_frame);
