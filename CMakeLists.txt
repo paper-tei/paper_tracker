@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(Babble)
+project(PaperTracker)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -7,23 +7,29 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-# if toolchain is mingw
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/QtMVSC/6.8.2/msvc2022_64")
-set(OpenCV_DIR "D:/Babble3rdParty/opencv-mvsc/opencv/build")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
-#set(ONNXRUNTIME_ROOT "D:/Babble3rdParty/onnxruntime-win-x64-1.20.1/onnxruntime-win-x64-1.20.1")
-set(ONNXRUNTIME_ROOT "D:/Babble3rdParty/onnxruntime-win-x64-gpu-1.20.1")
 
-
+# set 3rd party lib path
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_SOURCE_DIR}/3rdParty/QtMVSC/6.8.2/msvc2022_64)
+set(OpenCV_DIR ${CMAKE_SOURCE_DIR}/3rdParty/opencv-mvsc/opencv/build)
+find_package(CUDA)
+if(CUDA_FOUND)
+    message("CUDA found")
+    add_definitions(-DUSE_CUDA)
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode arch=compute_75,code=sm_75")
+    set(ONNXRUNTIME_ROOT ${CMAKE_SOURCE_DIR}/3rdParty/onnxruntime-win-x64-1.20.1)
+else()
+    message("CUDA no found")
+    set(ONNXRUNTIME_ROOT ${CMAKE_SOURCE_DIR}/3rdParty/onnxruntime-win-x64-gpu-1.20.1)
+endif ()
 find_package(OpenCV CONFIG REQUIRED)
-
 find_package(Qt6 COMPONENTS
     Core
     Gui
     Widgets
     REQUIRED)
 
-add_executable(Babble main.cpp
+add_executable(PaperTracker main.cpp
     main_window.ui
     main_window.cpp
     camera.cpp
@@ -33,18 +39,18 @@ add_executable(Babble main.cpp
 )
 
 target_include_directories(
-    Babble PUBLIC
+    PaperTracker PUBLIC
     include
     ${OpenCV_INCLUDE_DIRS}
     ${ONNXRUNTIME_ROOT}/include
 )
 
 target_link_directories(
-    Babble PUBLIC
+    PaperTracker PUBLIC
     ${ONNXRUNTIME_ROOT}/lib
 )
 
-target_link_libraries(Babble PRIVATE
+target_link_libraries(PaperTracker PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
@@ -56,8 +62,16 @@ target_link_libraries(Babble PRIVATE
 )
 
 # install dir model to the same dir as the executable
+set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/model/  DESTINATION ${CMAKE_BINARY_DIR}/model)
-
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/opencv-mvsc/opencv/build/x64/vc16/bin/  DESTINATION ${CMAKE_BINARY_DIR})
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/QtMVSC/6.8.2/msvc2022_64/bin/  DESTINATION ${CMAKE_BINARY_DIR})
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/QtMVSC/6.8.2/msvc2022_64/plugins/  DESTINATION ${CMAKE_BINARY_DIR}/plugins)
+if (CUDA_FOUND)
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/onnxruntime-win-x64-gpu-1.20.1/  DESTINATION ${CMAKE_BINARY_DIR})
+else ()
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/onnxruntime-win-x64-1.20.1/  DESTINATION ${CMAKE_BINARY_DIR})
+endif ()
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(DEBUG_SUFFIX)

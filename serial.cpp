@@ -103,52 +103,52 @@ void SerialPortManager::start() {
     SetCommTimeouts(hSerial, &timeouts);
 
     read_thread = std::thread(
-        [this]
-        {
-            std::string buffer;
-            char tempBuffer[1024];
-            DWORD bytesRead;
-            while (running) {
-                BOOL result = ReadFile(hSerial, tempBuffer, sizeof(tempBuffer) - 1, &bytesRead, NULL);
-                if (!result) {
-                    DWORD error = GetLastError();
-                    // 错误处理，判断是否是无效句柄或者错误的命令
-                    if (error == ERROR_INVALID_HANDLE || error == ERROR_BAD_COMMAND) {
-                        minilog::log_error(log_window,"Error: 串口句柄无效，可能设备断开或串口被关闭");
-                    } else {
-                        minilog::log_error(log_window,"Error: 读取串口文件失败，错误号：{}", error);
-                    }
-                    // 继续读取下一个数据
-                    continue;
-                }
-
-                if (bytesRead > 0) {
-                    tempBuffer[bytesRead] = '\0';
-                    buffer += tempBuffer;
-
-                    while (!buffer.empty()) {
-                        size_t validUtf8End = buffer.find_last_of("\n");
-                        if (validUtf8End == std::string::npos) {
-                            break;
-                        }
-
-                        std::string receivedData = buffer.substr(0, validUtf8End + 1);
-                        buffer.erase(0, validUtf8End + 1);
-
-                        // 提取 IP 地址并发送到 UI
-                        std::string ipAddress = extractIPFromSerialData(receivedData);
-                        if (!ipAddress.empty()) {
-                            // 使用 PostMessage 更新 UI 上的文本框控件
-                            PostMessage(hwnd, WM_USER + 3, 0, (LPARAM)new std::string(ipAddress));
-                        }
-
-                        // 发送到 UI
-                        PostMessage(hwnd, WM_USER + 2, 0, (LPARAM)new std::string(receivedData));
-                    }
-                }
-            }
-
-        }
+        // [this]
+        // {
+        //     std::string buffer;
+        //     char tempBuffer[1024];
+        //     DWORD bytesRead;
+        //     while (running) {
+        //         BOOL result = ReadFile(hSerial, tempBuffer, sizeof(tempBuffer) - 1, &bytesRead, NULL);
+        //         if (!result) {
+        //             DWORD error = GetLastError();
+        //             // 错误处理，判断是否是无效句柄或者错误的命令
+        //             if (error == ERROR_INVALID_HANDLE || error == ERROR_BAD_COMMAND) {
+        //                 minilog::log_error(log_window,"Error: 串口句柄无效，可能设备断开或串口被关闭");
+        //             } else {
+        //                 minilog::log_error(log_window,"Error: 读取串口文件失败，错误号：{}", error);
+        //             }
+        //             // 继续读取下一个数据
+        //             continue;
+        //         }
+        //
+        //         if (bytesRead > 0) {
+        //             tempBuffer[bytesRead] = '\0';
+        //             buffer += tempBuffer;
+        //
+        //             while (!buffer.empty()) {
+        //                 size_t validUtf8End = buffer.find_last_of("\n");
+        //                 if (validUtf8End == std::string::npos) {
+        //                     break;
+        //                 }
+        //
+        //                 std::string receivedData = buffer.substr(0, validUtf8End + 1);
+        //                 buffer.erase(0, validUtf8End + 1);
+        //
+        //                 // 提取 IP 地址并发送到 UI
+        //                 std::string ipAddress = extractIPFromSerialData(receivedData);
+        //                 if (!ipAddress.empty()) {
+        //                     // 使用 PostMessage 更新 UI 上的文本框控件
+        //                     // PostMessage(hwnd, WM_USER + 3, 0, (LPARAM)new std::string(ipAddress));
+        //                 }
+        //
+        //                 // 发送到 UI
+        //                 // PostMessage(hwnd, WM_USER + 2, 0, (LPARAM)new std::string(receivedData));
+        //             }
+        //         }
+        //     }
+        //
+        // }
     );
 
     write_thread = std::thread(
