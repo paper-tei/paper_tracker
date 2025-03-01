@@ -13,6 +13,7 @@
 #include "ui_main_window.h"
 #include "video_reader.hpp"
 #include "serial.hpp"
+#include "roi_event.hpp"
 
 class PaperTrackMainWindow final : public QWidget {
 public:
@@ -37,6 +38,11 @@ public:
         osc_manager_.setLocationPrefix("");    // 空前缀
         osc_manager_.setMultiplier(1.0f);      // 默认乘数
 
+        ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect)
+        {
+            roi_rect = cv::Rect(rect.x(), rect.y(), rect.width(), rect.height());
+        },ui.ImageLabel);
+        ui.ImageLabel->installEventFilter(roiFilter);
 
         show_video_thread = std::thread([this]() {
             while (!window_closed) {
@@ -49,15 +55,23 @@ public:
                 {
                     break;
                 }
+                cv::resize(frame, frame, cv::Size(361, 251));
                 auto infer_frame = frame.clone();
+                if (!roi_rect.empty())
+                {
+                    infer_frame = infer_frame(roi_rect);
+                }
+
                 inference.inference(infer_frame);
+
+                // draw rect on frame
+                cv::rectangle(frame, roi_rect, cv::Scalar(0, 255, 0), 2);
 
                 std::vector<float> output = inference.get_output();
                 if (!output.empty()) {
                     osc_manager_.sendModelOutput(output);
                 }
 
-                cv::resize(frame, frame, cv::Size(361, 251));
                 // show frame on the label
                 cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
                 QImage qimage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888);
@@ -75,6 +89,7 @@ public:
     {
         window_closed = true;
         show_video_thread.join();
+        serial_port_manager_.stop();
     }
 
 private:
@@ -88,6 +103,7 @@ private:
     Inference inference;
     SerialPortManager serial_port_manager_;
 
+    cv::Rect roi_rect;
 
     // OSC设置相关变量
     OscManager osc_manager_;

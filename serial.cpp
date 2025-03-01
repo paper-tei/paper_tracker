@@ -23,7 +23,7 @@
 SerialPortManager::SerialPortManager(QPlainTextEdit* log_window) : hSerial(INVALID_HANDLE_VALUE), running(false),
     log_window(log_window) {
     hSerial = initSerialPort(COM_PORT);
-    std::cout << "Serial port opened successfully!" << std::endl;
+    // minilog::log_info(log_window, "Serial port opened successfully!");
 }
 
 SerialPortManager::~SerialPortManager()

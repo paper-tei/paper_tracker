@@ -3,9 +3,9 @@
 //
 #include "video_reader.hpp"
 #include "opencv2/videoio.hpp"
+#include <QPainter>
 
-VideoReader::VideoReader(const std::string &video_path) : video_path(video_path){
-}
+VideoReader::VideoReader(const std::string &video_path) : video_path(video_path){}
 
 void VideoReader::open_video(const std::string &video_path) {
     if (video_path.empty() && this->video_path.empty()) {
@@ -34,4 +34,3 @@ cv::Mat VideoReader::get_image() {
     }
     return frame;
 }
-
