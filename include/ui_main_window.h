@@ -14,6 +14,7 @@
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QPlainTextEdit>
+#include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QScrollArea>
 #include <QtWidgets/QScrollBar>
@@ -112,6 +113,29 @@ public:
     QPlainTextEdit *plainTextEdit_67;
     QLabel *label_41;
     QPlainTextEdit *plainTextEdit_68;
+    QProgressBar *progressBar;
+    QProgressBar *progressBar_2;
+    QProgressBar *progressBar_3;
+    QProgressBar *progressBar_4;
+    QProgressBar *progressBar_5;
+    QProgressBar *progressBar_6;
+    QProgressBar *progressBar_7;
+    QProgressBar *progressBar_8;
+    QProgressBar *progressBar_9;
+    QProgressBar *progressBar_10;
+    QProgressBar *progressBar_11;
+    QProgressBar *progressBar_12;
+    QProgressBar *progressBar_13;
+    QProgressBar *progressBar_14;
+    QProgressBar *progressBar_15;
+    QProgressBar *progressBar_16;
+    QProgressBar *progressBar_17;
+    QProgressBar *progressBar_18;
+    QProgressBar *progressBar_19;
+    QProgressBar *progressBar_20;
+    QProgressBar *progressBar_21;
+    QProgressBar *progressBar_22;
+    QProgressBar *progressBar_24;
     QPushButton *StartCalibrationButton;
     QComboBox *CalibrationModeComboBox;
     QPushButton *ResetMaxButton;
@@ -180,7 +204,7 @@ public:
         scrollArea->setWidgetResizable(false);
         scrollAreaWidgetContents = new QWidget();
         scrollAreaWidgetContents->setObjectName("scrollAreaWidgetContents");
-        scrollAreaWidgetContents->setGeometry(QRect(0, 0, 639, 1221));
+        scrollAreaWidgetContents->setGeometry(QRect(0, -573, 639, 1000));
         scrollAreaWidgetContents->setMinimumSize(QSize(0, 1000));
         plainTextEdit_3 = new QPlainTextEdit(scrollAreaWidgetContents);
         plainTextEdit_3->setObjectName("plainTextEdit_3");
@@ -389,6 +413,98 @@ public:
         plainTextEdit_68 = new QPlainTextEdit(scrollAreaWidgetContents);
         plainTextEdit_68->setObjectName("plainTextEdit_68");
         plainTextEdit_68->setGeometry(QRect(110, 840, 81, 31));
+        progressBar = new QProgressBar(scrollAreaWidgetContents);
+        progressBar->setObjectName("progressBar");
+        progressBar->setGeometry(QRect(350, 0, 151, 31));
+        progressBar->setValue(24);
+        progressBar_2 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_2->setObjectName("progressBar_2");
+        progressBar_2->setGeometry(QRect(350, 40, 151, 31));
+        progressBar_2->setValue(24);
+        progressBar_3 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_3->setObjectName("progressBar_3");
+        progressBar_3->setGeometry(QRect(350, 120, 151, 31));
+        progressBar_3->setValue(24);
+        progressBar_4 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_4->setObjectName("progressBar_4");
+        progressBar_4->setGeometry(QRect(350, 80, 151, 31));
+        progressBar_4->setValue(24);
+        progressBar_5 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_5->setObjectName("progressBar_5");
+        progressBar_5->setGeometry(QRect(350, 200, 151, 31));
+        progressBar_5->setValue(24);
+        progressBar_6 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_6->setObjectName("progressBar_6");
+        progressBar_6->setGeometry(QRect(350, 160, 151, 31));
+        progressBar_6->setValue(24);
+        progressBar_7 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_7->setObjectName("progressBar_7");
+        progressBar_7->setGeometry(QRect(350, 280, 151, 31));
+        progressBar_7->setValue(24);
+        progressBar_8 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_8->setObjectName("progressBar_8");
+        progressBar_8->setGeometry(QRect(350, 240, 151, 31));
+        progressBar_8->setValue(24);
+        progressBar_9 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_9->setObjectName("progressBar_9");
+        progressBar_9->setGeometry(QRect(350, 360, 151, 31));
+        progressBar_9->setValue(24);
+        progressBar_10 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_10->setObjectName("progressBar_10");
+        progressBar_10->setGeometry(QRect(350, 320, 151, 31));
+        progressBar_10->setValue(24);
+        progressBar_11 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_11->setObjectName("progressBar_11");
+        progressBar_11->setGeometry(QRect(350, 440, 151, 31));
+        progressBar_11->setValue(24);
+        progressBar_12 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_12->setObjectName("progressBar_12");
+        progressBar_12->setGeometry(QRect(350, 400, 151, 31));
+        progressBar_12->setValue(24);
+        progressBar_13 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_13->setObjectName("progressBar_13");
+        progressBar_13->setGeometry(QRect(350, 520, 151, 31));
+        progressBar_13->setValue(24);
+        progressBar_14 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_14->setObjectName("progressBar_14");
+        progressBar_14->setGeometry(QRect(350, 480, 151, 31));
+        progressBar_14->setValue(24);
+        progressBar_15 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_15->setObjectName("progressBar_15");
+        progressBar_15->setGeometry(QRect(350, 600, 151, 31));
+        progressBar_15->setValue(24);
+        progressBar_16 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_16->setObjectName("progressBar_16");
+        progressBar_16->setGeometry(QRect(350, 560, 151, 31));
+        progressBar_16->setValue(24);
+        progressBar_17 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_17->setObjectName("progressBar_17");
+        progressBar_17->setGeometry(QRect(350, 680, 151, 31));
+        progressBar_17->setValue(24);
+        progressBar_18 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_18->setObjectName("progressBar_18");
+        progressBar_18->setGeometry(QRect(350, 640, 151, 31));
+        progressBar_18->setValue(24);
+        progressBar_19 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_19->setObjectName("progressBar_19");
+        progressBar_19->setGeometry(QRect(350, 760, 151, 31));
+        progressBar_19->setValue(24);
+        progressBar_20 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_20->setObjectName("progressBar_20");
+        progressBar_20->setGeometry(QRect(350, 720, 151, 31));
+        progressBar_20->setValue(24);
+        progressBar_21 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_21->setObjectName("progressBar_21");
+        progressBar_21->setGeometry(QRect(350, 840, 151, 31));
+        progressBar_21->setValue(24);
+        progressBar_22 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_22->setObjectName("progressBar_22");
+        progressBar_22->setGeometry(QRect(350, 800, 151, 31));
+        progressBar_22->setValue(24);
+        progressBar_24 = new QProgressBar(scrollAreaWidgetContents);
+        progressBar_24->setObjectName("progressBar_24");
+        progressBar_24->setGeometry(QRect(350, 880, 151, 31));
+        progressBar_24->setValue(24);
         scrollArea->setWidget(scrollAreaWidgetContents);
         StartCalibrationButton = new QPushButton(page_2);
         StartCalibrationButton->setObjectName("StartCalibrationButton");
@@ -417,7 +533,7 @@ public:
 
         retranslateUi(PaperTrackerMainWindow);
 
-        stackedWidget->setCurrentIndex(0);
+        stackedWidget->setCurrentIndex(1);
 
 
         QMetaObject::connectSlotsByName(PaperTrackerMainWindow);
