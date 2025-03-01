@@ -28,6 +28,7 @@ bool ROIEventFilter::eventFilter(QObject *obj, QEvent *event) {
     } else if (event->type() == QEvent::MouseMove && selecting) {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
         selectionRect = QRect(selectionStart, mouseEvent->pos()).normalized();
+        func(selectionRect);
         label->update();  // 触发重绘，绘制选区
         return true;
     } else if (event->type() == QEvent::MouseButtonRelease && selecting) {
