@@ -52,7 +52,6 @@ private:
     HANDLE initSerialPort(const wchar_t* portName);
 
     QPlainTextEdit* log_window = nullptr;
-
     HANDLE hSerial = INVALID_HANDLE_VALUE;
     bool running = false;
     std::queue<std::string> writeQueue;
@@ -60,6 +59,9 @@ private:
     std::string port;
     std::thread read_thread;
     std::thread write_thread;
+    std::mutex writeQueueMutex;
+    std::condition_variable writeQueueCV;
+
 };
 
 
