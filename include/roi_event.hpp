@@ -16,7 +16,7 @@
 class ROIEventFilter final : public QObject {
     // Q_OBJECT
 public:
-    explicit ROIEventFilter(std::function<void(QRect rect)>, QObject *parent = nullptr);
+    explicit ROIEventFilter(std::function<void(QRect rect, bool is_end)> func, QObject *parent = nullptr);
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 private:
@@ -24,7 +24,7 @@ private:
     QPoint selectionStart;
     bool selecting;
 
-    std::function<void(QRect rect)> func;
+    std::function<void(QRect rect, bool is_end)> func;
 };
 
 
