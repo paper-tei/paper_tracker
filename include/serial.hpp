@@ -42,7 +42,6 @@ private:
 
     void flashESP32();
 
-
     PacketType parsePacket(const std::string& packet);
 
     void sendWiFiConfig(HANDLE hSerial, const std::string& ssid, const std::string& pwd);
@@ -59,6 +58,9 @@ private:
     std::string port;
     std::thread read_thread;
     std::thread write_thread;
+
+    std::thread write_junk_thread;
+
     std::mutex writeQueueMutex;
     std::condition_variable writeQueueCV;
 

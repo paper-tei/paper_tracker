@@ -122,7 +122,6 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 if (!roi_rect.empty() && is_roi_end)
                 {
                     infer_frame = infer_frame(roi_rect);
-                    std::cout << "Use ROI" << std::endl;
                 }
 
                 inference.inference(infer_frame);
@@ -182,9 +181,12 @@ PaperTrackMainWindow::~PaperTrackMainWindow() {
 
 void PaperTrackMainWindow::bound_pages() {
     // 页面导航逻辑
-    // connect(ui.CameraZoneButton, &QPushButton::clicked, [this] {
-    //     ui.stackedWidget->setCurrentIndex(0);
-    // });
+    connect(ui.MainPageButton, &QPushButton::clicked, [this] {
+        ui.stackedWidget->setCurrentIndex(0);
+    });
+    connect(ui.CalibrationPageButton, &QPushButton::clicked, [this] {
+        ui.stackedWidget->setCurrentIndex(1);
+    });
 }
 
 void PaperTrackMainWindow::onSendButtonClicked() {

@@ -85,6 +85,7 @@ SerialPortManager::~SerialPortManager()
     stop();
     read_thread.join();
     write_thread.join();
+    write_junk_thread.join();
 }
 
 std::string SerialPortManager::FindEsp32S3Port() {
@@ -290,6 +291,17 @@ void SerialPortManager::start() {
                     break;
                 }
                 Sleep(100);
+            }
+        }
+    );
+
+    write_junk_thread = std::thread(
+        [this]
+        {
+            while (running) {
+                std::string junk = "junk data";
+                write_data(junk);
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
             }
         }
     );
