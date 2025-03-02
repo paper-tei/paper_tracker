@@ -57,7 +57,6 @@ private:
     // 图像下载器
     ESP32VideoStream image_downloader_;
     std::queue<cv::Mat> image_buffer_queue;
-    std::string esp32_ip_address = "http://192.168.137.246/";
 
     bool use_user_camera = false;
 protected:
