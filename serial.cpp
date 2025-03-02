@@ -23,15 +23,20 @@
 // 修改SerialPortManager的构造函数
 SerialPortManager::SerialPortManager(QPlainTextEdit* log_window)
     : hSerial(INVALID_HANDLE_VALUE), running(false), log_window(log_window) {
+    m_status = SerialStatus::CLOSED;
+    init();
+}
 
+void SerialPortManager::init()
+{
     std::cout << "正在搜索ESP32-S3设备..." << std::endl;
-
     std::string portName = FindEsp32S3Port();
 
     if (portName.empty()) {
         std::cout << "无法找到ESP32-S3设备，尝试使用默认端口COM101" << std::endl;
         hSerial = initSerialPort(COM_PORT);
     } else {
+        portName = "COM5";
         currentPort = portName;
         // 转换为宽字符串
         std::wstring wPortName(L"\\\\.\\");
@@ -101,7 +106,9 @@ SerialPortManager::SerialPortManager(QPlainTextEdit* log_window)
         running = true;
     } else {
         std::cerr << "串口打开失败！错误码: " << GetLastError() << std::endl;
+        m_status = SerialStatus::FAILED;
     }
+
 }
 
 SerialPortManager::~SerialPortManager()
@@ -323,7 +330,7 @@ void SerialPortManager::start() {
                 // 延时一小段时间避免过度占用CPU
                 Sleep(10);
             }
-
+            m_status = SerialStatus::FAILED;
             // 清理资源
             CloseHandle(osReader.hEvent);
         }
@@ -411,6 +418,7 @@ void SerialPortManager::start() {
                             else {
                                 // 处理其他错误
                                 std::cerr << "串口写入失败，错误码: " << dwError << std::endl;
+                                m_status = SerialStatus::FAILED;
                                 break;  // 退出当前数据的发送循环
                             }
                         }
@@ -428,17 +436,21 @@ void SerialPortManager::start() {
                     std::cout << "已发送数据: " << data << std::endl;
                 }
             }
+            m_status = SerialStatus::FAILED;
 
             // 清理资源
             CloseHandle(osWriter.hEvent);
         }
     );
-
+    m_status = SerialStatus::OPENED;
     running = true;
 }
 void SerialPortManager::stop()
 {
     running = false;
+    read_thread.join();
+    write_thread.join();
+    write_junk_thread.join();
     if (hSerial != INVALID_HANDLE_VALUE) {
         CloseHandle(hSerial);
         hSerial = INVALID_HANDLE_VALUE;
@@ -708,5 +720,10 @@ HANDLE SerialPortManager::initSerialPort(const wchar_t* portName)
     return hSerial;
 }
 
+
+SerialStatus SerialPortManager::status() const
+{
+    return m_status;
+}
 
 

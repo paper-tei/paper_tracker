@@ -107,8 +107,8 @@
     <widget class="QPushButton" name="FlashFirmwareButton">
      <property name="geometry">
       <rect>
-       <x>630</x>
-       <y>180</y>
+       <x>730</x>
+       <y>30</y>
        <width>91</width>
        <height>31</height>
       </rect>
