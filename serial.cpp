@@ -333,9 +333,9 @@ void SerialPortManager::start() {
         [this]
         {
             while (running) {
-                std::string junk = "junk data";
+                std::string junk = " junk data ";
                 write_data(junk);
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
         }
     );
