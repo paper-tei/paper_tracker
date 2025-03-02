@@ -26,6 +26,36 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     connect(ui.pushButton, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
     connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
     connect(ui.FlashFirmwareButton, &QPushButton::clicked, this, &PaperTrackMainWindow::flashESP32);
+
+    // 添加输入框焦点事件处理
+    ui.SSIDText->installEventFilter(this);
+    ui.PasswordText->installEventFilter(this);
+
+    // 允许Tab键在输入框之间跳转
+    ui.SSIDText->setTabChangesFocus(true);
+    ui.PasswordText->setTabChangesFocus(true);
+    // 清除所有控件的初始焦点，确保没有文本框自动获得焦点
+    setFocus();
+    // 设置设备状态回调
+    serial_port_manager_.setDeviceStatusCallback([this](const std::string& ip, int brightness, int power, int version) {
+    // 使用Qt的线程安全方式更新UI
+    QMetaObject::invokeMethod(this, [this, ip, brightness, power, version]() {
+        // 只在 IP 地址变化时更新显示
+        if (current_ip_ != ip) {
+            current_ip_ = ip;
+            // 更新IP地址显示，添加 http:// 前缀
+            ui.textEdit->setText("http://" + QString::fromStdString(ip));
+
+            // 记录 IP 变化到日志
+            ui.LogText->appendPlainText(QString("IP地址已更新: http://%1").arg(QString::fromStdString(ip)));
+        }
+
+        // 更新亮度滑块（如果需要）
+        ui.BrightnessBar->setValue(brightness);
+
+        // 可以添加其他状态更新的日志，如果需要的话
+    }, Qt::QueuedConnection);
+    });
     // 添加ROI事件
     ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect, bool isEnd)
     {
@@ -342,4 +372,36 @@ void PaperTrackMainWindow::flashESP32() {
         ui.LogText->appendPlainText("发生异常: " + QString(e.what()));
         QMessageBox::critical(this, "错误", "刷写过程中发生异常: " + QString(e.what()));
     }
+}
+// 添加事件过滤器实现
+bool PaperTrackMainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    // 处理焦点获取事件
+    if (event->type() == QEvent::FocusIn) {
+        if (obj == ui.SSIDText) {
+            if (ui.SSIDText->toPlainText() == "请输入SSID") {
+                ui.SSIDText->setPlainText("");
+            }
+        } else if (obj == ui.PasswordText) {
+            if (ui.PasswordText->toPlainText() == "请输入密码") {
+                ui.PasswordText->setPlainText("");
+            }
+        }
+    }
+
+    // 处理焦点失去事件
+    if (event->type() == QEvent::FocusOut) {
+        if (obj == ui.SSIDText) {
+            if (ui.SSIDText->toPlainText().isEmpty()) {
+                ui.SSIDText->setPlainText("请输入SSID");
+            }
+        } else if (obj == ui.PasswordText) {
+            if (ui.PasswordText->toPlainText().isEmpty()) {
+                ui.PasswordText->setPlainText("请输入密码");
+            }
+        }
+    }
+
+    // 继续事件处理
+    return QWidget::eventFilter(obj, event);
 }

@@ -26,8 +26,12 @@ public:
     private slots:
     void onSendButtonClicked();
     void onBrightnessChanged(int value);
-
+    void onSSIDTextFocusIn();
+    void onSSIDTextFocusOut();
+    void onPasswordTextFocusIn();
+    void onPasswordTextFocusOut();
 private:
+    std::string current_ip_;
     void bound_pages();
     void flashESP32();
     std::string getPortFromSerialManager(); // 获取串口端口名
@@ -49,4 +53,6 @@ private:
 
     // 线程控制
     std::atomic<bool> window_closed{false};
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
 };
