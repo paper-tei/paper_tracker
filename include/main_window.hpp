@@ -49,8 +49,8 @@ private:
     // 线程控制
     std::atomic<bool> window_closed{false};
     // 图像下载器
-    ImageDownloader image_downloader_;
-    std::vector<char> image_download_buffer_;
+    ESP32VideoStream image_downloader_;
+    std::queue<cv::Mat> image_buffer_queue;
     std::string esp32_ip_address = "http://192.168.137.246/";
 
     bool use_user_camera = false;

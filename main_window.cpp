@@ -78,8 +78,14 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     {
         auto esp32_future = std::async(std::launch::async, [this]()
         {
-            image_download_buffer_ = std::vector<char>();
-            image_downloader_.start_video_from_esp32(esp32_ip_address, &image_download_buffer_);
+            image_downloader_.init(esp32_ip_address, [this] (const cv::Mat& image)
+            {
+                if (image_buffer_queue.size() > 0)
+                {
+                    return ;
+                }
+                image_buffer_queue.push(image.clone());
+            });
         });
     }
 
@@ -103,6 +109,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         ui.LogText->appendPlainText("OSC初始化失败，请检查网络连接");
     }
 
+    image_downloader_.start();
     // 启动视频显示线程
     ui.LogText->appendPlainText("正在启动视频处理线程...");
     show_video_thread = std::thread([this]() {
@@ -115,11 +122,14 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                         std::this_thread::sleep_for(std::chrono::milliseconds(100));
                         continue;
                     }
-
                     // 获取视频帧
                      frame = video_reader.get_image();
                 } else {
-                    frame = std::move(image_downloader_.get_video_frame());
+                    if (!image_buffer_queue.empty())
+                    {
+                        frame = std::move(image_buffer_queue.front());
+                        image_buffer_queue.pop();
+                    }
                 }
                 bool image_captured = true;
                 if (frame.empty()) {
@@ -127,19 +137,22 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     image_captured = false;
                 }
               
-                // 显示图像
-                cv::resize(frame, frame, cv::Size(361, 251));
-                cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
 
                 // 推理处理
-                auto infer_frame = frame.clone();
-              
-                if (!roi_rect.empty() && is_roi_end)
-                {
-                    infer_frame = infer_frame(roi_rect);
-                }
                 if (image_captured)
                 {
+                    cv::Mat infer_frame;
+                    if (!roi_rect.empty() && is_roi_end)
+                    {
+                        infer_frame = infer_frame(roi_rect);
+                    } else
+                    {
+                        infer_frame = frame.clone();
+                    }
+                    // 显示图像
+                    cv::resize(frame, frame, cv::Size(361, 251));
+                    cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+
                     cv::rectangle(frame, roi_rect, cv::Scalar(0, 255, 0), 2);
                     inference.inference(infer_frame);
                     // 发送OSC数据
@@ -194,6 +207,7 @@ PaperTrackMainWindow::~PaperTrackMainWindow() {
     // 安全关闭
     ui.LogText->appendPlainText("正在关闭系统...");
     window_closed = true;
+    image_downloader_.stop();
 
     // 等待线程结束
     if (show_video_thread.joinable()) {
