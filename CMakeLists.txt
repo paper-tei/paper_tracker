@@ -74,6 +74,7 @@ add_executable(PaperTracker main.cpp
     include/osc.hpp
     osc.cpp
     roi_event.cpp
+        image_downloader.cpp
 )
 
 target_include_directories(
