@@ -10,8 +10,8 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
 
 # set 3rd party lib path
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "E:/Qt/6.8.2/msvc2022_64")
-
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/QtMVSC/6.8.2/msvc2022_64")
+set(CURL_DIR ${CMAKE_SOURCE_DIR}/3rdParty/curl-install/lib/cmake/CURL)
 set(OpenCV_DIR ${CMAKE_SOURCE_DIR}/3rdParty/opencv-mvsc/opencv/build)
 find_package(CUDA)
 if(CUDA_FOUND)
@@ -24,6 +24,7 @@ else()
     set(ONNXRUNTIME_ROOT ${CMAKE_SOURCE_DIR}/3rdParty/onnxruntime-win-x64-gpu-1.20.1)
 endif ()
 find_package(OpenCV CONFIG REQUIRED)
+find_package(CURL CONFIG REQUIRED)
 find_package(Qt6 COMPONENTS
     Core
     Gui
@@ -74,7 +75,7 @@ add_executable(PaperTracker main.cpp
     include/osc.hpp
     osc.cpp
     roi_event.cpp
-        image_downloader.cpp
+    image_downloader.cpp
 )
 
 target_include_directories(
@@ -98,6 +99,7 @@ target_link_libraries(PaperTracker PRIVATE
     onnxruntime
     oscpack
     ${LIBS}
+    CURL::libcurl
     #add windows library
     Setupapi
     User32
@@ -106,6 +108,7 @@ target_link_libraries(PaperTracker PRIVATE
 # install dir model to the same dir as the executable
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/model/  DESTINATION ${CMAKE_BINARY_DIR}/model)
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/opencv-mvsc/opencv/build/x64/vc16/bin/  DESTINATION ${CMAKE_BINARY_DIR})
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/curl-install/bin/  DESTINATION ${CMAKE_BINARY_DIR})
 #install(DIRECTORY "D:/QtMVSC/6.8.2/msvc2022_64/bin/"  DESTINATION ${CMAKE_BINARY_DIR})
 if (CUDA_FOUND)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/onnxruntime-win-x64-gpu-1.20.1/lib/  DESTINATION ${CMAKE_BINARY_DIR})
