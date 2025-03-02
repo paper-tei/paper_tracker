@@ -10,7 +10,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
 
 # set 3rd party lib path
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/QtMVSC/6.8.2/msvc2022_64")
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "E:/Qt/6.8.2/msvc2022_64")
 set(CURL_DIR ${CMAKE_SOURCE_DIR}/3rdParty/curl-install/lib/cmake/CURL)
 set(OpenCV_DIR ${CMAKE_SOURCE_DIR}/3rdParty/opencv-mvsc/opencv/build)
 find_package(CUDA)
@@ -107,8 +107,10 @@ target_link_libraries(PaperTracker PRIVATE
 
 # install dir model to the same dir as the executable
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/model/  DESTINATION ${CMAKE_BINARY_DIR}/model)
+
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/opencv-mvsc/opencv/build/x64/vc16/bin/  DESTINATION ${CMAKE_BINARY_DIR})
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/curl-install/bin/  DESTINATION ${CMAKE_BINARY_DIR})
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/esptools/  DESTINATION ${CMAKE_BINARY_DIR})
 #install(DIRECTORY "D:/QtMVSC/6.8.2/msvc2022_64/bin/"  DESTINATION ${CMAKE_BINARY_DIR})
 if (CUDA_FOUND)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/onnxruntime-win-x64-gpu-1.20.1/lib/  DESTINATION ${CMAKE_BINARY_DIR})

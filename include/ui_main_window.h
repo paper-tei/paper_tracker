@@ -35,6 +35,7 @@ public:
     QScrollBar *BrightnessBar;
     QLabel *label;
     QPushButton *pushButton;
+    QPushButton *FlashFirmwareButton;
     QPlainTextEdit *LogText;
     QLabel *label_2;
     QTextEdit *textEdit;
@@ -173,6 +174,9 @@ public:
         pushButton = new QPushButton(page);
         pushButton->setObjectName("pushButton");
         pushButton->setGeometry(QRect(630, 30, 91, 91));
+        FlashFirmwareButton = new QPushButton(page);
+        FlashFirmwareButton->setObjectName("FlashFirmwareButton");
+        FlashFirmwareButton->setGeometry(QRect(630, 180, 91, 31));
         LogText = new QPlainTextEdit(page);
         LogText->setObjectName("LogText");
         LogText->setGeometry(QRect(10, 310, 821, 171));
@@ -204,7 +208,7 @@ public:
         scrollArea->setWidgetResizable(false);
         scrollAreaWidgetContents = new QWidget();
         scrollAreaWidgetContents->setObjectName("scrollAreaWidgetContents");
-        scrollAreaWidgetContents->setGeometry(QRect(0, -573, 639, 1000));
+        scrollAreaWidgetContents->setGeometry(QRect(0, 0, 639, 1000));
         scrollAreaWidgetContents->setMinimumSize(QSize(0, 1000));
         plainTextEdit_3 = new QPlainTextEdit(scrollAreaWidgetContents);
         plainTextEdit_3->setObjectName("plainTextEdit_3");
@@ -533,7 +537,7 @@ public:
 
         retranslateUi(PaperTrackerMainWindow);
 
-        stackedWidget->setCurrentIndex(1);
+        stackedWidget->setCurrentIndex(0);
 
 
         QMetaObject::connectSlotsByName(PaperTrackerMainWindow);
@@ -547,6 +551,7 @@ public:
         PasswordText->setPlainText(QCoreApplication::translate("PaperTrackerMainWindow", "\350\257\267\350\276\223\345\205\245\345\257\206\347\240\201", nullptr));
         label->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\344\272\256\345\272\246\350\260\203\346\225\264", nullptr));
         pushButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\345\217\221\351\200\201", nullptr));
+        FlashFirmwareButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\345\210\267\345\206\231\345\233\272\344\273\266", nullptr));
         label_2->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\227\245\345\277\227\347\252\227\345\217\243\357\274\232", nullptr));
         label_16->setText(QCoreApplication::translate("PaperTrackerMainWindow", "IP\345\234\260\345\235\200\357\274\232", nullptr));
         label_3->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\234\200\345\260\217\345\200\274", nullptr));

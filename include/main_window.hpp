@@ -27,9 +27,15 @@ private slots:
     void onBrightnessChanged(int value);
     void onUseUserCameraClicked(int value);
 
+    void onSSIDTextFocusIn();
+    void onSSIDTextFocusOut();
+    void onPasswordTextFocusIn();
+    void onPasswordTextFocusOut();
 private:
+    std::string current_ip_;
     void bound_pages();
-
+    void flashESP32();
+    std::string getPortFromSerialManager(); // 获取串口端口名
     // UI组件
     Ui::PaperTrackerMainWindow ui{};
 
@@ -54,4 +60,6 @@ private:
     std::string esp32_ip_address = "http://192.168.137.246/";
 
     bool use_user_camera = false;
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
 };
