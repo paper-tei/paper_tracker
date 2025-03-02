@@ -15,17 +15,18 @@
 #include "osc.hpp"
 #include "serial.hpp"
 #include "roi_event.hpp"
+#include "image_downloader.hpp"
 
 class PaperTrackMainWindow : public QWidget {
-   // Q_OBJECT // 这行非常重要，不能缺少
-
 public:
     explicit PaperTrackMainWindow(QWidget *parent = nullptr);
     ~PaperTrackMainWindow() override;
 
-    private slots:
+private slots:
     void onSendButtonClicked();
     void onBrightnessChanged(int value);
+    void onUseUserCameraClicked(int value);
+
     void onSSIDTextFocusIn();
     void onSSIDTextFocusOut();
     void onPasswordTextFocusIn();
@@ -53,6 +54,12 @@ private:
 
     // 线程控制
     std::atomic<bool> window_closed{false};
+    // 图像下载器
+    ESP32VideoStream image_downloader_;
+    std::queue<cv::Mat> image_buffer_queue;
+    std::string esp32_ip_address = "http://192.168.137.246/";
+
+    bool use_user_camera = false;
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 };
