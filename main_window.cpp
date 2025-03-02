@@ -14,7 +14,8 @@
 #include <QCoreApplication>
 PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     : QWidget(parent),
-      serial_port_manager_(ui.LogText)
+      serial_port_manager_(ui.LogText),
+      use_user_camera(false)
 {
     // 基本UI设置
     setFixedSize(848, 538);
@@ -89,26 +90,43 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
 
     // 异步加载视频
     ui.LogText->appendPlainText("正在加载视频...");
-    auto video_future = std::async(std::launch::async, [this]() {
-        try {
-            video_reader.open_video("D:/Babble/test_video.mkv");
-            if (!video_reader.is_opened()) {
+
+    if (use_user_camera)
+    {
+        auto video_future = std::async(std::launch::async, [this]() {
+            try {
+                video_reader.open_video("D:/Babble/test_video.mkv");
+                if (!video_reader.is_opened()) {
+                    // 使用Qt方式记录日志，而不是minilog
+                    QMetaObject::invokeMethod(this, [this]() {
+                        ui.LogText->appendPlainText("错误: 视频打开失败");
+                    }, Qt::QueuedConnection);
+                    return ;
+                }
+            } catch (const std::exception& e) {
                 // 使用Qt方式记录日志，而不是minilog
-                QMetaObject::invokeMethod(this, [this]() {
-                    ui.LogText->appendPlainText("错误: 视频打开失败");
+                QString errorMsg = QString("视频加载异常: %1").arg(e.what());
+                QMetaObject::invokeMethod(this, [this, errorMsg]() {
+                    ui.LogText->appendPlainText("错误: " + errorMsg);
                 }, Qt::QueuedConnection);
-                return false;
             }
-            return true;
-        } catch (const std::exception& e) {
-            // 使用Qt方式记录日志，而不是minilog
-            QString errorMsg = QString("视频加载异常: %1").arg(e.what());
-            QMetaObject::invokeMethod(this, [this, errorMsg]() {
-                ui.LogText->appendPlainText("错误: " + errorMsg);
-            }, Qt::QueuedConnection);
-            return false;
-        }
-    });
+        });
+    } else
+    {
+        auto esp32_future = std::async(std::launch::async, [this]()
+        {
+            image_downloader_.init(esp32_ip_address, [this] (const cv::Mat& image)
+            {
+                if (image_buffer_queue.size() > 0)
+                {
+                    return ;
+                }
+                image_buffer_queue.push(image.clone());
+
+
+            });
+        });
+    }
 
     // 加载推理模型
     ui.LogText->appendPlainText("正在加载推理模型...");
@@ -130,37 +148,48 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         ui.LogText->appendPlainText("OSC初始化失败，请检查网络连接");
     }
 
+    image_downloader_.start();
     // 启动视频显示线程
     ui.LogText->appendPlainText("正在启动视频处理线程...");
     show_video_thread = std::thread([this]() {
+        cv::Mat frame;
         while (!window_closed) {
             try {
-                if (!video_reader.is_opened()) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    continue;
+                if (use_user_camera)
+                {
+                    if (!video_reader.is_opened()) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        continue;
+                    }
+                    // 获取视频帧
+                     frame = video_reader.get_image();
+                } else {
+                    if (!image_buffer_queue.empty())
+                    {
+                        frame = std::move(image_buffer_queue.front());
+                        image_buffer_queue.pop();
+                    }
                 }
-
-                // 获取视频帧
-                cv::Mat frame = video_reader.get_image();
                 bool image_captured = true;
                 if (frame.empty()) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     image_captured = false;
                 }
-              
-                // 显示图像
-                cv::resize(frame, frame, cv::Size(361, 251));
-                cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+
 
                 // 推理处理
-                auto infer_frame = frame.clone();
-              
-                if (!roi_rect.empty() && is_roi_end)
-                {
-                    infer_frame = infer_frame(roi_rect);
-                }
                 if (image_captured)
                 {
+                    cv::resize(frame, frame, cv::Size(361, 251));
+                    cv::Mat infer_frame;
+                    infer_frame = frame.clone();
+                    if (!roi_rect.empty() && is_roi_end)
+                    {
+                        infer_frame = infer_frame(roi_rect);
+                    }
+                    // 显示图像
+                    cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+
                     cv::rectangle(frame, roi_rect, cv::Scalar(0, 255, 0), 2);
                     inference.inference(infer_frame);
                     // 发送OSC数据
@@ -190,10 +219,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     ui.ImageLabel->setScaledContents(true);
                     ui.ImageLabel->update();
                 }, Qt::QueuedConnection);
-
                 // 控制帧率
                 cv::waitKey(33);
-                // std::this_thread::sleep_for(std::chrono::milliseconds(33)); // ~30fps
+                // std::this_thread::sleep_for(std::chrono::milliseconds(10)); // ~30fps
             } catch (const std::exception& e) {
                 // 使用Qt方式记录日志，而不是minilog
                 QString errorMsg = QString("视频处理异常: %1").arg(e.what());
@@ -215,6 +243,7 @@ PaperTrackMainWindow::~PaperTrackMainWindow() {
     // 安全关闭
     ui.LogText->appendPlainText("正在关闭系统...");
     window_closed = true;
+    image_downloader_.stop();
 
     // 等待线程结束
     if (show_video_thread.joinable()) {
@@ -404,4 +433,9 @@ bool PaperTrackMainWindow::eventFilter(QObject *obj, QEvent *event)
 
     // 继续事件处理
     return QWidget::eventFilter(obj, event);
+}
+
+void PaperTrackMainWindow::onUseUserCameraClicked(int value)
+{
+    use_user_camera = value;
 }
