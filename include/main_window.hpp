@@ -16,6 +16,7 @@
 #include "serial.hpp"
 #include "roi_event.hpp"
 #include "image_downloader.hpp"
+#include "wifi_cache_file_writer.hpp"
 
 class PaperTrackMainWindow : public QWidget {
 public:
@@ -57,6 +58,9 @@ private:
     // 图像下载器
     ESP32VideoStream image_downloader_;
     std::queue<cv::Mat> image_buffer_queue;
+
+    // WiFi配置文件写入器
+    WifiCacheFileWriter wifi_cache_file_writer;
 
     bool use_user_camera = false;
 protected:

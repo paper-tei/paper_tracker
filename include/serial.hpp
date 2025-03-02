@@ -8,6 +8,13 @@
 #include <condition_variable>
 #include <QPlainTextEdit>
 
+enum SerialStatus
+{
+    CLOSED = 0,
+    OPENED,
+    FAILED
+};
+
 // 定义数据包类型
 enum PacketType {
     PACKET_UNKNOWN = 0,
@@ -34,6 +41,8 @@ public:
     void start();
     void stop();
     void write_data(const std::string& data);
+
+    SerialStatus status() const;
 
     // 发送WiFi配置信息
     static void sendWiFiConfig(HANDLE hSerial, const std::string& ssid, const std::string& pwd);
@@ -70,4 +79,6 @@ private:
     // 处理接收到的数据
     void processReceivedData(std::string& receivedData);
     std::string currentPort = "COM101"; // 默认端口
+
+    SerialStatus m_status;
 };

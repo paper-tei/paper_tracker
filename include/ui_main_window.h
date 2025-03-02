@@ -176,7 +176,7 @@ public:
         pushButton->setGeometry(QRect(630, 30, 91, 91));
         FlashFirmwareButton = new QPushButton(page);
         FlashFirmwareButton->setObjectName("FlashFirmwareButton");
-        FlashFirmwareButton->setGeometry(QRect(630, 180, 91, 31));
+        FlashFirmwareButton->setGeometry(QRect(730, 30, 91, 31));
         LogText = new QPlainTextEdit(page);
         LogText->setObjectName("LogText");
         LogText->setGeometry(QRect(10, 310, 821, 171));
