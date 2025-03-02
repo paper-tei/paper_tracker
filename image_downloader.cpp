@@ -62,10 +62,10 @@ void ESP32VideoStream::stop() {
     
     isRunning = false;
     
-    // 等待线程结束
-    if (streamThread.joinable()) {
-        streamThread.join();
-    }
+    ///TODO: 如何解决curl easy perform的阻塞问题
+    // if (streamThread.joinable()) {
+    //     streamThread.join();
+    // }
     
     // 清理curl
     curl_global_cleanup();
