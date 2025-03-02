@@ -13,7 +13,7 @@
 #include <QEventLoop>
 #include <QCoreApplication>
 PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
-    : QWidget(parent),
+    : QWidget(parent), wifi_cache_file_writer("./wifi_cache.txt"),
       serial_port_manager_(ui.LogText),
       use_user_camera(false)
 {
@@ -53,6 +53,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
 
                 if (!use_user_camera)
                 {
+                    wifi_cache_file_writer.write_wifi_config(current_ip_);
                     auto esp32_future = std::async(std::launch::async, [this]()
                     {
                         image_downloader_.init("http://" + current_ip_, [this] (const cv::Mat& image)
@@ -150,6 +151,37 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         ui.LogText->appendPlainText("OSC初始化失败，请检查网络连接");
     }
 
+    // 启动串口
+    ui.LogText->appendPlainText("正在初始化串口...");
+    serial_port_manager_.start();
+    ui.LogText->appendPlainText("系统初始化完成");
+
+    if (serial_port_manager_.status() == SerialStatus::FAILED && !use_user_camera)
+    {
+        auto ip = wifi_cache_file_writer.try_get_wifi_config();
+        if (ip.has_value() && !ip.value().empty())
+        {
+            auto esp32_future = std::async(std::launch::async, [this]()
+            {
+                image_downloader_.init("http://" + current_ip_, [this] (const cv::Mat& image)
+                {
+                    if (image_buffer_queue.size() > 0)
+                    {
+                        return ;
+                    }
+                    image_buffer_queue.push(image.clone());
+                });
+                image_downloader_.start();
+            });
+        } else
+        {
+            QMessageBox msgBox;
+            msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
+            msgBox.exec();
+        }
+    }
+
+
     // 启动视频显示线程
     ui.LogText->appendPlainText("正在启动视频处理线程...");
     show_video_thread = std::thread([this]() {
@@ -234,10 +266,6 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         }
     });
 
-    // 启动串口
-    ui.LogText->appendPlainText("正在初始化串口...");
-    serial_port_manager_.start();
-    ui.LogText->appendPlainText("系统初始化完成");
 }
 
 PaperTrackMainWindow::~PaperTrackMainWindow() {
