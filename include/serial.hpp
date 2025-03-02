@@ -23,7 +23,7 @@ class SerialPortManager {
 public:
     SerialPortManager(QPlainTextEdit* log_window = nullptr);
     ~SerialPortManager();
-
+    std::string getCurrentPort() const { return currentPort; }
     void start();
     void stop();
     void write_data(const std::string& data);
@@ -60,4 +60,5 @@ private:
     
     // 处理接收到的数据
     void processReceivedData(std::string& receivedData);
+    std::string currentPort = "COM101"; // 默认端口
 };
