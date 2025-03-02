@@ -18,7 +18,7 @@
 #include <codecvt>
 #include <logger.h>
 #include <thread>
-#define COM_PORT L"COM2"  // 指定要打开的串口号
+#define COM_PORT L"COM101"  // 指定要打开的串口号
 
 // 修改SerialPortManager的构造函数
 SerialPortManager::SerialPortManager(QPlainTextEdit* log_window)
@@ -29,9 +29,10 @@ SerialPortManager::SerialPortManager(QPlainTextEdit* log_window)
     std::string portName = FindEsp32S3Port();
 
     if (portName.empty()) {
-        std::cout << "无法找到ESP32-S3设备，尝试使用默认端口COM2" << std::endl;
+        std::cout << "无法找到ESP32-S3设备，尝试使用默认端口COM101" << std::endl;
         hSerial = initSerialPort(COM_PORT);
     } else {
+        currentPort = portName;
         // 转换为宽字符串
         std::wstring wPortName(L"\\\\.\\");
         wPortName += std::wstring(portName.begin(), portName.end());
@@ -699,7 +700,6 @@ HANDLE SerialPortManager::initSerialPort(const wchar_t* portName)
     PurgeComm(hSerial, PURGE_RXCLEAR | PURGE_TXCLEAR);
     return hSerial;
 }
-
 
 
 

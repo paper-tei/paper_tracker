@@ -29,7 +29,8 @@ public:
 
 private:
     void bound_pages();
-
+    void flashESP32();
+    std::string getPortFromSerialManager(); // 获取串口端口名
     // UI组件
     Ui::PaperTrackerMainWindow ui{};
 

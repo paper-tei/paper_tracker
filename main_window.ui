@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QLabel" name="ImageLabel">
@@ -102,6 +102,19 @@
      </property>
      <property name="text">
       <string>发送</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="FlashFirmwareButton">
+     <property name="geometry">
+      <rect>
+       <x>630</x>
+       <y>180</y>
+       <width>91</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>刷写固件</string>
      </property>
     </widget>
     <widget class="QPlainTextEdit" name="LogText">
@@ -209,7 +222,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-573</y>
+        <y>0</y>
         <width>639</width>
         <height>1000</height>
        </rect>
