@@ -18,7 +18,7 @@
 #include <codecvt>
 #include <logger.h>
 #include <thread>
-#define COM_PORT L"COM2"  // 指定要打开的串口号
+#define COM_PORT L"COM101"  // 指定要打开的串口号
 
 // 修改SerialPortManager的构造函数
 SerialPortManager::SerialPortManager(QPlainTextEdit* log_window)
@@ -29,9 +29,10 @@ SerialPortManager::SerialPortManager(QPlainTextEdit* log_window)
     std::string portName = FindEsp32S3Port();
 
     if (portName.empty()) {
-        std::cout << "无法找到ESP32-S3设备，尝试使用默认端口COM2" << std::endl;
+        std::cout << "无法找到ESP32-S3设备，尝试使用默认端口COM101" << std::endl;
         hSerial = initSerialPort(COM_PORT);
     } else {
+        currentPort = portName;
         // 转换为宽字符串
         std::wstring wPortName(L"\\\\.\\");
         wPortName += std::wstring(portName.begin(), portName.end());
@@ -333,9 +334,9 @@ void SerialPortManager::start() {
         [this]
         {
             while (running) {
-                std::string junk = "junk data";
+                std::string junk = " junk data ";
                 write_data(junk);
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
         }
     );
@@ -597,6 +598,13 @@ PacketType SerialPortManager::parsePacket(const std::string& packet)
                     std::to_string(std::stoi(paddedIp.substr(6, 3))) + "." +
                     std::to_string(std::stoi(paddedIp.substr(3, 3))) + "." +
                     std::to_string(std::stoi(paddedIp.substr(0, 3)));
+                // 调用回调函数
+                if (deviceStatusCallback) {
+                    int brightness = std::stoi(match[1]);
+                    int power = std::stoi(match[3]);
+                    int version = std::stoi(match[4]);
+                    deviceStatusCallback(formattedIp, brightness, power, version);
+                }
             } catch (const std::exception& e) {
                 std::cerr << "IP格式转换失败: " << e.what() << std::endl;
                 formattedIp = rawIp; // 转换失败时使用原始IP
@@ -699,7 +707,6 @@ HANDLE SerialPortManager::initSerialPort(const wchar_t* portName)
     PurgeComm(hSerial, PURGE_RXCLEAR | PURGE_TXCLEAR);
     return hSerial;
 }
-
 
 
 

@@ -4,7 +4,14 @@
 
 #include "main_window.hpp"
 #include <QMessageBox>
-
+#include <codecvt>
+#include <locale>
+#include <windows.h>
+#include <QTimer>
+#include <QProcess>
+#include <QProgressDialog>
+#include <QEventLoop>
+#include <QCoreApplication>
 PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     : QWidget(parent),
       serial_port_manager_(ui.LogText),
@@ -19,7 +26,37 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     // 连接UI信号槽
     connect(ui.pushButton, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
     connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
-        
+    connect(ui.FlashFirmwareButton, &QPushButton::clicked, this, &PaperTrackMainWindow::flashESP32);
+
+    // 添加输入框焦点事件处理
+    ui.SSIDText->installEventFilter(this);
+    ui.PasswordText->installEventFilter(this);
+
+    // 允许Tab键在输入框之间跳转
+    ui.SSIDText->setTabChangesFocus(true);
+    ui.PasswordText->setTabChangesFocus(true);
+    // 清除所有控件的初始焦点，确保没有文本框自动获得焦点
+    setFocus();
+    // 设置设备状态回调
+    serial_port_manager_.setDeviceStatusCallback([this](const std::string& ip, int brightness, int power, int version) {
+    // 使用Qt的线程安全方式更新UI
+    QMetaObject::invokeMethod(this, [this, ip, brightness, power, version]() {
+        // 只在 IP 地址变化时更新显示
+        if (current_ip_ != ip) {
+            current_ip_ = ip;
+            // 更新IP地址显示，添加 http:// 前缀
+            ui.textEdit->setText("http://" + QString::fromStdString(ip));
+
+            // 记录 IP 变化到日志
+            ui.LogText->appendPlainText(QString("IP地址已更新: http://%1").arg(QString::fromStdString(ip)));
+        }
+
+        // 更新亮度滑块（如果需要）
+        ui.BrightnessBar->setValue(brightness);
+
+        // 可以添加其他状态更新的日志，如果需要的话
+    }, Qt::QueuedConnection);
+    });
     // 添加ROI事件
     ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect, bool isEnd)
     {
@@ -138,7 +175,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     image_captured = false;
                 }
-              
+
 
                 // 推理处理
                 if (image_captured)
@@ -258,6 +295,144 @@ void PaperTrackMainWindow::onBrightnessChanged(int value) {
 
     // 记录操作
     ui.LogText->appendPlainText("已设置亮度: " + QString::number(value));
+}
+
+// 获取串口端口名称
+std::string PaperTrackMainWindow::getPortFromSerialManager() {
+    // 从SerialPortManager获取COM端口名称
+    return serial_port_manager_.getCurrentPort();
+}
+// 刷写ESP32固件
+void PaperTrackMainWindow::flashESP32() {
+    // 记录操作
+    ui.LogText->appendPlainText("准备刷写ESP32固件...");
+    serial_port_manager_.stop();
+    // 不再调用stop()，而是手动关闭程序持有的串口句柄
+    // 这样可以释放COM端口而不会导致其他部分的问题
+    try {
+        // 从SerialPortManager获取端口名
+        std::string port = getPortFromSerialManager();
+        if (port.empty()) {
+            port = "COM2"; // 默认端口
+        }
+
+        ui.LogText->appendPlainText("使用端口: " + QString::fromStdString(port));
+
+        // 构造完整的命令路径
+        QString appDir = QCoreApplication::applicationDirPath();
+        QString esptoolPath = "\"" + appDir + "/esptool.exe\"";
+        QString bootloaderPath = "\"" + appDir + "/bootloader.bin\"";
+        QString partitionPath = "\"" + appDir + "/partition-table.bin\"";
+        QString firmwarePath = "\"" + appDir + "/WIFI.bin\"";
+
+        // 构造命令
+        QString commandStr = QString("%1 --chip ESP32-S3 --port %2 --baud 921600 --before default_reset --after hard_reset write_flash 0x0000 %3 0x8000 %4 0x10000 %5")
+            .arg(esptoolPath)
+            .arg(port.c_str())
+            .arg(bootloaderPath)
+            .arg(partitionPath)
+            .arg(firmwarePath);
+
+        ui.LogText->appendPlainText("执行命令: " + commandStr);
+
+        // 创建进度窗口
+        QProgressDialog progress("正在刷写固件，请稍候...", "取消", 0, 0, this);
+        progress.setWindowTitle("固件刷写");
+        progress.setWindowModality(Qt::WindowModal);
+        progress.setMinimumDuration(0);
+        progress.setValue(0);
+        progress.setMaximum(0); // 设置为0表示未知进度
+
+        // 使用QProcess执行命令
+        QProcess process;
+
+        // 捕获标准输出和错误输出
+        connect(&process, &QProcess::readyReadStandardOutput, [&]() {
+            QString output = process.readAllStandardOutput();
+            ui.LogText->appendPlainText(output.trimmed());
+        });
+
+        connect(&process, &QProcess::readyReadStandardError, [&]() {
+            QString error = process.readAllStandardError();
+            ui.LogText->appendPlainText("错误: " + error.trimmed());
+        });
+
+        // 绑定取消按钮
+        connect(&progress, &QProgressDialog::canceled, [&]() {
+            process.kill();
+            ui.LogText->appendPlainText("用户取消了固件刷写");
+        });
+
+        // 启动进程
+        process.start(commandStr);
+
+        // 等待进程启动
+        if (!process.waitForStarted(3000)) {
+            ui.LogText->appendPlainText("无法启动esptool.exe: " + process.errorString());
+            QMessageBox::critical(this, "启动失败", "无法启动esptool.exe: " + process.errorString());
+            return;
+        }
+
+        ui.LogText->appendPlainText("刷写进程已启动，请等待完成...");
+
+        // 使用事件循环等待进程完成，同时保持UI响应
+        QEventLoop loop;
+        connect(&process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), &loop, &QEventLoop::quit);
+        loop.exec();
+
+        // 进程完成
+        progress.setValue(100);
+
+        // 处理结果
+        if (process.exitCode() == 0) {
+            ui.LogText->appendPlainText("固件刷写成功！");
+            QMessageBox::information(this, "刷写完成", "ESP32固件刷写成功！");
+        } else {
+            ui.LogText->appendPlainText("固件刷写失败，退出码: " + QString::number(process.exitCode()));
+            QMessageBox::critical(this, "刷写失败", "ESP32固件刷写失败，请检查连接和固件文件！");
+        }
+
+        // 重新启动程序
+        QString appPath = QCoreApplication::applicationFilePath();
+        QProcess::startDetached(appPath);
+        QApplication::quit();
+
+    } catch (const std::exception& e) {
+        ui.LogText->appendPlainText("发生异常: " + QString(e.what()));
+        QMessageBox::critical(this, "错误", "刷写过程中发生异常: " + QString(e.what()));
+    }
+}
+// 添加事件过滤器实现
+bool PaperTrackMainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    // 处理焦点获取事件
+    if (event->type() == QEvent::FocusIn) {
+        if (obj == ui.SSIDText) {
+            if (ui.SSIDText->toPlainText() == "请输入SSID") {
+                ui.SSIDText->setPlainText("");
+            }
+        } else if (obj == ui.PasswordText) {
+            if (ui.PasswordText->toPlainText() == "请输入密码") {
+                ui.PasswordText->setPlainText("");
+            }
+        }
+    }
+
+    // 处理焦点失去事件
+    if (event->type() == QEvent::FocusOut) {
+        if (obj == ui.SSIDText) {
+            if (ui.SSIDText->toPlainText().isEmpty()) {
+                ui.SSIDText->setPlainText("请输入SSID");
+            }
+        } else if (obj == ui.PasswordText) {
+            if (ui.PasswordText->toPlainText().isEmpty()) {
+                ui.PasswordText->setPlainText("请输入密码");
+            }
+        }
+    }
+
+    // 继续事件处理
+    return QWidget::eventFilter(obj, event);
 }
 
 void PaperTrackMainWindow::onUseUserCameraClicked(int value)

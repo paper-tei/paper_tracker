@@ -23,7 +23,13 @@ class SerialPortManager {
 public:
     SerialPortManager(QPlainTextEdit* log_window = nullptr);
     ~SerialPortManager();
-
+    // 添加一个回调函数类型
+    using DeviceStatusCallback = std::function<void(const std::string& ip, int brightness, int power, int version)>;
+    // 添加设置回调的方法
+    void setDeviceStatusCallback(DeviceStatusCallback callback) {
+        deviceStatusCallback = callback;
+    }
+    std::string getCurrentPort() const { return currentPort; }
     void start();
     void stop();
     void write_data(const std::string& data);
@@ -35,6 +41,8 @@ public:
     static void sendLightControl(HANDLE hSerial, int brightness);
 
 private:
+    // 添加回调函数成员
+    DeviceStatusCallback deviceStatusCallback;
     HANDLE hSerial;         // 串口句柄
     bool running;           // 控制线程运行状态
     
@@ -60,4 +68,5 @@ private:
     
     // 处理接收到的数据
     void processReceivedData(std::string& receivedData);
+    std::string currentPort = "COM101"; // 默认端口
 };
