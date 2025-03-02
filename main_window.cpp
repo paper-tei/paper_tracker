@@ -85,6 +85,8 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     return ;
                 }
                 image_buffer_queue.push(image.clone());
+
+
             });
         });
     }
@@ -113,9 +115,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     // 启动视频显示线程
     ui.LogText->appendPlainText("正在启动视频处理线程...");
     show_video_thread = std::thread([this]() {
+        cv::Mat frame;
         while (!window_closed) {
             try {
-                cv::Mat frame;
                 if (use_user_camera)
                 {
                     if (!video_reader.is_opened()) {
@@ -141,16 +143,14 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 // 推理处理
                 if (image_captured)
                 {
+                    cv::resize(frame, frame, cv::Size(361, 251));
                     cv::Mat infer_frame;
+                    infer_frame = frame.clone();
                     if (!roi_rect.empty() && is_roi_end)
                     {
                         infer_frame = infer_frame(roi_rect);
-                    } else
-                    {
-                        infer_frame = frame.clone();
                     }
                     // 显示图像
-                    cv::resize(frame, frame, cv::Size(361, 251));
                     cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
 
                     cv::rectangle(frame, roi_rect, cv::Scalar(0, 255, 0), 2);
@@ -182,10 +182,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     ui.ImageLabel->setScaledContents(true);
                     ui.ImageLabel->update();
                 }, Qt::QueuedConnection);
-
                 // 控制帧率
                 cv::waitKey(33);
-                // std::this_thread::sleep_for(std::chrono::milliseconds(33)); // ~30fps
+                // std::this_thread::sleep_for(std::chrono::milliseconds(10)); // ~30fps
             } catch (const std::exception& e) {
                 // 使用Qt方式记录日志，而不是minilog
                 QString errorMsg = QString("视频处理异常: %1").arg(e.what());
