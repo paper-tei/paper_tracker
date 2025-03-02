@@ -290,10 +290,14 @@ void PaperTrackMainWindow::onSendButtonClicked() {
 }
 
 void PaperTrackMainWindow::onBrightnessChanged(int value) {
-    // 发送亮度控制命令
-    std::string packet = "A6" + std::to_string(value) + "B6";
+    // 发送亮度控制命令 - 确保亮度值为3位数
+    std::string brightness = std::to_string(value);
+    // 使用零填充保证3位数
+    while (brightness.length() < 3) {
+        brightness = "0" + brightness;
+    }
+    std::string packet = "A6" + brightness + "B6";
     serial_port_manager_.write_data(packet);
-
     // 记录操作
     ui.LogText->appendPlainText("已设置亮度: " + QString::number(value));
 }
