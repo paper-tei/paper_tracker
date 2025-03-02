@@ -30,6 +30,7 @@ public:
         deviceStatusCallback = callback;
     }
     std::string getCurrentPort() const { return currentPort; }
+    void init();
     void start();
     void stop();
     void write_data(const std::string& data);

@@ -23,15 +23,19 @@
 // 修改SerialPortManager的构造函数
 SerialPortManager::SerialPortManager(QPlainTextEdit* log_window)
     : hSerial(INVALID_HANDLE_VALUE), running(false), log_window(log_window) {
+    init();
+}
 
+void SerialPortManager::init()
+{
     std::cout << "正在搜索ESP32-S3设备..." << std::endl;
-
     std::string portName = FindEsp32S3Port();
 
     if (portName.empty()) {
         std::cout << "无法找到ESP32-S3设备，尝试使用默认端口COM101" << std::endl;
         hSerial = initSerialPort(COM_PORT);
     } else {
+        // portName = "COM5";
         currentPort = portName;
         // 转换为宽字符串
         std::wstring wPortName(L"\\\\.\\");
@@ -102,6 +106,7 @@ SerialPortManager::SerialPortManager(QPlainTextEdit* log_window)
     } else {
         std::cerr << "串口打开失败！错误码: " << GetLastError() << std::endl;
     }
+
 }
 
 SerialPortManager::~SerialPortManager()
@@ -439,6 +444,9 @@ void SerialPortManager::start() {
 void SerialPortManager::stop()
 {
     running = false;
+    read_thread.join();
+    write_thread.join();
+    write_junk_thread.join();
     if (hSerial != INVALID_HANDLE_VALUE) {
         CloseHandle(hSerial);
         hSerial = INVALID_HANDLE_VALUE;

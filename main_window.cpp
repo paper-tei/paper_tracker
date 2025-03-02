@@ -39,23 +39,40 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     setFocus();
     // 设置设备状态回调
     serial_port_manager_.setDeviceStatusCallback([this](const std::string& ip, int brightness, int power, int version) {
-    // 使用Qt的线程安全方式更新UI
-    QMetaObject::invokeMethod(this, [this, ip, brightness, power, version]() {
-        // 只在 IP 地址变化时更新显示
-        if (current_ip_ != ip) {
-            current_ip_ = ip;
-            // 更新IP地址显示，添加 http:// 前缀
-            ui.textEdit->setText("http://" + QString::fromStdString(ip));
+        // 使用Qt的线程安全方式更新UI
+        QMetaObject::invokeMethod(this, [this, ip, brightness, power, version]() {
+            // 只在 IP 地址变化时更新显示
+            if (current_ip_ != ip)
+            {
+                current_ip_ = ip;
+                // 更新IP地址显示，添加 http:// 前缀
+                ui.textEdit->setText("http://" + QString::fromStdString(ip));
 
-            // 记录 IP 变化到日志
-            ui.LogText->appendPlainText(QString("IP地址已更新: http://%1").arg(QString::fromStdString(ip)));
-        }
+                // 记录 IP 变化到日志
+                ui.LogText->appendPlainText(QString("IP地址已更新: http://%1").arg(QString::fromStdString(ip)));
 
-        // 更新亮度滑块（如果需要）
-        ui.BrightnessBar->setValue(brightness);
+                if (!use_user_camera)
+                {
+                    auto esp32_future = std::async(std::launch::async, [this]()
+                    {
+                        image_downloader_.init("http://" + current_ip_, [this] (const cv::Mat& image)
+                        {
+                            if (image_buffer_queue.size() > 0)
+                            {
+                                return ;
+                            }
+                            image_buffer_queue.push(image.clone());
+                        });
+                        image_downloader_.start();
+                    });
+                }
+            }
 
-        // 可以添加其他状态更新的日志，如果需要的话
-    }, Qt::QueuedConnection);
+            // 更新亮度滑块（如果需要）
+            ui.BrightnessBar->setValue(brightness);
+
+            // 可以添加其他状态更新的日志，如果需要的话
+        }, Qt::QueuedConnection);
     });
     // 添加ROI事件
     ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect, bool isEnd)
@@ -111,21 +128,6 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 }, Qt::QueuedConnection);
             }
         });
-    } else
-    {
-        auto esp32_future = std::async(std::launch::async, [this]()
-        {
-            image_downloader_.init(esp32_ip_address, [this] (const cv::Mat& image)
-            {
-                if (image_buffer_queue.size() > 0)
-                {
-                    return ;
-                }
-                image_buffer_queue.push(image.clone());
-
-
-            });
-        });
     }
 
     // 加载推理模型
@@ -148,7 +150,6 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         ui.LogText->appendPlainText("OSC初始化失败，请检查网络连接");
     }
 
-    image_downloader_.start();
     // 启动视频显示线程
     ui.LogText->appendPlainText("正在启动视频处理线程...");
     show_video_thread = std::thread([this]() {
@@ -393,10 +394,11 @@ void PaperTrackMainWindow::flashESP32() {
         }
 
         // 重新启动程序
-        QString appPath = QCoreApplication::applicationFilePath();
-        QProcess::startDetached(appPath);
-        QApplication::quit();
-
+        // QString appPath = QCoreApplication::applicationFilePath();
+        // QProcess::startDetached(appPath);
+        // QApplication::quit();
+        serial_port_manager_.init();
+        serial_port_manager_.start();
     } catch (const std::exception& e) {
         ui.LogText->appendPlainText("发生异常: " + QString(e.what()));
         QMessageBox::critical(this, "错误", "刷写过程中发生异常: " + QString(e.what()));
