@@ -23,6 +23,7 @@ public:
     ~PaperTrackMainWindow() override;
 
 private slots:
+    void sendBrightnessValue();
     void onSendButtonClicked();
     void onBrightnessChanged(int value);
     void onUseUserCameraClicked(int value);
@@ -32,6 +33,8 @@ private slots:
     void onPasswordTextFocusIn();
     void onPasswordTextFocusOut();
 private:
+    QTimer* brightness_timer;
+    int current_brightness;
     std::string current_ip_;
     void bound_pages();
     void flashESP32();

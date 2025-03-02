@@ -22,7 +22,11 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     ui.setupUi(this);
     ui.LogText->setMaximumBlockCount(200);
     ui.LogText->appendPlainText("系统初始化中...");
-
+    // 初始化亮度控制相关成员
+    brightness_timer = new QTimer(this);
+    brightness_timer->setSingleShot(true);
+    connect(brightness_timer, &QTimer::timeout, this, &PaperTrackMainWindow::sendBrightnessValue);
+    current_brightness = 0;
     // 连接UI信号槽
     connect(ui.pushButton, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
     connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
@@ -67,9 +71,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     });
                 }
             }
-
+            //TODO:滑块更新逻辑
             // 更新亮度滑块（如果需要）
-            ui.BrightnessBar->setValue(brightness);
+            //ui.BrightnessBar->setValue(brightness);
 
             // 可以添加其他状态更新的日志，如果需要的话
         }, Qt::QueuedConnection);
@@ -245,7 +249,10 @@ PaperTrackMainWindow::~PaperTrackMainWindow() {
     ui.LogText->appendPlainText("正在关闭系统...");
     window_closed = true;
     image_downloader_.stop();
-
+    if (brightness_timer) {
+        brightness_timer->stop();
+        delete brightness_timer;
+    }
     // 等待线程结束
     if (show_video_thread.joinable()) {
         show_video_thread.join();
@@ -290,18 +297,26 @@ void PaperTrackMainWindow::onSendButtonClicked() {
 }
 
 void PaperTrackMainWindow::onBrightnessChanged(int value) {
-    // 发送亮度控制命令 - 确保亮度值为3位数
-    std::string brightness = std::to_string(value);
-    // 使用零填充保证3位数
-    while (brightness.length() < 3) {
-        brightness = "0" + brightness;
-    }
-    std::string packet = "A6" + brightness + "B6";
-    serial_port_manager_.write_data(packet);
-    // 记录操作
-    ui.LogText->appendPlainText("已设置亮度: " + QString::number(value));
-}
+    // 更新当前亮度值
+    current_brightness = value;
 
+    // 重置定时器，如果用户500毫秒内没有再次改变值，就发送数据包
+    brightness_timer->start(100);
+}
+// 添加新的发送亮度值函数
+void PaperTrackMainWindow::sendBrightnessValue() {
+    // 发送亮度控制命令 - 确保亮度值为三位数字
+    std::string brightness_str = std::to_string(current_brightness);
+    // 补齐三位数字，前面加0
+    while (brightness_str.length() < 3) {
+        brightness_str = "0" + brightness_str;
+    }
+    std::string packet = "A6" + brightness_str + "B6";
+    serial_port_manager_.write_data(packet);
+
+    // 记录操作
+    ui.LogText->appendPlainText("已设置亮度: " + QString::number(current_brightness));
+}
 // 获取串口端口名称
 std::string PaperTrackMainWindow::getPortFromSerialManager() {
     // 从SerialPortManager获取COM端口名称
