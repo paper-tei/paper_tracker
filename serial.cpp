@@ -598,6 +598,13 @@ PacketType SerialPortManager::parsePacket(const std::string& packet)
                     std::to_string(std::stoi(paddedIp.substr(6, 3))) + "." +
                     std::to_string(std::stoi(paddedIp.substr(3, 3))) + "." +
                     std::to_string(std::stoi(paddedIp.substr(0, 3)));
+                // 调用回调函数
+                if (deviceStatusCallback) {
+                    int brightness = std::stoi(match[1]);
+                    int power = std::stoi(match[3]);
+                    int version = std::stoi(match[4]);
+                    deviceStatusCallback(formattedIp, brightness, power, version);
+                }
             } catch (const std::exception& e) {
                 std::cerr << "IP格式转换失败: " << e.what() << std::endl;
                 formattedIp = rawIp; // 转换失败时使用原始IP
