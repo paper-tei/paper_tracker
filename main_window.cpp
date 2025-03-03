@@ -219,9 +219,6 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     std::vector<float> output = inference.get_output();
                     if (!output.empty()) {
                         osc_manager_.sendModelOutput(output);
-
-                        // 更新校准页面的进度条
-                        updateCalibrationProgressBars(output);
                     }
 
                 }
@@ -522,6 +519,11 @@ void PaperTrackMainWindow::flashESP32() {
             ui.LogText->appendPlainText("固件刷写失败，退出码: " + QString::number(process.exitCode()));
             QMessageBox::critical(this, "刷写失败", "ESP32固件刷写失败，请检查连接和固件文件！");
         }
+
+        // 重新启动程序
+        // QString appPath = QCoreApplication::applicationFilePath();
+        // QProcess::startDetached(appPath);
+        // QApplication::quit();
         serial_port_manager_.init();
         serial_port_manager_.start();
     } catch (const std::exception& e) {
