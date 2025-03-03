@@ -9,7 +9,7 @@ VideoReader::VideoReader(const std::string &video_path) : video_path(video_path)
 
 void VideoReader::open_video(const std::string &video_path) {
     if (video_path.empty() && this->video_path.empty()) {
-        // minilog::log_error(nullptr, "Video path is empty");
+        LOG_ERROR("视频路径为空");
         return;
     }
     cap.open(0, cv::CAP_DSHOW);
@@ -24,13 +24,13 @@ bool VideoReader::is_opened() const
 
 cv::Mat VideoReader::get_image() {
     if (!cap.isOpened()) {
-        // minilog::log_error(nullptr, "Video is not opened");
+        LOG_ERROR("视频打开失败");
         return cv::Mat();
     }
     cap >> frame;
     if (frame.empty())
     {
-        // minilog::log_warn(nullptr, "Video has ended");
+        LOG_WARN("视频播放结束");
     }
     return frame;
 }

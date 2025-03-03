@@ -17,6 +17,7 @@
 #include "roi_event.hpp"
 #include "image_downloader.hpp"
 #include "wifi_cache_file_writer.hpp"
+#include "logger.hpp"
 
 class PaperTrackMainWindow : public QWidget {
 public:
@@ -57,24 +58,23 @@ private:
     cv::Rect roi_rect;
     bool is_roi_end = true;
 
-    VideoReader video_reader;
+    std::shared_ptr<VideoReader> video_reader;
     std::thread show_video_thread;
 
     // 推理和OSC通信
-    Inference inference;
-    OscManager osc_manager_;
-
+    std::shared_ptr<Inference> inference;
+    std::shared_ptr<OscManager> osc_manager_;
     // 串口通信
-    SerialPortManager serial_port_manager_;
+    std::shared_ptr<SerialPortManager> serial_port_manager_;
 
     // 线程控制
     std::atomic<bool> window_closed{false};
     // 图像下载器
-    ESP32VideoStream image_downloader_;
+    std::shared_ptr<ESP32VideoStream> image_downloader_;
     std::queue<cv::Mat> image_buffer_queue;
 
     // WiFi配置文件写入器
-    WifiCacheFileWriter wifi_cache_file_writer;
+    std::shared_ptr<WifiCacheFileWriter> wifi_cache_file_writer;
 
     bool use_user_camera = false;
 protected:

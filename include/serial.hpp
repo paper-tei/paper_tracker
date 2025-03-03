@@ -7,6 +7,7 @@
 #include <thread>
 #include <condition_variable>
 #include <QPlainTextEdit>
+#include "logger.hpp"
 
 enum SerialStatus
 {
@@ -28,7 +29,7 @@ enum PacketType {
 
 class SerialPortManager {
 public:
-    SerialPortManager(QPlainTextEdit* log_window = nullptr);
+    SerialPortManager();
     ~SerialPortManager();
     // 添加一个回调函数类型
     using DeviceStatusCallback = std::function<void(const std::string& ip, int brightness, int power, int version)>;
@@ -60,8 +61,6 @@ private:
     std::thread write_thread;      // 写入线程
     std::thread write_junk_thread; // 测试用的写线程
 
-    QPlainTextEdit* log_window;    // 日志窗口
-    
     // 写入队列
     std::queue<std::string> writeQueue;
     std::mutex writeQueueMutex;

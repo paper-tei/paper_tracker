@@ -13,15 +13,27 @@
 #include <QEventLoop>
 #include <QCoreApplication>
 PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
-    : QWidget(parent), wifi_cache_file_writer("./wifi_cache.txt"),
-      serial_port_manager_(ui.LogText),
+    : QWidget(parent),
       use_user_camera(false)
 {
     // 基本UI设置
     setFixedSize(848, 538);
     ui.setupUi(this);
     ui.LogText->setMaximumBlockCount(200);
-    ui.LogText->appendPlainText("系统初始化中...");
+    init_logger(ui.LogText);
+    LOG_INFO("系统初始化中...");
+
+    wifi_cache_file_writer = std::make_shared<WifiCacheFileWriter>("./wifi_cache.txt");
+    // 初始化串口
+    serial_port_manager_ = std::make_shared<SerialPortManager>();
+    inference = std::make_shared<Inference>();
+    osc_manager_ = std::make_shared<OscManager>();
+    image_downloader_ = std::make_shared<ESP32VideoStream>();
+    video_reader = std::make_shared<VideoReader>();
+    // 初始化串口连接状态
+    ui.SerialConnectLabel->setText("串口未连接");
+    ui.WifiConnectLabel->setText("Wifi未连接");
+
     // 初始化亮度控制相关成员
     brightness_timer = new QTimer(this);
     brightness_timer->setSingleShot(true);
@@ -42,7 +54,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     // 清除所有控件的初始焦点，确保没有文本框自动获得焦点
     setFocus();
     // 设置设备状态回调
-    serial_port_manager_.setDeviceStatusCallback([this](const std::string& ip, int brightness, int power, int version) {
+    serial_port_manager_->setDeviceStatusCallback([this](const std::string& ip, int brightness, int power, int version) {
         // 使用Qt的线程安全方式更新UI
         QMetaObject::invokeMethod(this, [this, ip, brightness, power, version]() {
             // 只在 IP 地址变化时更新显示
@@ -51,20 +63,14 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 current_ip_ = ip;
                 // 更新IP地址显示，添加 http:// 前缀
                 ui.textEdit->setText("http://" + QString::fromStdString(ip));
-
-                // 记录 IP 变化到日志
-                ui.LogText->appendPlainText(QString("IP地址已更新: http://%1").arg(QString::fromStdString(ip)));
+                LOG_INFO(QString("IP地址已更新: http://%1").arg(QString::fromStdString(ip)));
 
                 if (!use_user_camera)
                 {
-                    wifi_cache_file_writer.write_wifi_config(current_ip_);
+                    wifi_cache_file_writer->write_wifi_config(current_ip_);
                     start_image_download();
                 }
             }
-            //TODO:滑块更新逻辑
-            // 更新亮度滑块（如果需要）
-            //ui.BrightnessBar->setValue(brightness);
-
             // 可以添加其他状态更新的日志，如果需要的话
         }, Qt::QueuedConnection);
     });
@@ -100,17 +106,16 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     bound_pages();
 
     // 异步加载视频
-    ui.LogText->appendPlainText("正在加载视频...");
-
+    LOG_INFO("正在加载视频...");
     if (use_user_camera)
     {
         auto video_future = std::async(std::launch::async, [this]() {
             try {
-                video_reader.open_video("D:/Babble/test_video.mkv");
-                if (!video_reader.is_opened()) {
+                video_reader->open_video("D:/Babble/test_video.mkv");
+                if (!video_reader->is_opened()) {
                     // 使用Qt方式记录日志，而不是minilog
                     QMetaObject::invokeMethod(this, [this]() {
-                        ui.LogText->appendPlainText("错误: 视频打开失败");
+                        LOG_ERROR("错误: 视频打开失败");
                     }, Qt::QueuedConnection);
                     return ;
                 }
@@ -118,47 +123,49 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 // 使用Qt方式记录日志，而不是minilog
                 QString errorMsg = QString("视频加载异常: %1").arg(e.what());
                 QMetaObject::invokeMethod(this, [this, errorMsg]() {
-                    ui.LogText->appendPlainText("错误: " + errorMsg);
+                    LOG_ERROR("错误: " + errorMsg);
                 }, Qt::QueuedConnection);
             }
         });
     }
 
     // 加载推理模型
-    ui.LogText->appendPlainText("正在加载推理模型...");
+    LOG_INFO("正在加载推理模型...");
     try {
-        inference.load_model("./model/model.onnx");
-        ui.LogText->appendPlainText("模型加载完成");
+        inference->load_model("./model/model.onnx");
+        LOG_INFO("模型加载完成");
     } catch (const std::exception& e) {
         // 使用Qt方式记录日志，而不是minilog
-        ui.LogText->appendPlainText(QString("错误: 模型加载异常: %1").arg(e.what()));
+        LOG_ERROR(QString("错误: 模型加载异常: %1").arg(e.what()));
     }
 
     // 初始化OSC管理器
-    ui.LogText->appendPlainText("正在初始化OSC...");
-    if (osc_manager_.init("127.0.0.1", 8888)) {
-        osc_manager_.setLocationPrefix("");
-        osc_manager_.setMultiplier(1.0f);
-        ui.LogText->appendPlainText("OSC初始化成功");
+    LOG_INFO("正在初始化OSC...");
+    if (osc_manager_->init("127.0.0.1", 8888)) {
+        osc_manager_->setLocationPrefix("");
+        osc_manager_->setMultiplier(1.0f);
+        LOG_INFO("OSC初始化成功");
     } else {
-        ui.LogText->appendPlainText("OSC初始化失败，请检查网络连接");
+        LOG_ERROR("OSC初始化失败，请检查网络连接");
     }
 
     // 启动串口
-    ui.LogText->appendPlainText("正在初始化串口...");
-    serial_port_manager_.start();
+    LOG_INFO("正在初始化串口...");
+    serial_port_manager_->start();
     initBlendShapeIndexMap();
-    ui.LogText->appendPlainText("初始化ARKit模型输出映射表完成");
-    ui.LogText->appendPlainText("系统初始化完成");
+    LOG_INFO("初始化ARKit模型输出映射表完成");
+    LOG_INFO("系统初始化完成");
 
-    while (serial_port_manager_.status() == SerialStatus::CLOSED) {}
+    while (serial_port_manager_->status() == SerialStatus::CLOSED) {}
 
-    if (serial_port_manager_.status() == SerialStatus::FAILED && !use_user_camera)
+    if (serial_port_manager_->status() == SerialStatus::FAILED && !use_user_camera)
     {
-        auto ip = wifi_cache_file_writer.try_get_wifi_config();
+        ui.SerialConnectLabel->setText("串口连接失败");
+        LOG_WARN("串口未连接，尝试从wifi缓存中读取地址...");
+        auto ip = wifi_cache_file_writer->try_get_wifi_config();
         if (ip.has_value() && !ip.value().empty())
         {
-            ui.LogText->appendPlainText("从wifi缓存中读取地址成功");
+            LOG_INFO("从wifi缓存中读取地址成功");
             current_ip_ = ip.value();
             auto esp32_future = std::async(std::launch::async, [this, ip]()
             {
@@ -170,23 +177,26 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
             msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
             msgBox.exec();
         }
+    } else
+    {
+        ui.SerialConnectLabel->setText("串口连接成功");
     }
 
 
     // 启动视频显示线程
-    ui.LogText->appendPlainText("正在启动视频处理线程...");
+    LOG_INFO("正在启动视频处理线程...");
     show_video_thread = std::thread([this]() {
         cv::Mat frame;
         while (!window_closed) {
             try {
                 if (use_user_camera)
                 {
-                    if (!video_reader.is_opened()) {
+                    if (!video_reader->is_opened()) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(100));
                         continue;
                     }
                     // 获取视频帧
-                     frame = video_reader.get_image();
+                     frame = video_reader->get_image();
                 } else {
                     if (!image_buffer_queue.empty())
                     {
@@ -215,11 +225,11 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
 
                     cv::rectangle(frame, roi_rect, cv::Scalar(0, 255, 0), 2);
-                    inference.inference(infer_frame);
+                    inference->inference(infer_frame);
                     // 发送OSC数据
-                    std::vector<float> output = inference.get_output();
+                    std::vector<float> output = inference->get_output();
                     if (!output.empty()) {
-                        osc_manager_.sendModelOutput(output);
+                        osc_manager_->sendModelOutput(output);
                         updateCalibrationProgressBars(output);
                     }
 
@@ -249,9 +259,8 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 // std::this_thread::sleep_for(std::chrono::milliseconds(10)); // ~30fps
             } catch (const std::exception& e) {
                 // 使用Qt方式记录日志，而不是minilog
-                QString errorMsg = QString("视频处理异常: %1").arg(e.what());
-                QMetaObject::invokeMethod(this, [this, errorMsg]() {
-                    ui.LogText->appendPlainText("错误: " + errorMsg);
+                QMetaObject::invokeMethod(this, [e]() {
+                LOG_ERROR(QString("错误： 视频处理异常: %1").arg(e.what()));
                 }, Qt::QueuedConnection);
                 std::this_thread::sleep_for(std::chrono::seconds(1));
             }
@@ -262,9 +271,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
 
 PaperTrackMainWindow::~PaperTrackMainWindow() {
     // 安全关闭
-    ui.LogText->appendPlainText("正在关闭系统...");
+    LOG_INFO("正在关闭系统...");
     window_closed = true;
-    image_downloader_.stop();
+    image_downloader_->stop();
     if (brightness_timer) {
         brightness_timer->stop();
         delete brightness_timer;
@@ -275,7 +284,7 @@ PaperTrackMainWindow::~PaperTrackMainWindow() {
     }
 
     // 其他清理工作
-    ui.LogText->appendPlainText("系统已安全关闭");
+    LOG_INFO("系统已安全关闭");
 }
 // 新增的重启按钮处理函数
 void PaperTrackMainWindow::onRestartButtonClicked() {
@@ -285,8 +294,8 @@ void PaperTrackMainWindow::onRestartButtonClicked() {
 // 新增的重启ESP32函数实现
 void PaperTrackMainWindow::restartESP32() {
     // 记录操作
-    ui.LogText->appendPlainText("准备重启ESP32设备...");
-    serial_port_manager_.stop();
+    LOG_INFO("准备重启ESP32设备...");
+    serial_port_manager_->stop();
 
     try {
         // 从SerialPortManager获取端口名
@@ -295,7 +304,7 @@ void PaperTrackMainWindow::restartESP32() {
             port = "COM2"; // 默认端口
         }
 
-        ui.LogText->appendPlainText("使用端口: " + QString::fromStdString(port));
+        LOG_INFO("使用端口: " + QString::fromStdString(port));
 
         // 构造完整的命令路径
         QString appDir = QCoreApplication::applicationDirPath();
@@ -305,7 +314,7 @@ void PaperTrackMainWindow::restartESP32() {
         QString commandStr = QString("\"%1/esptool.exe\" --port %2 run")
             .arg(appDir)
             .arg(port.c_str());
-        ui.LogText->appendPlainText("执行重启命令: " + commandStr);
+        LOG_INFO("执行重启命令: " + commandStr);
 
         // 创建进度窗口
         QProgressDialog progress("正在重启设备，请稍候...", "取消", 0, 0, this);
@@ -326,13 +335,13 @@ void PaperTrackMainWindow::restartESP32() {
 
         connect(&process, &QProcess::readyReadStandardError, [&]() {
             QString error = process.readAllStandardError();
-            ui.LogText->appendPlainText("错误: " + error.trimmed());
+            LOG_ERROR("错误： " + error.trimmed());
         });
 
         // 绑定取消按钮
         connect(&progress, &QProgressDialog::canceled, [&]() {
             process.kill();
-            ui.LogText->appendPlainText("用户取消了设备重启");
+            LOG_INFO("用户取消了设备重启");
         });
 
         // 启动进程
@@ -340,12 +349,12 @@ void PaperTrackMainWindow::restartESP32() {
 
         // 等待进程启动
         if (!process.waitForStarted(3000)) {
-            ui.LogText->appendPlainText("无法启动esptool.exe: " + process.errorString());
+            LOG_ERROR("无法启动esptool.exe: " + process.errorString());
             QMessageBox::critical(this, "启动失败", "无法启动esptool.exe: " + process.errorString());
             return;
         }
 
-        ui.LogText->appendPlainText("重启进程已启动，请等待完成...");
+        LOG_INFO("重启进程已启动，请等待完成...");
 
         // 使用事件循环等待进程完成，同时保持UI响应
         QEventLoop loop;
@@ -357,18 +366,18 @@ void PaperTrackMainWindow::restartESP32() {
 
         // 处理结果
         if (process.exitCode() == 0) {
-            ui.LogText->appendPlainText("设备重启成功！");
+            LOG_INFO("设备重启成功！");
             QMessageBox::information(this, "重启完成", "ESP32设备重启成功！");
         } else {
-            ui.LogText->appendPlainText("设备重启失败，退出码: " + QString::number(process.exitCode()));
+            LOG_ERROR("设备重启失败，退出码: " + QString::number(process.exitCode()));
             QMessageBox::critical(this, "重启失败", "ESP32设备重启失败，请检查连接！");
         }
 
         // 重新初始化和启动串口
-        serial_port_manager_.init();
-        serial_port_manager_.start();
+        serial_port_manager_->init();
+        serial_port_manager_->start();
     } catch (const std::exception& e) {
-        ui.LogText->appendPlainText("发生异常: " + QString(e.what()));
+        LOG_ERROR("重启过程发生异常: " + QString(e.what()));
         QMessageBox::critical(this, "错误", "重启过程中发生异常: " + QString(e.what()));
     }
 }
@@ -400,10 +409,10 @@ void PaperTrackMainWindow::onSendButtonClicked() {
 
     // 构建并发送数据包
     std::string packet = "A2SSID" + ssid.toStdString() + "PWD" + password.toStdString() + "B2";
-    serial_port_manager_.write_data(packet);
+    serial_port_manager_->write_data(packet);
 
     // 记录操作
-    ui.LogText->appendPlainText("已发送WiFi配置: SSID=" + ssid + ", PWD=" + password);
+    LOG_INFO("已发送WiFi配置: SSID=" + ssid + ", PWD=" + password);
 }
 
 void PaperTrackMainWindow::onBrightnessChanged(int value) {
@@ -422,21 +431,21 @@ void PaperTrackMainWindow::sendBrightnessValue() {
         brightness_str = "0" + brightness_str;
     }
     std::string packet = "A6" + brightness_str + "B6";
-    serial_port_manager_.write_data(packet);
+    serial_port_manager_->write_data(packet);
 
     // 记录操作
-    ui.LogText->appendPlainText("已设置亮度: " + QString::number(current_brightness));
+    LOG_INFO("已设置亮度: " + QString::number(current_brightness));
 }
 // 获取串口端口名称
 std::string PaperTrackMainWindow::getPortFromSerialManager() {
     // 从SerialPortManager获取COM端口名称
-    return serial_port_manager_.getCurrentPort();
+    return serial_port_manager_->getCurrentPort();
 }
 // 刷写ESP32固件
 void PaperTrackMainWindow::flashESP32() {
     // 记录操作
-    ui.LogText->appendPlainText("准备刷写ESP32固件...");
-    serial_port_manager_.stop();
+    LOG_INFO("准备刷写ESP32固件...");
+    serial_port_manager_->stop();
     // 不再调用stop()，而是手动关闭程序持有的串口句柄
     // 这样可以释放COM端口而不会导致其他部分的问题
     try {
@@ -445,9 +454,7 @@ void PaperTrackMainWindow::flashESP32() {
         if (port.empty()) {
             port = "COM2"; // 默认端口
         }
-
-        ui.LogText->appendPlainText("使用端口: " + QString::fromStdString(port));
-
+        LOG_INFO("使用端口: " + QString::fromStdString(port));
         // 构造完整的命令路径
         QString appDir = QCoreApplication::applicationDirPath();
         QString esptoolPath = "\"" + appDir + "/esptool.exe\"";
@@ -462,8 +469,7 @@ void PaperTrackMainWindow::flashESP32() {
             .arg(bootloaderPath)
             .arg(partitionPath)
             .arg(firmwarePath);
-
-        ui.LogText->appendPlainText("执行命令: " + commandStr);
+        LOG_INFO("执行命令: " + commandStr);
 
         // 创建进度窗口
         QProgressDialog progress("正在刷写固件，请稍候...", "取消", 0, 0, this);
@@ -484,13 +490,13 @@ void PaperTrackMainWindow::flashESP32() {
 
         connect(&process, &QProcess::readyReadStandardError, [&]() {
             QString error = process.readAllStandardError();
-            ui.LogText->appendPlainText("错误: " + error.trimmed());
+            LOG_ERROR("错误: " + error.trimmed());
         });
 
         // 绑定取消按钮
         connect(&progress, &QProgressDialog::canceled, [&]() {
             process.kill();
-            ui.LogText->appendPlainText("用户取消了固件刷写");
+            LOG_WARN("用户取消了固件刷写");
         });
 
         // 启动进程
@@ -498,12 +504,11 @@ void PaperTrackMainWindow::flashESP32() {
 
         // 等待进程启动
         if (!process.waitForStarted(3000)) {
-            ui.LogText->appendPlainText("无法启动esptool.exe: " + process.errorString());
+            LOG_ERROR("无法启动esptool.exe: " + process.errorString());
             QMessageBox::critical(this, "启动失败", "无法启动esptool.exe: " + process.errorString());
             return;
         }
-
-        ui.LogText->appendPlainText("刷写进程已启动，请等待完成...");
+        LOG_INFO("刷写进程已启动，请等待完成...");
 
         // 使用事件循环等待进程完成，同时保持UI响应
         QEventLoop loop;
@@ -515,10 +520,10 @@ void PaperTrackMainWindow::flashESP32() {
 
         // 处理结果
         if (process.exitCode() == 0) {
-            ui.LogText->appendPlainText("固件刷写成功！");
+            LOG_INFO("固件刷写成功！");
             QMessageBox::information(this, "刷写完成", "ESP32固件刷写成功！");
         } else {
-            ui.LogText->appendPlainText("固件刷写失败，退出码: " + QString::number(process.exitCode()));
+            LOG_ERROR("固件刷写失败，退出码: " + QString::number(process.exitCode()));
             QMessageBox::critical(this, "刷写失败", "ESP32固件刷写失败，请检查连接和固件文件！");
         }
 
@@ -526,10 +531,10 @@ void PaperTrackMainWindow::flashESP32() {
         // QString appPath = QCoreApplication::applicationFilePath();
         // QProcess::startDetached(appPath);
         // QApplication::quit();
-        serial_port_manager_.init();
-        serial_port_manager_.start();
+        serial_port_manager_->init();
+        serial_port_manager_->start();
     } catch (const std::exception& e) {
-        ui.LogText->appendPlainText("发生异常: " + QString(e.what()));
+        LOG_ERROR("发生异常: " + QString(e.what()));
         QMessageBox::critical(this, "错误", "刷写过程中发生异常: " + QString(e.what()));
     }
 }
@@ -679,8 +684,8 @@ void PaperTrackMainWindow::updateCalibrationProgressBars(const std::vector<float
 
 void PaperTrackMainWindow::start_image_download()
 {
-    image_downloader_.stop();
-    image_downloader_.init("http://" + current_ip_, [this] (const cv::Mat& image)
+    image_downloader_->stop();
+    image_downloader_->init("http://" + current_ip_, [this] (const cv::Mat& image)
     {
         if (image_buffer_queue.size() > 0)
         {
@@ -688,6 +693,10 @@ void PaperTrackMainWindow::start_image_download()
         }
         image_buffer_queue.push(image.clone());
     });
-    image_downloader_.start();
+    image_downloader_->start();
 
+    if (image_downloader_->isStreaming())
+    {
+        ui.WifiConnectLabel->setText("Wifi连接成功");
+    }
 }

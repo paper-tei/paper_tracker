@@ -41,6 +41,8 @@ public:
     QTextEdit *textEdit;
     QLabel *label_16;
     QPushButton *restart_Button;
+    QLabel *SerialConnectLabel;
+    QLabel *WifiConnectLabel;
     QWidget *page_2;
     QLabel *label_3;
     QLabel *label_4;
@@ -151,6 +153,13 @@ public:
         restart_Button = new QPushButton(page);
         restart_Button->setObjectName("restart_Button");
         restart_Button->setGeometry(QRect(730, 70, 91, 31));
+        SerialConnectLabel = new QLabel(page);
+        SerialConnectLabel->setObjectName("SerialConnectLabel");
+        SerialConnectLabel->setGeometry(QRect(390, 270, 71, 31));
+        SerialConnectLabel->setTextFormat(Qt::TextFormat::AutoText);
+        WifiConnectLabel = new QLabel(page);
+        WifiConnectLabel->setObjectName("WifiConnectLabel");
+        WifiConnectLabel->setGeometry(QRect(520, 270, 71, 31));
         stackedWidget->addWidget(page);
         page_2 = new QWidget();
         page_2->setObjectName("page_2");
@@ -168,7 +177,7 @@ public:
         scrollArea->setWidgetResizable(false);
         scrollAreaWidgetContents = new QWidget();
         scrollAreaWidgetContents->setObjectName("scrollAreaWidgetContents");
-        scrollAreaWidgetContents->setGeometry(QRect(0, -73, 639, 500));
+        scrollAreaWidgetContents->setGeometry(QRect(0, 0, 639, 500));
         scrollAreaWidgetContents->setMinimumSize(QSize(0, 500));
         CheekPullRightMax = new QPlainTextEdit(scrollAreaWidgetContents);
         CheekPullRightMax->setObjectName("CheekPullRightMax");
@@ -372,6 +381,8 @@ public:
         label_2->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\227\245\345\277\227\347\252\227\345\217\243\357\274\232", nullptr));
         label_16->setText(QCoreApplication::translate("PaperTrackerMainWindow", "IP\345\234\260\345\235\200\357\274\232", nullptr));
         restart_Button->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\351\207\215\345\220\257", nullptr));
+        SerialConnectLabel->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\344\270\262\345\217\243\346\234\252\350\277\236\346\216\245", nullptr));
+        WifiConnectLabel->setText(QCoreApplication::translate("PaperTrackerMainWindow", "wifi\346\234\252\350\277\236\346\216\245", nullptr));
         label_3->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\234\200\345\260\217\345\200\274", nullptr));
         label_4->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\234\200\345\244\247\345\200\274", nullptr));
         label_5->setText(QCoreApplication::translate("PaperTrackerMainWindow", "cheekPuffLeft", nullptr));
