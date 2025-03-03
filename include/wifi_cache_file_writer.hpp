@@ -10,6 +10,7 @@
 #include <optional>
 #include <windows.h>
 #include <iostream>
+#include "logger.hpp"
 
 class WifiCacheFileWriter {
 public:
@@ -19,7 +20,7 @@ public:
     if (!std::filesystem::exists(file_path_)) {
       std::ofstream file(file_path_);
       if (!file.is_open()) {
-        std::cerr << "Error: Creating file failed!\n";
+        LOG_ERROR("错误： 无法创建wifi缓存文件！");
         return;
       }
     }
@@ -28,7 +29,7 @@ public:
   std::optional<std::string> try_get_wifi_config() {
     std::ifstream file(file_path_);
     if (!file.is_open()) {
-      std::cerr << "Error: Opening file failed!\n";
+      LOG_ERROR("错误： 打开wifi缓存文件失败！");
       return std::nullopt;
     }
     file.seekg(std::ios_base::beg);
@@ -44,12 +45,12 @@ public:
     }
     std::ofstream file(file_path_);
     if (!file.is_open()) {
-      std::cerr << "Error: Opening file failed!\n";
+      LOG_ERROR("错误： 打开wifi缓存文件失败！");
       return;
     }
     file << ip;
     if (file.fail()) {
-      std::cerr << "Error: Writing to file failed!\n";
+      LOG_ERROR("错误： 写入wifi缓存信息失败！");
       return ;
     }
     file.flush();

@@ -48,7 +48,7 @@ bool OscManager::init(const std::string& address, int port) {
         );
         return true;
     } catch (const std::exception& e) {
-        std::cerr << "OSC初始化错误: " << e.what() << std::endl;
+        LOG_ERROR("OSC初始化错误: " + QString(e.what()));
         return false;
     }
 }
@@ -65,13 +65,13 @@ void OscManager::setMultiplier(float multiplier) {
 
 bool OscManager::sendModelOutput(const std::vector<float>& output) {
     if (!socket_) {
-        std::cerr << "OSC socket未初始化" << std::endl;
+        LOG_ERROR("OSC socket未初始化");
         return false;
     }
 
     // 确保有足够的输出值
     if (output.size() < 45) {
-        std::cerr << "模型输出数组大小不足，需要45个元素，实际: " << output.size() << std::endl;
+        LOG_ERROR("模型输出数组大小不足，需要45个元素，实际: " + QString::number(output.size()));
         return false;
     }
 
@@ -129,7 +129,7 @@ bool OscManager::sendModelOutput(const std::vector<float>& output) {
 
         return true;
     } catch (const std::exception& e) {
-        std::cerr << "发送OSC消息错误: " << e.what() << std::endl;
+        LOG_ERROR("发送OSC消息错误: " + QString(e.what()));
         return false;
     }
 }
