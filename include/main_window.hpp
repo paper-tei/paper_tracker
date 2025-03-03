@@ -41,7 +41,14 @@ private:
     void flashESP32();
     void restartESP32();
     std::string getPortFromSerialManager(); // 获取串口端口名
+    // 根据模型输出更新校准页面的进度条
+    void updateCalibrationProgressBars(const std::vector<float>& output);
 
+    // 保存ARKit模型输出的映射表
+    std::map<std::string, size_t> blendShapeIndexMap;
+
+    // 初始化ARKit模型输出的映射表
+    void initBlendShapeIndexMap();
     // UI组件
     Ui::PaperTrackerMainWindow ui{};
 
