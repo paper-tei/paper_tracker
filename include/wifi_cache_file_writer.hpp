@@ -32,7 +32,7 @@ public:
     }
     file.seekg(std::ios_base::beg);
     std::string ip;
-    file.read(ip.data(), ip.size());
+    std::getline(file, ip);
     return ip;
   }
 

@@ -163,11 +163,11 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     if (serial_port_manager_.status() == SerialStatus::FAILED && !use_user_camera)
     {
         auto ip = wifi_cache_file_writer.try_get_wifi_config();
-        if (ip.has_value() && !ip.value().empty())
+        if (ip.has_value())
         {
-            auto esp32_future = std::async(std::launch::async, [this]()
+            auto esp32_future = std::async(std::launch::async, [this, ip]()
             {
-                image_downloader_.init("http://" + current_ip_, [this] (const cv::Mat& image)
+                image_downloader_.init("http://" + ip.value(), [this] (const cv::Mat& image)
                 {
                     if (image_buffer_queue.size() > 0)
                     {
