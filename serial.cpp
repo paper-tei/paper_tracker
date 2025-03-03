@@ -36,7 +36,7 @@ void SerialPortManager::init()
         std::cout << "无法找到ESP32-S3设备，尝试使用默认端口COM101" << std::endl;
         hSerial = initSerialPort(COM_PORT);
     } else {
-        portName = "COM5";
+
         currentPort = portName;
         // 转换为宽字符串
         std::wstring wPortName(L"\\\\.\\");

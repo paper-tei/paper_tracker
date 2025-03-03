@@ -257,7 +257,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     ui.ImageLabel->update();
                 }, Qt::QueuedConnection);
                 // 控制帧率
-                cv::waitKey(33);
+                cv::waitKey(13);
                 // std::this_thread::sleep_for(std::chrono::milliseconds(10)); // ~30fps
             } catch (const std::exception& e) {
                 // 使用Qt方式记录日志，而不是minilog
