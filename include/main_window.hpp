@@ -28,6 +28,7 @@ private slots:
     void sendBrightnessValue();
     void onSendButtonClicked();
     void onBrightnessChanged(int value);
+    void onRotateAngleChanged(int value);
     void onUseUserCameraClicked(int value);
     void onRestartButtonClicked();
     void onSSIDTextFocusIn();
@@ -36,7 +37,10 @@ private slots:
     void onPasswordTextFocusOut();
 private:
     QTimer* brightness_timer;
+
     int current_brightness;
+    int current_rotate_angle = 0;
+
     std::string current_ip_;
     void bound_pages();
     void flashESP32();
