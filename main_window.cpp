@@ -156,8 +156,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     if (serial_port_manager_.status() == SerialStatus::FAILED && !use_user_camera)
     {
         auto ip = wifi_cache_file_writer.try_get_wifi_config();
-        if (ip.has_value())
+        if (ip.has_value() && !ip.value().empty())
         {
+            ui.LogText->appendPlainText("从wifi缓存中读取地址成功");
             current_ip_ = ip.value();
             auto esp32_future = std::async(std::launch::async, [this, ip]()
             {
