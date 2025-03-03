@@ -242,32 +242,6 @@
     </widget>
    </widget>
    <widget class="QWidget" name="page_2">
-    <widget class="QLabel" name="label_3">
-     <property name="geometry">
-      <rect>
-       <x>130</x>
-       <y>10</y>
-       <width>53</width>
-       <height>15</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>最小值</string>
-     </property>
-    </widget>
-    <widget class="QLabel" name="label_4">
-     <property name="geometry">
-      <rect>
-       <x>240</x>
-       <y>10</y>
-       <width>53</width>
-       <height>15</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>最大值</string>
-     </property>
-    </widget>
     <widget class="QScrollArea" name="scrollArea">
      <property name="geometry">
       <rect>
@@ -293,7 +267,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
+        <y>-73</y>
         <width>639</width>
         <height>500</height>
        </rect>
@@ -304,36 +278,6 @@
         <height>500</height>
        </size>
       </property>
-      <widget class="QPlainTextEdit" name="CheekPullRightMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>40</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="TongueUpMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>320</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="TongueOutMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>280</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
       <widget class="QLabel" name="label_5">
        <property name="geometry">
         <rect>
@@ -345,16 +289,6 @@
        </property>
        <property name="text">
         <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="CheekPullLeftMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>0</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
        </property>
       </widget>
       <widget class="QLabel" name="label_10">
@@ -409,46 +343,6 @@
         <string>tongueLeft</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="JawLeftMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>120</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="TongueUpMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>320</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="TongueLeftMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>400</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="TongueDownMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>360</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
       <widget class="QLabel" name="label_7">
        <property name="geometry">
         <rect>
@@ -460,46 +354,6 @@
        </property>
        <property name="text">
         <string>jawOpen</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="MouthRightMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>240</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="TongueOutMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>280</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="TongueDownMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>360</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="JawRightMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>160</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
        </property>
       </widget>
       <widget class="QLabel" name="label_11">
@@ -515,16 +369,6 @@
         <string>mouthRight</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="JawLeftMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>120</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
       <widget class="QLabel" name="label_9">
        <property name="geometry">
         <rect>
@@ -536,26 +380,6 @@
        </property>
        <property name="text">
         <string>jawRight</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="CheekPullRightMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>40</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="JawOpenMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>80</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
        </property>
       </widget>
       <widget class="QLabel" name="label_14">
@@ -571,26 +395,6 @@
         <string>tongueDown</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="JawRightMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>160</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="MouthLeftMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>200</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
       <widget class="QLabel" name="label_8">
        <property name="geometry">
         <rect>
@@ -602,46 +406,6 @@
        </property>
        <property name="text">
         <string>jawLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="CheekPullLeftMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>0</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="MouthLeftMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>200</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="MouthRightMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>240</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="JawOpenMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>80</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
        </property>
       </widget>
       <widget class="QLabel" name="label_12">
@@ -657,16 +421,6 @@
         <string>tongueOut</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="TongueLeftMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>400</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
       <widget class="QLabel" name="label_31">
        <property name="geometry">
         <rect>
@@ -678,26 +432,6 @@
        </property>
        <property name="text">
         <string>tongueRight</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="TongueRightMax">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>440</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="TongueRightMin">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>440</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
        </property>
       </widget>
       <widget class="QProgressBar" name="CheekPullLeftValue">
@@ -856,6 +590,162 @@
         <number>24</number>
        </property>
       </widget>
+      <widget class="QScrollBar" name="CheekPuffLeftBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>10</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="CheekPuffRightBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>50</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="JawOpenBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>90</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="JawLeftBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>130</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="MouthLeftBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>210</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="JawRightBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>170</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="TongueOutBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>290</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="MouthRightBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>250</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="TongueDownBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>370</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="TongueUpBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>330</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="TongueRightBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>450</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="TongueLeftBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>410</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
      </widget>
     </widget>
     <widget class="QPushButton" name="StartCalibrationButton">
@@ -868,7 +758,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>开始标定</string>
+      <string>开始标定(开发中)</string>
      </property>
     </widget>
     <widget class="QComboBox" name="CalibrationModeComboBox">
@@ -890,32 +780,6 @@
        <string>Full模式</string>
       </property>
      </item>
-    </widget>
-    <widget class="QPushButton" name="ResetMaxButton">
-     <property name="geometry">
-      <rect>
-       <x>650</x>
-       <y>80</y>
-       <width>131</width>
-       <height>41</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>重置最大值</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="ResetMinButton">
-     <property name="geometry">
-      <rect>
-       <x>510</x>
-       <y>80</y>
-       <width>131</width>
-       <height>41</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>重置最小值</string>
-     </property>
     </widget>
     <widget class="QLabel" name="ImageLabelCal">
      <property name="geometry">

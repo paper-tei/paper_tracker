@@ -31,10 +31,8 @@ private slots:
     void onRotateAngleChanged(int value);
     void onUseUserCameraClicked(int value);
     void onRestartButtonClicked();
-    void onSSIDTextFocusIn();
-    void onSSIDTextFocusOut();
-    void onPasswordTextFocusIn();
-    void onPasswordTextFocusOut();
+
+
 private:
     QTimer* brightness_timer;
 
