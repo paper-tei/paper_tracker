@@ -413,6 +413,9 @@ void PaperTrackMainWindow::onSendButtonClicked() {
 
     // 记录操作
     LOG_INFO("已发送WiFi配置: SSID=" + ssid + ", PWD=" + password);
+
+    LOG_INFO("开始自动重启ESP32...");
+    restartESP32();
 }
 
 void PaperTrackMainWindow::onBrightnessChanged(int value) {
