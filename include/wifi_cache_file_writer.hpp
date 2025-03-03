@@ -5,25 +5,34 @@
 #ifndef FILE_WRITER_HPP
 #define FILE_WRITER_HPP
 
+#include <filesystem>
 #include <fstream>
 #include <optional>
+#include <windows.h>
 
 class WifiCacheFileWriter {
 public:
-  WifiCacheFileWriter(const std::string& file_path) {
-    file_.open(file_path, std::ios::in | std::ios::out);
-    if (!file_.is_open()) {
-      file_.open(file_path, std::ios::in | std::ios::out | std::ios::trunc);
+  WifiCacheFileWriter(const std::string& file_path) : file_path_(file_path)
+  {
+    // create file if not exists
+    if (!std::filesystem::exists(file_path_)) {
+      std::ofstream file(file_path_);
+      if (!file.is_open()) {
+        std::cerr << "Error: Creating file failed!\n";
+        return;
+      }
     }
   }
 
   std::optional<std::string> try_get_wifi_config() {
-    if (!file_.is_open()) {
+    std::ifstream file(file_path_);
+    if (!file.is_open()) {
+      std::cerr << "Error: Opening file failed!\n";
       return std::nullopt;
     }
-    file_.seekg(0);
+    file.seekg(std::ios_base::beg);
     std::string ip;
-    file_ >> ip;
+    file.read(ip.data(), ip.size());
     return ip;
   }
 
@@ -32,15 +41,21 @@ public:
     if (config.has_value() && config.value() == ip) {
       return;
     }
-    if (!file_.is_open()) {
+    std::ofstream file(file_path_);
+    if (!file.is_open()) {
+      std::cerr << "Error: Opening file failed!\n";
       return;
     }
-    file_.seekp(0);
-    file_ << ip;
+    file << ip;
+    if (file.fail()) {
+      std::cerr << "Error: Writing to file failed!\n";
+      return ;
+    }
+    file.flush();
   }
 
 private:
-  std::fstream file_;
+  std::string file_path_;
 };
 
 
