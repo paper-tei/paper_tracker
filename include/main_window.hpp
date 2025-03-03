@@ -49,6 +49,8 @@ private:
 
     // 初始化ARKit模型输出的映射表
     void initBlendShapeIndexMap();
+    void start_image_download();
+
     // UI组件
     Ui::PaperTrackerMainWindow ui{};
 
