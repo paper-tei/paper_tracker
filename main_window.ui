@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>PaperTrack</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <widget class="QStackedWidget" name="stackedWidget">
    <property name="geometry">
     <rect>
@@ -68,10 +71,10 @@
     <widget class="QScrollBar" name="BrightnessBar">
      <property name="geometry">
       <rect>
-       <x>460</x>
-       <y>140</y>
+       <x>450</x>
+       <y>150</y>
        <width>261</width>
-       <height>31</height>
+       <height>20</height>
       </rect>
      </property>
      <property name="orientation">
@@ -82,9 +85,9 @@
      <property name="geometry">
       <rect>
        <x>390</x>
-       <y>140</y>
+       <y>150</y>
        <width>51</width>
-       <height>31</height>
+       <height>21</height>
       </rect>
      </property>
      <property name="text">
