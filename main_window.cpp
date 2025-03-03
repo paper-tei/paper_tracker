@@ -88,13 +88,13 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
             roi_rect.y = 0;
         }
         // if roi is bigger than image, resize rect
-        if (roi_rect.x + roi_rect.width > 240)
+        if (roi_rect.x + roi_rect.width > 280)
         {
-            roi_rect.width = 240 - roi_rect.x;
+            roi_rect.width = 280 - roi_rect.x;
         }
-        if (roi_rect.y + roi_rect.height > 240)
+        if (roi_rect.y + roi_rect.height > 280)
         {
-            roi_rect.height = 240 - roi_rect.y;
+            roi_rect.height = 280 - roi_rect.y;
         }
     },ui.ImageLabel);
     ui.ImageLabel->installEventFilter(roiFilter);
@@ -218,7 +218,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 // 推理处理
                 if (image_captured)
                 {
-                    cv::resize(frame, frame, cv::Size(240, 240));
+                    cv::resize(frame, frame, cv::Size(280, 280));
                     if (image_updated)
                     {
                         int y = frame.rows / 2;
@@ -254,7 +254,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 } else
                 {
                     // default image which displays: "没有图像载入“
-                    cv::Mat default_frame = cv::Mat::zeros(240, 240, CV_8UC3);
+                    cv::Mat default_frame = cv::Mat::zeros(280, 280, CV_8UC3);
                     default_frame = cv::Scalar(255, 255, 255);
                     cv::putText(default_frame, "No Image Loaded", cv::Point(10, 100), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 0), 2);
                     qimage = QImage(default_frame.data, default_frame.cols, default_frame.rows, default_frame.step, QImage::Format_RGB888).copy();
