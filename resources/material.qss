@@ -6,6 +6,9 @@ Company: GTRONICK
 Last updated: 04/12/2018, 15:00.
 Available at: https://github.com/GTRONICK/QSS/blob/master/MaterialDark.qss
 */
+QWidget {
+	background-color:#2F343F;
+}
 QMainWindow {
 	background-color:#1e1d23;
 }
@@ -387,4 +390,103 @@ QSlider::sub-page:horizontal {
 }
 QSlider::sub-page:vertical {
     background: #04b97f;
+}
+
+QScrollBar:vertical{
+    margin:16px 0px 16px 0px;
+    background-color:rgb(11,54,117);
+    border: 0px solid rgb(11,54,117);
+    width:14px;
+}
+
+QScrollBar::handle:vertical{
+    background-color:#a9b7c6;
+    border-radius:7px;
+    width:13px;
+}
+
+QScrollBar::handle:vertical:hover{
+    background-color:#cbd4dd;
+}
+
+QScrollBar::sub-line:vertical{
+    subcontrol-position:top;
+    subcontrol-origin:margin;
+    background-color:transparent;
+    border:1px solid transparent;
+    height:16px;
+}
+
+QScrollBar::add-line:vertical{
+    subcontrol-position:bottom;
+    subcontrol-origin:margin;
+    background-color:transparent;
+    border:1px solid transparent;
+    height:16px;
+}
+
+QScrollBar::up-arrow:vertical{
+    width:12px;
+    height:6px;
+}
+
+QScrollBar::down-arrow:vertical{
+    width:12px;
+    height:6px;
+}
+
+QScrollBar::sub-page:vertical,QScrollBar::add-page:vertical{
+    background-color:#1E1D23;
+}
+
+QScrollBar:horizontal{
+    margin:0px 16px 0px 16px;
+    background-color:rgb(11,54,117);
+    border:none;
+    height:14px;
+}
+
+QScrollBar::handle:horizontal{
+    background-color:#a9b7c6;
+    border-radius:7px;
+    height:18px;
+}
+
+QScrollBar::handle:horizontal:hover{
+    background-color:#cbd4dd;
+}
+
+QScrollBar::add-line:horizontal{
+    subcontrol-position: right;
+    subcontrol-origin:margin;
+    background-color:transparent;
+    border:1px solid transparent;
+    height:12px;
+    width:6px;
+}
+
+QScrollBar::sub-line:horizontal{
+    subcontrol-position: left;
+    subcontrol-origin:margin;
+    background-color:transparent;
+    border:1px solid transparent;
+    height:12px;
+    width:6px;
+
+}
+
+QScrollBar::left-arrow:horizontal{
+    border-image:url(:/commonImg/Resources/image/common/arrowLeft.png);
+    width:6px;
+    height:12px;
+}
+
+QScrollBar::right-arrow:horizontal{
+    border-image:url(:/commonImg/Resources/image/common/arrowRight.png);
+    width:6px;
+    height:12px;
+}
+
+QScrollBar::sub-page:horizontal,QScrollBar::add-page:horizontal{
+    background-color:#1E1D23;
 }
