@@ -10,6 +10,7 @@ int main(int argc, char *argv[]) {
     curl_easy_init();
 
     PaperTrackMainWindow window;
+    window.setWindowIcon(QIcon("./resources/window_icon.png"));  // 设置窗口图标
     window.show();
 
     return QApplication::exec();

@@ -24,7 +24,7 @@ void Inference::load_model(const std::string &model_path) {
         std::string actual_model_path = model_path.empty() ? "D:/Babble/model/model.onnx" : model_path;
 
         if (!file_exists(actual_model_path)) {
-            std::cerr << "错误：模型文件不存在: " << actual_model_path << std::endl;
+            LOG_ERROR("错误：模型文件不存在: " + QString(actual_model_path.c_str()));
             return;
         }
 
@@ -62,12 +62,11 @@ void Inference::load_model(const std::string &model_path) {
         // 提前分配内存
         allocate_buffers();
 
-        std::cout << "模型加载完成" << std::endl;
-
+        LOG_INFO("模型加载完成");
     } catch (const Ort::Exception& e) {
-        std::cerr << "ONNX Runtime 错误: " << e.what() << std::endl;
+        LOG_ERROR("ONNX Runtime 错误: " + QString(e.what()));
     } catch (const std::exception& e) {
-        std::cerr << "标准异常: " << e.what() << std::endl;
+        LOG_ERROR("标准异常: " + QString(e.what()));
     }
 }
 
@@ -237,7 +236,7 @@ void Inference::run_model() {
         process_results();
 
     } catch (const std::exception& e) {
-        std::cerr << "推理错误: " << e.what() << std::endl;
+        LOG_ERROR("推理错误: " + QString(e.what()));
     }
 }
 
@@ -265,7 +264,7 @@ void Inference::process_results() {
         // 例如: 解析输出数据，更新结果等
 
     } catch (const std::exception& e) {
-        std::cerr << "处理结果出错: " << e.what() << std::endl;
+        LOG_ERROR("处理结果出错: " + QString(e.what()));
     }
 }
 
@@ -299,7 +298,7 @@ std::vector<float> Inference::get_output() const
         return result;
     }
     catch (const std::exception& e) {
-        std::cerr << "获取输出数据错误: " << e.what() << std::endl;
+        LOG_ERROR("获取输出数据错误: " + QString(e.what()));
         return std::vector<float>();
     }
 }

@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include "ip/UdpSocket.h"
+#include "logger.hpp"
 
 // 前向声明oscpack类
 

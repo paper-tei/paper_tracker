@@ -7,6 +7,7 @@
 #include <atomic>
 #include <functional>
 #include <opencv2/core.hpp>
+#include "logger.hpp"
 
 // 前向声明
 typedef void CURL;

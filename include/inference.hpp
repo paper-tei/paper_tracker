@@ -10,6 +10,7 @@
 #include <vector>
 #include <opencv2/core.hpp>
 #include <onnxruntime_cxx_api.h>
+#include "logger.hpp"
 
 class Inference {
 public:
