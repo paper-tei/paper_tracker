@@ -453,6 +453,8 @@ void PaperTrackMainWindow::onSendButtonClicked() {
     LOG_INFO("已发送WiFi配置: SSID=" + ssid + ", PWD=" + password);
 
     LOG_INFO("开始自动重启ESP32...");
+    //延时
+    cv::waitKey(1000);
     restartESP32();
 }
 

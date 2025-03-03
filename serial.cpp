@@ -35,7 +35,7 @@ void SerialPortManager::init()
         LOG_WARN("无法找到ESP32-S3设备，尝试使用默认端口COM101");
         hSerial = initSerialPort(COM_PORT);
     } else {
-        portName = "COM5";
+        //portName = "COM5";
         currentPort = portName;
         // 转换为宽字符串
         std::wstring wPortName(L"\\\\.\\");
@@ -519,7 +519,8 @@ void SerialPortManager::processReceivedData(std::string& receivedData) {
             LOG_INFO("[补光灯设置] 调整亮度");
             break;
         default:
-            LOG_WARN("[未知数据包]: " + QString(packet.c_str()));
+            ;
+            //LOG_WARN("[未知数据包]: " + QString(packet.c_str()));
         }
     }
 }
@@ -544,7 +545,7 @@ PacketType SerialPortManager::parsePacket(const std::string& packet)
 {
     // 先将收到的字符串去除首尾空白（例如换行符、空格）
     std::string trimmedPacket = trim(packet);
-    LOG_DEBUG("Parsing packet: [" + QString(trimmedPacket.c_str()) + "]");
+    //LOG_DEBUG("Parsing packet: [" + QString(trimmedPacket.c_str()) + "]");
 
     // 基本验证：检查包格式是否有效（A开头，B结尾加数字）
     if (trimmedPacket.length() < 3 || trimmedPacket[0] != 'A' ||
@@ -640,7 +641,7 @@ PacketType SerialPortManager::parsePacket(const std::string& packet)
         default:
             break;
     }
-    LOG_DEBUG("未匹配任何数据包类型: " + QString(packetType));
+    //LOG_DEBUG("未匹配任何数据包类型: " + QString(packetType));
     return PACKET_UNKNOWN;
 }
 void SerialPortManager::sendWiFiConfig(HANDLE hSerial, const std::string& ssid, const std::string& pwd)
