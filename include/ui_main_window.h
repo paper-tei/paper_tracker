@@ -43,6 +43,8 @@ public:
     QPushButton *restart_Button;
     QLabel *SerialConnectLabel;
     QLabel *WifiConnectLabel;
+    QLabel *label_17;
+    QScrollBar *RotateImageBar;
     QWidget *page_2;
     QLabel *label_3;
     QLabel *label_4;
@@ -100,7 +102,7 @@ public:
     QComboBox *CalibrationModeComboBox;
     QPushButton *ResetMaxButton;
     QPushButton *ResetMinButton;
-    QLabel *label_29;
+    QLabel *ImageLabelCal;
     QPushButton *MainPageButton;
     QPushButton *CalibrationPageButton;
 
@@ -109,6 +111,7 @@ public:
         if (PaperTrackerMainWindow->objectName().isEmpty())
             PaperTrackerMainWindow->setObjectName("PaperTrackerMainWindow");
         PaperTrackerMainWindow->resize(835, 553);
+        PaperTrackerMainWindow->setStyleSheet(QString::fromUtf8(""));
         stackedWidget = new QStackedWidget(PaperTrackerMainWindow);
         stackedWidget->setObjectName("stackedWidget");
         stackedWidget->setGeometry(QRect(0, 50, 841, 491));
@@ -116,50 +119,57 @@ public:
         page->setObjectName("page");
         ImageLabel = new QLabel(page);
         ImageLabel->setObjectName("ImageLabel");
-        ImageLabel->setGeometry(QRect(0, 0, 371, 261));
+        ImageLabel->setGeometry(QRect(0, 0, 280, 280));
         SSIDText = new QPlainTextEdit(page);
         SSIDText->setObjectName("SSIDText");
-        SSIDText->setGeometry(QRect(390, 30, 221, 41));
+        SSIDText->setGeometry(QRect(310, 10, 221, 41));
         PasswordText = new QPlainTextEdit(page);
         PasswordText->setObjectName("PasswordText");
-        PasswordText->setGeometry(QRect(390, 80, 221, 41));
+        PasswordText->setGeometry(QRect(310, 60, 221, 41));
         BrightnessBar = new QScrollBar(page);
         BrightnessBar->setObjectName("BrightnessBar");
-        BrightnessBar->setGeometry(QRect(450, 150, 261, 20));
+        BrightnessBar->setGeometry(QRect(370, 130, 261, 20));
         BrightnessBar->setOrientation(Qt::Orientation::Horizontal);
         label = new QLabel(page);
         label->setObjectName("label");
-        label->setGeometry(QRect(390, 150, 51, 21));
+        label->setGeometry(QRect(310, 130, 51, 21));
         wifi_send_Button = new QPushButton(page);
         wifi_send_Button->setObjectName("wifi_send_Button");
-        wifi_send_Button->setGeometry(QRect(630, 30, 91, 91));
+        wifi_send_Button->setGeometry(QRect(550, 10, 91, 91));
         FlashFirmwareButton = new QPushButton(page);
         FlashFirmwareButton->setObjectName("FlashFirmwareButton");
-        FlashFirmwareButton->setGeometry(QRect(730, 30, 91, 31));
+        FlashFirmwareButton->setGeometry(QRect(650, 10, 91, 31));
         LogText = new QPlainTextEdit(page);
         LogText->setObjectName("LogText");
         LogText->setGeometry(QRect(10, 310, 821, 171));
         LogText->setReadOnly(true);
         label_2 = new QLabel(page);
         label_2->setObjectName("label_2");
-        label_2->setGeometry(QRect(10, 270, 111, 31));
+        label_2->setGeometry(QRect(10, 291, 111, 20));
         textEdit = new QTextEdit(page);
         textEdit->setObjectName("textEdit");
-        textEdit->setGeometry(QRect(390, 220, 221, 41));
+        textEdit->setGeometry(QRect(310, 240, 221, 41));
         textEdit->setReadOnly(true);
         label_16 = new QLabel(page);
         label_16->setObjectName("label_16");
-        label_16->setGeometry(QRect(390, 180, 51, 31));
+        label_16->setGeometry(QRect(310, 210, 51, 31));
         restart_Button = new QPushButton(page);
         restart_Button->setObjectName("restart_Button");
-        restart_Button->setGeometry(QRect(730, 70, 91, 31));
+        restart_Button->setGeometry(QRect(650, 50, 91, 31));
         SerialConnectLabel = new QLabel(page);
         SerialConnectLabel->setObjectName("SerialConnectLabel");
-        SerialConnectLabel->setGeometry(QRect(390, 270, 71, 31));
+        SerialConnectLabel->setGeometry(QRect(660, 210, 71, 31));
         SerialConnectLabel->setTextFormat(Qt::TextFormat::AutoText);
         WifiConnectLabel = new QLabel(page);
         WifiConnectLabel->setObjectName("WifiConnectLabel");
-        WifiConnectLabel->setGeometry(QRect(520, 270, 71, 31));
+        WifiConnectLabel->setGeometry(QRect(660, 250, 71, 31));
+        label_17 = new QLabel(page);
+        label_17->setObjectName("label_17");
+        label_17->setGeometry(QRect(310, 160, 81, 21));
+        RotateImageBar = new QScrollBar(page);
+        RotateImageBar->setObjectName("RotateImageBar");
+        RotateImageBar->setGeometry(QRect(390, 160, 261, 20));
+        RotateImageBar->setOrientation(Qt::Orientation::Horizontal);
         stackedWidget->addWidget(page);
         page_2 = new QWidget();
         page_2->setObjectName("page_2");
@@ -171,8 +181,8 @@ public:
         label_4->setGeometry(QRect(240, 10, 53, 15));
         scrollArea = new QScrollArea(page_2);
         scrollArea->setObjectName("scrollArea");
-        scrollArea->setGeometry(QRect(0, 30, 641, 441));
-        scrollArea->setMinimumSize(QSize(641, 441));
+        scrollArea->setGeometry(QRect(0, 30, 500, 441));
+        scrollArea->setMinimumSize(QSize(500, 441));
         scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAsNeeded);
         scrollArea->setWidgetResizable(false);
         scrollAreaWidgetContents = new QWidget();
@@ -338,21 +348,21 @@ public:
         scrollArea->setWidget(scrollAreaWidgetContents);
         StartCalibrationButton = new QPushButton(page_2);
         StartCalibrationButton->setObjectName("StartCalibrationButton");
-        StartCalibrationButton->setGeometry(QRect(660, 30, 131, 41));
+        StartCalibrationButton->setGeometry(QRect(510, 30, 131, 41));
         CalibrationModeComboBox = new QComboBox(page_2);
         CalibrationModeComboBox->addItem(QString());
         CalibrationModeComboBox->addItem(QString());
         CalibrationModeComboBox->setObjectName("CalibrationModeComboBox");
-        CalibrationModeComboBox->setGeometry(QRect(660, 110, 131, 31));
+        CalibrationModeComboBox->setGeometry(QRect(650, 30, 131, 41));
         ResetMaxButton = new QPushButton(page_2);
         ResetMaxButton->setObjectName("ResetMaxButton");
-        ResetMaxButton->setGeometry(QRect(660, 430, 131, 41));
+        ResetMaxButton->setGeometry(QRect(650, 80, 131, 41));
         ResetMinButton = new QPushButton(page_2);
         ResetMinButton->setObjectName("ResetMinButton");
-        ResetMinButton->setGeometry(QRect(660, 380, 131, 41));
-        label_29 = new QLabel(page_2);
-        label_29->setObjectName("label_29");
-        label_29->setGeometry(QRect(660, 90, 91, 16));
+        ResetMinButton->setGeometry(QRect(510, 80, 131, 41));
+        ImageLabelCal = new QLabel(page_2);
+        ImageLabelCal->setObjectName("ImageLabelCal");
+        ImageLabelCal->setGeometry(QRect(510, 190, 280, 280));
         stackedWidget->addWidget(page_2);
         MainPageButton = new QPushButton(PaperTrackerMainWindow);
         MainPageButton->setObjectName("MainPageButton");
@@ -363,7 +373,7 @@ public:
 
         retranslateUi(PaperTrackerMainWindow);
 
-        stackedWidget->setCurrentIndex(0);
+        stackedWidget->setCurrentIndex(1);
 
 
         QMetaObject::connectSlotsByName(PaperTrackerMainWindow);
@@ -383,6 +393,7 @@ public:
         restart_Button->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\351\207\215\345\220\257", nullptr));
         SerialConnectLabel->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\344\270\262\345\217\243\346\234\252\350\277\236\346\216\245", nullptr));
         WifiConnectLabel->setText(QCoreApplication::translate("PaperTrackerMainWindow", "wifi\346\234\252\350\277\236\346\216\245", nullptr));
+        label_17->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\227\213\350\275\254\350\247\222\345\272\246\350\260\203\346\225\264", nullptr));
         label_3->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\234\200\345\260\217\345\200\274", nullptr));
         label_4->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\234\200\345\244\247\345\200\274", nullptr));
         label_5->setText(QCoreApplication::translate("PaperTrackerMainWindow", "cheekPuffLeft", nullptr));
@@ -403,7 +414,7 @@ public:
 
         ResetMaxButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\351\207\215\347\275\256\346\234\200\345\244\247\345\200\274", nullptr));
         ResetMinButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\351\207\215\347\275\256\346\234\200\345\260\217\345\200\274", nullptr));
-        label_29->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\240\207\345\256\232\346\250\241\345\274\217\351\200\211\346\213\251", nullptr));
+        ImageLabelCal->setText(QString());
         MainPageButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\344\270\273\351\241\265\351\235\242", nullptr));
         CalibrationPageButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\240\207\345\256\232\351\241\265\351\235\242", nullptr));
     } // retranslateUi
