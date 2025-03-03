@@ -295,7 +295,9 @@ std::vector<float> Inference::get_output()
 
         if (use_filter)
         {
+#ifdef DEBUG
             float raw = result[4];
+#endif
             if (last_use_filter != use_filter)
             {
                 last_use_filter = use_filter;
@@ -306,8 +308,10 @@ std::vector<float> Inference::get_output()
             auto measure = cv::Mat(cv::Size(1, 45), CV_32F, result.data());
             kalman_filter_.correct(measure.clone());
             result = kalman_filter_.state_post_.clone();
+#ifdef DEBUG
             float filtered = result[4];
             plot_curve(raw, filtered);
+#endif
         }
 
         return result;

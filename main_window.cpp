@@ -35,8 +35,6 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     ui.WifiConnectLabel->setText("Wifi未连接");
 
     // 初始化亮度控制相关成员
-    brightness_timer = new QTimer(this);
-    brightness_timer->setSingleShot(true);
     current_brightness = 0;
     // 连接信号和槽
     connect_callbacks();
@@ -808,7 +806,7 @@ void PaperTrackMainWindow::AmpMapToOutput(std::vector<float>& output)
             if (blendShapeAmpMap[blendShapes[i]] != 0)
             {
                 output[i] = output[i] * (blendShapeAmpMap[blendShapes[i]] * 0.02 + 1);
-                output[i] = min(1, output[i]);
+                output[i] = min(1.0f, output[i]);
             }
         }
     }
@@ -821,6 +819,9 @@ void PaperTrackMainWindow::onUseFilterClicked(int value)
 
 void PaperTrackMainWindow::connect_callbacks()
 {
+    brightness_timer = new QTimer(this);
+    brightness_timer->setSingleShot(true);
+
     connect(brightness_timer, &QTimer::timeout, this, &PaperTrackMainWindow::sendBrightnessValue);
     // functions
     connect(ui.wifi_send_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);

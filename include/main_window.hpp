@@ -8,6 +8,8 @@
 #include <thread>
 #include <future>
 #include <atomic>
+#include <algorithm>
+#include <QTimer>
 
 #include "ui_main_window.h"
 #include "video_reader.hpp"
@@ -71,7 +73,6 @@ private:
     std::vector<std::string> blendShapes;
     // 初始化ARKit模型输出的映射表
     void initBlendShapeIndexMap();
-
 
     void start_image_download();
 
