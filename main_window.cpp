@@ -28,10 +28,10 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     connect(brightness_timer, &QTimer::timeout, this, &PaperTrackMainWindow::sendBrightnessValue);
     current_brightness = 0;
     // 连接UI信号槽
-    connect(ui.pushButton, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
+    connect(ui.wifi_send_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
     connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
     connect(ui.FlashFirmwareButton, &QPushButton::clicked, this, &PaperTrackMainWindow::flashESP32);
-
+    connect(ui.restart_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onRestartButtonClicked);
     // 添加输入框焦点事件处理
     ui.SSIDText->installEventFilter(this);
     ui.PasswordText->installEventFilter(this);
@@ -289,7 +289,101 @@ PaperTrackMainWindow::~PaperTrackMainWindow() {
     // 其他清理工作
     ui.LogText->appendPlainText("系统已安全关闭");
 }
+// 新增的重启按钮处理函数
+void PaperTrackMainWindow::onRestartButtonClicked() {
+    // 调用restartESP32函数
+    restartESP32();
+}
+// 新增的重启ESP32函数实现
+void PaperTrackMainWindow::restartESP32() {
+    // 记录操作
+    ui.LogText->appendPlainText("准备重启ESP32设备...");
+    serial_port_manager_.stop();
 
+    try {
+        // 从SerialPortManager获取端口名
+        std::string port = getPortFromSerialManager();
+        if (port.empty()) {
+            port = "COM2"; // 默认端口
+        }
+
+        ui.LogText->appendPlainText("使用端口: " + QString::fromStdString(port));
+
+        // 构造完整的命令路径
+        QString appDir = QCoreApplication::applicationDirPath();
+        QString esptoolPath = "\"" + appDir + "/esptool.exe\"";
+
+        // 构造重启命令 - 只执行重启操作
+        QString commandStr = QString("\"%1/esptool.exe\" --port %2 run")
+            .arg(appDir)
+            .arg(port.c_str());
+        ui.LogText->appendPlainText("执行重启命令: " + commandStr);
+
+        // 创建进度窗口
+        QProgressDialog progress("正在重启设备，请稍候...", "取消", 0, 0, this);
+        progress.setWindowTitle("设备重启");
+        progress.setWindowModality(Qt::WindowModal);
+        progress.setMinimumDuration(0);
+        progress.setValue(0);
+        progress.setMaximum(0); // 设置为0表示未知进度
+
+        // 使用QProcess执行命令
+        QProcess process;
+
+        // 捕获标准输出和错误输出
+        connect(&process, &QProcess::readyReadStandardOutput, [&]() {
+            QString output = process.readAllStandardOutput();
+            ui.LogText->appendPlainText(output.trimmed());
+        });
+
+        connect(&process, &QProcess::readyReadStandardError, [&]() {
+            QString error = process.readAllStandardError();
+            ui.LogText->appendPlainText("错误: " + error.trimmed());
+        });
+
+        // 绑定取消按钮
+        connect(&progress, &QProgressDialog::canceled, [&]() {
+            process.kill();
+            ui.LogText->appendPlainText("用户取消了设备重启");
+        });
+
+        // 启动进程
+        process.start(commandStr);
+
+        // 等待进程启动
+        if (!process.waitForStarted(3000)) {
+            ui.LogText->appendPlainText("无法启动esptool.exe: " + process.errorString());
+            QMessageBox::critical(this, "启动失败", "无法启动esptool.exe: " + process.errorString());
+            return;
+        }
+
+        ui.LogText->appendPlainText("重启进程已启动，请等待完成...");
+
+        // 使用事件循环等待进程完成，同时保持UI响应
+        QEventLoop loop;
+        connect(&process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), &loop, &QEventLoop::quit);
+        loop.exec();
+
+        // 进程完成
+        progress.setValue(100);
+
+        // 处理结果
+        if (process.exitCode() == 0) {
+            ui.LogText->appendPlainText("设备重启成功！");
+            QMessageBox::information(this, "重启完成", "ESP32设备重启成功！");
+        } else {
+            ui.LogText->appendPlainText("设备重启失败，退出码: " + QString::number(process.exitCode()));
+            QMessageBox::critical(this, "重启失败", "ESP32设备重启失败，请检查连接！");
+        }
+
+        // 重新初始化和启动串口
+        serial_port_manager_.init();
+        serial_port_manager_.start();
+    } catch (const std::exception& e) {
+        ui.LogText->appendPlainText("发生异常: " + QString(e.what()));
+        QMessageBox::critical(this, "错误", "重启过程中发生异常: " + QString(e.what()));
+    }
+}
 void PaperTrackMainWindow::bound_pages() {
     // 页面导航逻辑
     connect(ui.MainPageButton, &QPushButton::clicked, [this] {

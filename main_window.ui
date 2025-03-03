@@ -91,7 +91,7 @@
       <string>亮度调整</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="wifi_send_Button">
      <property name="geometry">
       <rect>
        <x>630</x>
@@ -167,6 +167,19 @@
      </property>
      <property name="text">
       <string>IP地址：</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="restart_Button">
+     <property name="geometry">
+      <rect>
+       <x>730</x>
+       <y>70</y>
+       <width>91</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>重启</string>
      </property>
     </widget>
    </widget>
