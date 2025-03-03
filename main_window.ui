@@ -222,18 +222,18 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
+        <y>-73</y>
         <width>639</width>
-        <height>1000</height>
+        <height>500</height>
        </rect>
       </property>
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>1000</height>
+        <height>500</height>
        </size>
       </property>
-      <widget class="QPlainTextEdit" name="plainTextEdit_3">
+      <widget class="QPlainTextEdit" name="CheekPullRightMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -243,7 +243,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_17">
+      <widget class="QPlainTextEdit" name="TongueUpMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -253,7 +253,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_15">
+      <widget class="QPlainTextEdit" name="TongueOutMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -276,7 +276,7 @@
         <string>cheekPuffLeft</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_2">
+      <widget class="QPlainTextEdit" name="CheekPullLeftMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -296,7 +296,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>jawRight</string>
+        <string>mouthLeft</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_13">
@@ -309,7 +309,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>mouthFunnel</string>
+        <string>tongueUp</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_6">
@@ -335,10 +335,10 @@
         </rect>
        </property>
        <property name="text">
-        <string>mouthLeft</string>
+        <string>tongueLeft</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_7">
+      <widget class="QPlainTextEdit" name="JawLeftMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -348,7 +348,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_18">
+      <widget class="QPlainTextEdit" name="TongueUpMin">
        <property name="geometry">
         <rect>
          <x>110</x>
@@ -358,7 +358,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_21">
+      <widget class="QPlainTextEdit" name="TongueLeftMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -368,7 +368,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_19">
+      <widget class="QPlainTextEdit" name="TongueDownMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -391,7 +391,7 @@
         <string>jawOpen</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_13">
+      <widget class="QPlainTextEdit" name="MouthRightMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -401,7 +401,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_16">
+      <widget class="QPlainTextEdit" name="TongueOutMin">
        <property name="geometry">
         <rect>
          <x>110</x>
@@ -411,7 +411,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_20">
+      <widget class="QPlainTextEdit" name="TongueDownMin">
        <property name="geometry">
         <rect>
          <x>110</x>
@@ -421,7 +421,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_9">
+      <widget class="QPlainTextEdit" name="JawRightMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -441,10 +441,10 @@
         </rect>
        </property>
        <property name="text">
-        <string>noseSneefLeft</string>
+        <string>mouthRight</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_8">
+      <widget class="QPlainTextEdit" name="JawLeftMin">
        <property name="geometry">
         <rect>
          <x>110</x>
@@ -464,10 +464,10 @@
         </rect>
        </property>
        <property name="text">
-        <string>jawLeft</string>
+        <string>jawRight</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_4">
+      <widget class="QPlainTextEdit" name="CheekPullRightMin">
        <property name="geometry">
         <rect>
          <x>110</x>
@@ -477,7 +477,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_6">
+      <widget class="QPlainTextEdit" name="JawOpenMin">
        <property name="geometry">
         <rect>
          <x>110</x>
@@ -497,10 +497,10 @@
         </rect>
        </property>
        <property name="text">
-        <string>mouthPucker</string>
+        <string>tongueDown</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_10">
+      <widget class="QPlainTextEdit" name="JawRightMin">
        <property name="geometry">
         <rect>
          <x>110</x>
@@ -510,7 +510,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_11">
+      <widget class="QPlainTextEdit" name="MouthLeftMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -530,10 +530,10 @@
         </rect>
        </property>
        <property name="text">
-        <string>jawForward</string>
+        <string>jawLeft</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit">
+      <widget class="QPlainTextEdit" name="CheekPullLeftMin">
        <property name="geometry">
         <rect>
          <x>110</x>
@@ -543,7 +543,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_12">
+      <widget class="QPlainTextEdit" name="MouthLeftMin">
        <property name="geometry">
         <rect>
          <x>110</x>
@@ -553,7 +553,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_14">
+      <widget class="QPlainTextEdit" name="MouthRightMin">
        <property name="geometry">
         <rect>
          <x>110</x>
@@ -563,7 +563,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_5">
+      <widget class="QPlainTextEdit" name="JawOpenMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -583,47 +583,14 @@
         </rect>
        </property>
        <property name="text">
-        <string>noseSneefRight</string>
+        <string>tongueOut</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_22">
+      <widget class="QPlainTextEdit" name="TongueLeftMin">
        <property name="geometry">
         <rect>
          <x>110</x>
          <y>400</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_45">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>560</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_30">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>570</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_46">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>480</y>
          <width>81</width>
          <height>31</height>
         </rect>
@@ -639,20 +606,10 @@
         </rect>
        </property>
        <property name="text">
-        <string>cheekPuffLeft</string>
+        <string>tongueRight</string>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_47">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>560</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_48">
+      <widget class="QPlainTextEdit" name="TongueRightMax">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -662,30 +619,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_49">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>480</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_32">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>490</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_50">
+      <widget class="QPlainTextEdit" name="TongueRightMin">
        <property name="geometry">
         <rect>
          <x>110</x>
@@ -695,304 +629,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_51">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>520</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_33">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>530</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_52">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>520</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_53">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>720</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_34">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>730</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_54">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>640</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_35">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>610</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_55">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>720</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_56">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>600</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_57">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>640</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_36">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>650</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_58">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>600</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_59">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>680</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_37">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>690</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_60">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>680</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_61">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>880</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_38">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>890</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_62">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>800</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_39">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>770</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_63">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>880</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_64">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>760</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_65">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>800</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_40">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>810</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_66">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>760</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_67">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>840</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_41">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>850</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>cheekPuffLeft</string>
-       </property>
-      </widget>
-      <widget class="QPlainTextEdit" name="plainTextEdit_68">
-       <property name="geometry">
-        <rect>
-         <x>110</x>
-         <y>840</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar">
+      <widget class="QProgressBar" name="CheekPullLeftValue">
        <property name="geometry">
         <rect>
          <x>350</x>
@@ -1005,7 +642,7 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="progressBar_2">
+      <widget class="QProgressBar" name="CheekPullRightValue">
        <property name="geometry">
         <rect>
          <x>350</x>
@@ -1018,7 +655,7 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="progressBar_3">
+      <widget class="QProgressBar" name="JawLeftValue">
        <property name="geometry">
         <rect>
          <x>350</x>
@@ -1031,7 +668,7 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="progressBar_4">
+      <widget class="QProgressBar" name="JawOpenValue">
        <property name="geometry">
         <rect>
          <x>350</x>
@@ -1044,7 +681,7 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="progressBar_5">
+      <widget class="QProgressBar" name="MouthLeftValue">
        <property name="geometry">
         <rect>
          <x>350</x>
@@ -1057,7 +694,7 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="progressBar_6">
+      <widget class="QProgressBar" name="JawRightValue">
        <property name="geometry">
         <rect>
          <x>350</x>
@@ -1070,7 +707,7 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="progressBar_7">
+      <widget class="QProgressBar" name="TongueOutValue">
        <property name="geometry">
         <rect>
          <x>350</x>
@@ -1083,7 +720,7 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="progressBar_8">
+      <widget class="QProgressBar" name="MouthRightValue">
        <property name="geometry">
         <rect>
          <x>350</x>
@@ -1096,7 +733,7 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="progressBar_9">
+      <widget class="QProgressBar" name="TongueDownValue">
        <property name="geometry">
         <rect>
          <x>350</x>
@@ -1109,7 +746,7 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="progressBar_10">
+      <widget class="QProgressBar" name="TongueUpValue">
        <property name="geometry">
         <rect>
          <x>350</x>
@@ -1122,7 +759,7 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="progressBar_11">
+      <widget class="QProgressBar" name="TongueRightValue">
        <property name="geometry">
         <rect>
          <x>350</x>
@@ -1135,154 +772,11 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="progressBar_12">
+      <widget class="QProgressBar" name="TongueLeftValue">
        <property name="geometry">
         <rect>
          <x>350</x>
          <y>400</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar_13">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>520</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar_14">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>480</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar_15">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>600</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar_16">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>560</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar_17">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>680</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar_18">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>640</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar_19">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>760</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar_20">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>720</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar_21">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>840</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar_22">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>800</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="progressBar_24">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>880</y>
          <width>151</width>
          <height>31</height>
         </rect>
