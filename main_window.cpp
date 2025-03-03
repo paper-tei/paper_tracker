@@ -158,6 +158,8 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     // 启动串口
     ui.LogText->appendPlainText("正在初始化串口...");
     serial_port_manager_.start();
+    initBlendShapeIndexMap();
+    ui.LogText->appendPlainText("初始化ARKit模型输出映射表完成");
     ui.LogText->appendPlainText("系统初始化完成");
 
     if (serial_port_manager_.status() == SerialStatus::FAILED && !use_user_camera)
@@ -233,6 +235,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     std::vector<float> output = inference.get_output();
                     if (!output.empty()) {
                         osc_manager_.sendModelOutput(output);
+
+                        // 更新校准页面的进度条
+                        updateCalibrationProgressBars(output);
                     }
 
                 }
@@ -581,4 +586,110 @@ bool PaperTrackMainWindow::eventFilter(QObject *obj, QEvent *event)
 void PaperTrackMainWindow::onUseUserCameraClicked(int value)
 {
     use_user_camera = value;
+}
+
+// 初始化ARKit模型输出的映射表
+void PaperTrackMainWindow::initBlendShapeIndexMap() {
+    // 定义所有ARKit模型输出名称及其索引
+    const std::vector<std::string> blendShapes = {
+        "cheekPuffLeft", "cheekPuffRight",
+        "cheekSuckLeft", "cheekSuckRight",
+        "jawOpen", "jawForward", "jawLeft", "jawRight",
+        "noseSneerLeft", "noseSneerRight",
+        "mouthFunnel", "mouthPucker",
+        "mouthLeft", "mouthRight",
+        "mouthRollUpper", "mouthRollLower",
+        "mouthShrugUpper", "mouthShrugLower",
+        "mouthClose",
+        "mouthSmileLeft", "mouthSmileRight",
+        "mouthFrownLeft", "mouthFrownRight",
+        "mouthDimpleLeft", "mouthDimpleRight",
+        "mouthUpperUpLeft", "mouthUpperUpRight",
+        "mouthLowerDownLeft", "mouthLowerDownRight",
+        "mouthPressLeft", "mouthPressRight",
+        "mouthStretchLeft", "mouthStretchRight",
+        "tongueOut", "tongueUp", "tongueDown",
+        "tongueLeft", "tongueRight",
+        "tongueRoll", "tongueBendDown",
+        "tongueCurlUp", "tongueSquish",
+        "tongueFlat", "tongueTwistLeft",
+        "tongueTwistRight"
+    };
+
+    // 构建映射
+    for (size_t i = 0; i < blendShapes.size(); ++i) {
+        blendShapeIndexMap[blendShapes[i]] = i;
+    }
+}
+
+// 根据模型输出更新校准页面的进度条
+void PaperTrackMainWindow::updateCalibrationProgressBars(const std::vector<float>& output) {
+    if (output.empty() || ui.stackedWidget->currentIndex() != 1) {
+        // 如果输出为空或者当前不在校准页面，则不更新
+        return;
+    }
+
+    // 使用Qt的线程安全方式更新UI
+    QMetaObject::invokeMethod(this, [this, output]() {
+        // 将值缩放到0-100范围内用于进度条显示
+        auto scaleValue = [](float value) -> int {
+            // 将值限制在0-1.0范围内，然后映射到0-100
+            return static_cast<int>(value * 100);
+        };
+
+        // 更新各个进度条
+        // 注意：这里假设输出数组中的索引与ARKit模型输出的顺序一致
+
+        // 脸颊
+        if (blendShapeIndexMap.count("cheekPuffLeft") && blendShapeIndexMap["cheekPuffLeft"] < output.size()) {
+            ui.CheekPullLeftValue->setValue(scaleValue(output[blendShapeIndexMap["cheekPuffLeft"]]));
+        }
+
+        if (blendShapeIndexMap.count("cheekPuffRight") && blendShapeIndexMap["cheekPuffRight"] < output.size()) {
+            ui.CheekPullRightValue->setValue(scaleValue(output[blendShapeIndexMap["cheekPuffRight"]]));
+        }
+
+        // 下巴
+        if (blendShapeIndexMap.count("jawOpen") && blendShapeIndexMap["jawOpen"] < output.size()) {
+            ui.JawOpenValue->setValue(scaleValue(output[blendShapeIndexMap["jawOpen"]]));
+        }
+
+        if (blendShapeIndexMap.count("jawLeft") && blendShapeIndexMap["jawLeft"] < output.size()) {
+            ui.JawLeftValue->setValue(scaleValue(output[blendShapeIndexMap["jawLeft"]]));
+        }
+
+        if (blendShapeIndexMap.count("jawRight") && blendShapeIndexMap["jawRight"] < output.size()) {
+            ui.JawRightValue->setValue(scaleValue(output[blendShapeIndexMap["jawRight"]]));
+        }
+
+        // 嘴巴
+        if (blendShapeIndexMap.count("mouthLeft") && blendShapeIndexMap["mouthLeft"] < output.size()) {
+            ui.MouthLeftValue->setValue(scaleValue(output[blendShapeIndexMap["mouthLeft"]]));
+        }
+
+        if (blendShapeIndexMap.count("mouthRight") && blendShapeIndexMap["mouthRight"] < output.size()) {
+            ui.MouthRightValue->setValue(scaleValue(output[blendShapeIndexMap["mouthRight"]]));
+        }
+
+        // 舌头
+        if (blendShapeIndexMap.count("tongueOut") && blendShapeIndexMap["tongueOut"] < output.size()) {
+            ui.TongueOutValue->setValue(scaleValue(output[blendShapeIndexMap["tongueOut"]]));
+        }
+
+        if (blendShapeIndexMap.count("tongueUp") && blendShapeIndexMap["tongueUp"] < output.size()) {
+            ui.TongueUpValue->setValue(scaleValue(output[blendShapeIndexMap["tongueUp"]]));
+        }
+
+        if (blendShapeIndexMap.count("tongueDown") && blendShapeIndexMap["tongueDown"] < output.size()) {
+            ui.TongueDownValue->setValue(scaleValue(output[blendShapeIndexMap["tongueDown"]]));
+        }
+
+        if (blendShapeIndexMap.count("tongueLeft") && blendShapeIndexMap["tongueLeft"] < output.size()) {
+            ui.TongueLeftValue->setValue(scaleValue(output[blendShapeIndexMap["tongueLeft"]]));
+        }
+
+        if (blendShapeIndexMap.count("tongueRight") && blendShapeIndexMap["tongueRight"] < output.size()) {
+            ui.TongueRightValue->setValue(scaleValue(output[blendShapeIndexMap["tongueRight"]]));
+        }
+    }, Qt::QueuedConnection);
 }
