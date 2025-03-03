@@ -163,7 +163,18 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         ui.SerialConnectLabel->setText("串口连接失败");
         LOG_WARN("串口未连接，尝试从wifi缓存中读取地址...");
         auto ip = wifi_cache_file_writer->try_get_wifi_config();
-        if (ip.has_value() && !ip.value().empty())
+        if (!ip.has_value())
+        {
+            QMessageBox msgBox;
+            msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
+            msgBox.exec();
+        }
+        if (ip.value().empty())
+        {
+            QMessageBox msgBox;
+            msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
+            msgBox.exec();
+        } else
         {
             LOG_INFO("从wifi缓存中读取地址成功");
             current_ip_ = ip.value();
@@ -171,14 +182,10 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
             {
                 start_image_download();
             });
-        } else
-        {
-            QMessageBox msgBox;
-            msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
-            msgBox.exec();
         }
     } else
     {
+        LOG_INFO("串口连接成功");
         ui.SerialConnectLabel->setText("串口连接成功");
     }
 
@@ -244,7 +251,6 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                         updateCalibrationProgressBars(output);
                         osc_manager_->sendModelOutput(output);
                     }
-
                 }
                 // draw rect on frame
                 QImage qimage;

@@ -97,6 +97,10 @@ void SerialPortManager::init()
 
             // 清空串口缓冲区
             PurgeComm(hSerial, PURGE_RXCLEAR | PURGE_TXCLEAR);
+        } else
+        {
+            m_status = SerialStatus::FAILED;
+            LOG_ERROR("创建串口失败。");
         }
     }
 
@@ -351,6 +355,7 @@ void SerialPortManager::start() {
 
             if (osWriter.hEvent == NULL) {
                 LOG_ERROR("创建写入事件失败，错误码: " + GetLastError());
+                m_status = SerialStatus::FAILED;
                 return;
             }
 
@@ -405,10 +410,12 @@ void SerialPortManager::start() {
                                     // 写入超时，取消I/O操作
                                     LOG_ERROR("写入超时");
                                     CancelIo(hSerial);
+                                    m_status = SerialStatus::FAILED;
                                 }
                                 else {
                                     // 其他错误
                                     LOG_ERROR("等待写入事件失败，错误码: " + GetLastError());
+                                    m_status = SerialStatus::FAILED;
                                 }
                             }
                             else {
@@ -425,7 +432,7 @@ void SerialPortManager::start() {
                                             "/" + QString(std::to_string(chunkLen).c_str()) + " 字节");
                             }
                         }
-
+                        m_status = SerialStatus::OPENED;
                         // 添加小延时，避免连续写入过快
                         std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     }
@@ -434,7 +441,6 @@ void SerialPortManager::start() {
                         break;
                     }
                     LOG_DEBUG("已发送数据: " + QString(data.c_str()));
-                    // std::cout <<  << data << std::endl;
                 }
             }
             m_status = SerialStatus::FAILED;
@@ -443,7 +449,6 @@ void SerialPortManager::start() {
             CloseHandle(osWriter.hEvent);
         }
     );
-    m_status = SerialStatus::OPENED;
     running = true;
 }
 void SerialPortManager::stop()
@@ -681,6 +686,7 @@ HANDLE SerialPortManager::initSerialPort(const wchar_t* portName)
 
     if (hSerial == INVALID_HANDLE_VALUE) {
         LOG_ERROR("打开串口失败: " + GetLastError());
+        m_status = SerialStatus::FAILED;
         return INVALID_HANDLE_VALUE;
     }
 
@@ -690,6 +696,7 @@ HANDLE SerialPortManager::initSerialPort(const wchar_t* portName)
     if (!GetCommState(hSerial, &dcbSerialParams)) {
         LOG_ERROR("获取串口状态失败");
         CloseHandle(hSerial);
+        m_status = SerialStatus::FAILED;
         return INVALID_HANDLE_VALUE;
     }
 
@@ -708,6 +715,7 @@ HANDLE SerialPortManager::initSerialPort(const wchar_t* portName)
 
     if (!SetCommState(hSerial, &dcbSerialParams)) {
         LOG_ERROR("配置串口失败");
+        m_status = SerialStatus::FAILED;
         CloseHandle(hSerial);
         return INVALID_HANDLE_VALUE;
     }
