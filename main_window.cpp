@@ -58,18 +58,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 if (!use_user_camera)
                 {
                     wifi_cache_file_writer.write_wifi_config(current_ip_);
-                    auto esp32_future = std::async(std::launch::async, [this]()
-                    {
-                        image_downloader_.init("http://" + current_ip_, [this] (const cv::Mat& image)
-                        {
-                            if (image_buffer_queue.size() > 0)
-                            {
-                                return ;
-                            }
-                            image_buffer_queue.push(image.clone());
-                        });
-                        image_downloader_.start();
-                    });
+                    start_image_download();
                 }
             }
             //TODO:滑块更新逻辑
@@ -160,22 +149,17 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     serial_port_manager_.start();
     ui.LogText->appendPlainText("系统初始化完成");
 
+    while (serial_port_manager_.status() == SerialStatus::CLOSED) {}
+
     if (serial_port_manager_.status() == SerialStatus::FAILED && !use_user_camera)
     {
         auto ip = wifi_cache_file_writer.try_get_wifi_config();
         if (ip.has_value())
         {
+            current_ip_ = ip.value();
             auto esp32_future = std::async(std::launch::async, [this, ip]()
             {
-                image_downloader_.init("http://" + ip.value(), [this] (const cv::Mat& image)
-                {
-                    if (image_buffer_queue.size() > 0)
-                    {
-                        return ;
-                    }
-                    image_buffer_queue.push(image.clone());
-                });
-                image_downloader_.start();
+                start_image_download();
             });
         } else
         {
@@ -533,11 +517,6 @@ void PaperTrackMainWindow::flashESP32() {
             ui.LogText->appendPlainText("固件刷写失败，退出码: " + QString::number(process.exitCode()));
             QMessageBox::critical(this, "刷写失败", "ESP32固件刷写失败，请检查连接和固件文件！");
         }
-
-        // 重新启动程序
-        // QString appPath = QCoreApplication::applicationFilePath();
-        // QProcess::startDetached(appPath);
-        // QApplication::quit();
         serial_port_manager_.init();
         serial_port_manager_.start();
     } catch (const std::exception& e) {
@@ -581,4 +560,19 @@ bool PaperTrackMainWindow::eventFilter(QObject *obj, QEvent *event)
 void PaperTrackMainWindow::onUseUserCameraClicked(int value)
 {
     use_user_camera = value;
+}
+
+void PaperTrackMainWindow::start_image_download()
+{
+    image_downloader_.stop();
+    image_downloader_.init("http://" + current_ip_, [this] (const cv::Mat& image)
+    {
+        if (image_buffer_queue.size() > 0)
+        {
+            return ;
+        }
+        image_buffer_queue.push(image.clone());
+    });
+    image_downloader_.start();
+
 }

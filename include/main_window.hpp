@@ -42,6 +42,8 @@ private:
     void restartESP32();
     std::string getPortFromSerialManager(); // 获取串口端口名
 
+    void start_image_download();
+
     // UI组件
     Ui::PaperTrackerMainWindow ui{};
 
