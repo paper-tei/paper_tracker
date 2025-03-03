@@ -28,7 +28,7 @@ private slots:
     void onSendButtonClicked();
     void onBrightnessChanged(int value);
     void onUseUserCameraClicked(int value);
-
+    void onRestartButtonClicked();
     void onSSIDTextFocusIn();
     void onSSIDTextFocusOut();
     void onPasswordTextFocusIn();
@@ -39,7 +39,9 @@ private:
     std::string current_ip_;
     void bound_pages();
     void flashESP32();
+    void restartESP32();
     std::string getPortFromSerialManager(); // 获取串口端口名
+
     // UI组件
     Ui::PaperTrackerMainWindow ui{};
 
