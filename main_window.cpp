@@ -39,13 +39,26 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     brightness_timer->setSingleShot(true);
     connect(brightness_timer, &QTimer::timeout, this, &PaperTrackMainWindow::sendBrightnessValue);
     current_brightness = 0;
-    // 连接UI信号槽
+    // functions
     connect(ui.wifi_send_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
     connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
     connect(ui.RotateImageBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onRotateAngleChanged);
-
     connect(ui.FlashFirmwareButton, &QPushButton::clicked, this, &PaperTrackMainWindow::flashESP32);
     connect(ui.restart_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onRestartButtonClicked);
+    // params
+    connect(ui.JawOpenBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawOpenChanged);
+    connect(ui.JawLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawLeftChanged);
+    connect(ui.JawRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawRightChanged);
+    connect(ui.MouthLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onMouthLeftChanged);
+    connect(ui.MouthRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onMouthRightChanged);
+    connect(ui.TongueOutBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueOutChanged);
+    connect(ui.TongueLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueLeftChanged);
+    connect(ui.TongueRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueRightChanged);
+    connect(ui.TongueUpBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueUpChanged);
+    connect(ui.TongueDownBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueDownChanged);
+    connect(ui.CheekPuffLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffLeftChanged);
+    connect(ui.CheekPuffRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffRightChanged);
+
     // 添加输入框焦点事件处理
     ui.SSIDText->installEventFilter(this);
     ui.PasswordText->installEventFilter(this);
@@ -246,6 +259,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     std::vector<float> output = inference->get_output();
                     if (!output.empty()) {
                         osc_manager_->sendModelOutput(output);
+                        AmpMapToOutput(output);
                         updateCalibrationProgressBars(output);
                     }
 
@@ -614,7 +628,7 @@ void PaperTrackMainWindow::onUseUserCameraClicked(int value)
 // 初始化ARKit模型输出的映射表
 void PaperTrackMainWindow::initBlendShapeIndexMap() {
     // 定义所有ARKit模型输出名称及其索引
-    const std::vector<std::string> blendShapes = {
+    blendShapes = {
         "cheekPuffLeft", "cheekPuffRight",
         "cheekSuckLeft", "cheekSuckRight",
         "jawOpen", "jawForward", "jawLeft", "jawRight",
@@ -642,6 +656,7 @@ void PaperTrackMainWindow::initBlendShapeIndexMap() {
     // 构建映射
     for (size_t i = 0; i < blendShapes.size(); ++i) {
         blendShapeIndexMap[blendShapes[i]] = i;
+        blendShapeAmpMap.insert_or_assign(blendShapes[i], 0);
     }
 }
 
@@ -734,4 +749,80 @@ void PaperTrackMainWindow::start_image_download()
     {
         ui.WifiConnectLabel->setText("Wifi连接成功");
     }
+}
+
+void PaperTrackMainWindow::onCheeckPuffLeftChanged(int value)
+{
+    blendShapeAmpMap["cheekPuffLeft"] = value;
+}
+
+void PaperTrackMainWindow::onCheeckPuffRightChanged(int value)
+{
+    blendShapeAmpMap["cheekPuffRight"] = value;
+}
+
+void PaperTrackMainWindow::onJawOpenChanged(int value)
+{
+    blendShapeAmpMap["jawOpen"] = value;
+}
+
+void PaperTrackMainWindow::onJawLeftChanged(int value)
+{
+    blendShapeAmpMap["jawLeft"] = value;
+}
+
+void PaperTrackMainWindow::onJawRightChanged(int value)
+{
+    blendShapeAmpMap["jawRight"] = value;
+}
+
+void PaperTrackMainWindow::onMouthLeftChanged(int value)
+{
+    blendShapeAmpMap["mouthLeft"] = value;
+}
+
+void PaperTrackMainWindow::onMouthRightChanged(int value)
+{
+    blendShapeAmpMap["mouthRight"] = value;
+}
+
+void PaperTrackMainWindow::onTongueOutChanged(int value)
+{
+    blendShapeAmpMap["tongueOut"] = value;
+}
+
+void PaperTrackMainWindow::onTongueLeftChanged(int value)
+{
+    blendShapeAmpMap["tongueLeft"] = value;
+}
+
+void PaperTrackMainWindow::onTongueRightChanged(int value)
+{
+    blendShapeAmpMap["tongueRight"] = value;
+}
+
+void PaperTrackMainWindow::onTongueUpChanged(int value)
+{
+    blendShapeAmpMap["tongueUp"] = value;
+}
+
+void PaperTrackMainWindow::onTongueDownChanged(int value)
+{
+    blendShapeAmpMap["tongueDown"] = value;
+}
+
+void PaperTrackMainWindow::AmpMapToOutput(std::vector<float>& output)
+{
+    for (int i = 0; i < blendShapes.size(); i++)
+    {
+        if (blendShapeAmpMap.contains(blendShapes[i]))
+        {
+            if (blendShapeAmpMap[blendShapes[i]] != 0)
+            {
+                output[i] = output[i] * (blendShapeAmpMap[blendShapes[i]] * 0.02 + 1);
+                output[i] = min(1, output[i]);
+            }
+        }
+    }
+
 }

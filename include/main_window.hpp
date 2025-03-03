@@ -31,10 +31,21 @@ private slots:
     void onRotateAngleChanged(int value);
     void onUseUserCameraClicked(int value);
     void onRestartButtonClicked();
-    void onSSIDTextFocusIn();
-    void onSSIDTextFocusOut();
-    void onPasswordTextFocusIn();
-    void onPasswordTextFocusOut();
+
+    void onCheeckPuffLeftChanged(int value);
+    void onCheeckPuffRightChanged(int value);
+    void onJawOpenChanged(int value);
+    void onJawLeftChanged(int value);
+    void onJawRightChanged(int value);
+    void onMouthLeftChanged(int value);
+    void onMouthRightChanged(int value);
+    void onTongueOutChanged(int value);
+    void onTongueLeftChanged(int value);
+    void onTongueRightChanged(int value);
+    void onTongueUpChanged(int value);
+    void onTongueDownChanged(int value);
+
+
 private:
     QTimer* brightness_timer;
 
@@ -48,12 +59,16 @@ private:
     std::string getPortFromSerialManager(); // 获取串口端口名
     // 根据模型输出更新校准页面的进度条
     void updateCalibrationProgressBars(const std::vector<float>& output);
+    void AmpMapToOutput(std::vector<float>& output);
 
     // 保存ARKit模型输出的映射表
-    std::map<std::string, size_t> blendShapeIndexMap;
-
+    std::unordered_map<std::string, size_t> blendShapeIndexMap;
+    std::unordered_map<std::string, int> blendShapeAmpMap;
+    std::vector<std::string> blendShapes;
     // 初始化ARKit模型输出的映射表
     void initBlendShapeIndexMap();
+
+
     void start_image_download();
 
     // UI组件
