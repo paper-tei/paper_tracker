@@ -43,7 +43,7 @@ bool ESP32VideoStream::init(const std::string& url, FrameCallback callback) {
 // 开始接收视频流
 bool ESP32VideoStream::start() {
     if (isRunning) {
-        std::cerr << "视频流已经在运行!" << std::endl;
+        LOG_ERROR("错误： 打开wifi缓存文件失败！");
         return false;
     }
     
@@ -134,7 +134,7 @@ void ESP32VideoStream::processFramesInBuffer() {
                 std::vector<char> newBuffer(streamBuffer.begin() + searchPos, streamBuffer.end());
                 streamBuffer.swap(newBuffer); // 交换比直接擦除更安全
             } catch (const std::exception& e) {
-                std::cerr << "清理缓冲区时出错: " << e.what() << std::endl;
+                LOG_ERROR("清理缓冲区时出错: " + QString(e.what()));
                 streamBuffer.clear(); // 如果失败则清空
             }
         } else {
@@ -145,7 +145,7 @@ void ESP32VideoStream::processFramesInBuffer() {
 
     // 防止缓冲区无限增长
     if (streamBuffer.size() > MAX_BUFFER_SIZE) {
-        std::cerr << "警告: 缓冲区过大，可能丢失帧" << std::endl;
+        LOG_WARN("警告: 缓冲区过大，可能丢失帧");
         streamBuffer.clear();
     }
 }
@@ -220,7 +220,7 @@ void ESP32VideoStream::processJpegFrame(const std::vector<char>& jpegData) {
             }
         }
     } catch (const cv::Exception& e) {
-        std::cerr << "处理JPEG帧出错: " << e.what() << std::endl;
+        LOG_ERROR("处理JPEG帧出错: " + QString(e.what()));
     }
 }
 
@@ -243,15 +243,16 @@ void ESP32VideoStream::streamThreadFunc() {
         curl_easy_setopt (curl, CURLOPT_LOW_SPEED_TIME, 1L);
         curl_easy_setopt (curl, CURLOPT_LOW_SPEED_LIMIT, 3000L);
 
-        std::cout << "开始连接ESP32视频流: " << currentStreamUrl << std::endl;
+        LOG_INFO("开始连接ESP32视频流: " + QString(currentStreamUrl.c_str()));
 
         // 启动连接
         CURLcode res = curl_easy_perform(curl);
 
         if (res != CURLE_OK) {
-            std::cerr << "curl_easy_perform() 失败: " << curl_easy_strerror(res) << std::endl;
+            LOG_ERROR("curl_easy_perform() 失败: " + QString(curl_easy_strerror(res)));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
             continue ;
         }
     }
-    std::cout << "ESP32视频流线程退出" << std::endl;
+    LOG_INFO("ESP32视频流线程退出");
 }

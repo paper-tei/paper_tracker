@@ -16,33 +16,32 @@
 #include <vector>
 #include <locale>
 #include <codecvt>
-#include <logger.h>
 #include <thread>
 #define COM_PORT L"COM101"  // 指定要打开的串口号
 
 // 修改SerialPortManager的构造函数
-SerialPortManager::SerialPortManager(QPlainTextEdit* log_window)
-    : hSerial(INVALID_HANDLE_VALUE), running(false), log_window(log_window) {
+SerialPortManager::SerialPortManager()
+    : hSerial(INVALID_HANDLE_VALUE), running(false) {
     m_status = SerialStatus::CLOSED;
     init();
 }
 
 void SerialPortManager::init()
 {
-    std::cout << "正在搜索ESP32-S3设备..." << std::endl;
+    LOG_INFO("正在搜索ESP32-S3设备...");
     std::string portName = FindEsp32S3Port();
 
     if (portName.empty()) {
-        std::cout << "无法找到ESP32-S3设备，尝试使用默认端口COM101" << std::endl;
+        LOG_WARN("无法找到ESP32-S3设备，尝试使用默认端口COM101");
         hSerial = initSerialPort(COM_PORT);
     } else {
-
+        // portName = "COM5";
         currentPort = portName;
         // 转换为宽字符串
         std::wstring wPortName(L"\\\\.\\");
         wPortName += std::wstring(portName.begin(), portName.end());
 
-        std::cout << "尝试连接到端口: " << portName << std::endl;
+        LOG_INFO("尝试连接到端口:" + QString(portName.c_str()));
 
         // 使用FILE_FLAG_OVERLAPPED打开串口以启用异步I/O
         hSerial = CreateFileW(
@@ -74,12 +73,12 @@ void SerialPortManager::init()
                 dcbSerialParams.fInX = FALSE;
 
                 if (!SetCommState(hSerial, &dcbSerialParams)) {
-                    std::cerr << "配置串口失败，错误码: " << GetLastError() << std::endl;
+                    LOG_ERROR("配置串口失败，错误码: " + GetLastError());
                     CloseHandle(hSerial);
                     hSerial = INVALID_HANDLE_VALUE;
                 }
             } else {
-                std::cerr << "获取串口状态失败，错误码: " << GetLastError() << std::endl;
+                LOG_ERROR("获取串口状态失败，错误码: " + GetLastError());
                 CloseHandle(hSerial);
                 hSerial = INVALID_HANDLE_VALUE;
             }
@@ -93,7 +92,7 @@ void SerialPortManager::init()
             timeouts.WriteTotalTimeoutMultiplier = 10;  // 写入每字节的附加超时
 
             if (!SetCommTimeouts(hSerial, &timeouts)) {
-                std::cerr << "设置串口超时参数失败，错误码: " << GetLastError() << std::endl;
+                LOG_ERROR("设置串口超时参数失败，错误码: " + GetLastError());
             }
 
             // 清空串口缓冲区
@@ -102,10 +101,10 @@ void SerialPortManager::init()
     }
 
     if (hSerial != INVALID_HANDLE_VALUE) {
-        std::cout << "串口打开成功！" << std::endl;
+        LOG_INFO("串口打开成功！");
         running = true;
     } else {
-        std::cerr << "串口打开失败！错误码: " << GetLastError() << std::endl;
+        LOG_ERROR("串口打开失败，错误码: " + GetLastError());
         m_status = SerialStatus::FAILED;
     }
 
@@ -143,7 +142,7 @@ std::string SerialPortManager::FindEsp32S3Port() {
     );
 
     if (hDevInfo == INVALID_HANDLE_VALUE) {
-        std::cerr << "获取设备信息集失败，错误码: " << GetLastError() << std::endl;
+        LOG_ERROR("获取设备信息集失败，错误码: " + GetLastError());
         return "";
     }
 
@@ -157,15 +156,13 @@ std::string SerialPortManager::FindEsp32S3Port() {
         if (!SetupDiGetDeviceInstanceIdA(hDevInfo, &devInfoData, instanceId, sizeof(instanceId), NULL)) {
             continue;
         }
-
-        std::cout << "检查设备: " << instanceId << std::endl;
-
+        LOG_INFO("检查设备: " + QString(instanceId));
         // 检查是否是目标设备 - 尝试所有可能的ID
         bool isTargetDevice = false;
         for (const char* targetDeviceId : targetDeviceIds) {
             if (strstr(instanceId, targetDeviceId) != NULL) {
                 isTargetDevice = true;
-                std::cout << "匹配成功，找到目标设备: " << targetDeviceId << std::endl;
+                LOG_INFO("匹配成功，找到目标设备: " + QString(targetDeviceId));
                 break;
             }
         }
@@ -188,7 +185,7 @@ std::string SerialPortManager::FindEsp32S3Port() {
 
                 if (RegQueryValueExA(hKey, "PortName", NULL, &dwType, (LPBYTE)portName, &dwSize) == ERROR_SUCCESS) {
                     targetPort = portName;
-                    std::cout << "找到ESP32-S3设备的COM端口: " << targetPort << std::endl;
+                    LOG_INFO("找到ESP32-S3设备的COM端口: " + QString(targetPort.c_str()));
                 }
 
                 RegCloseKey(hKey);
@@ -200,8 +197,7 @@ std::string SerialPortManager::FindEsp32S3Port() {
     // 调试：遍历所有可用的COM端口
     SP_DEVINFO_DATA devInfoData2;
     devInfoData2.cbSize = sizeof(SP_DEVINFO_DATA);
-
-    std::cout << "系统中所有可用的COM端口:" << std::endl;
+    LOG_INFO("系统中所有可用的COM端口: ");
     for (DWORD i = 0; SetupDiEnumDeviceInfo(hDevInfo, i, &devInfoData2); i++) {
         HKEY hKey = SetupDiOpenDevRegKey(
             hDevInfo,
@@ -229,9 +225,9 @@ std::string SerialPortManager::FindEsp32S3Port() {
                     (PBYTE)friendlyName,
                     nameSize,
                     NULL)) {
-                    std::cout << " - " << portName << " (" << friendlyName << ")" << std::endl;
+                    LOG_INFO(" - " + QString(portName) + " (" + QString(friendlyName) + ")");
                 } else {
-                    std::cout << " - " << portName << std::endl;
+                    LOG_INFO(" - " + QString(portName));
                 }
             }
 
@@ -242,7 +238,7 @@ std::string SerialPortManager::FindEsp32S3Port() {
     SetupDiDestroyDeviceInfoList(hDevInfo);
 
     if (targetPort.empty()) {
-        std::cerr << "未找到ESP32-S3设备的COM端口" << std::endl;
+        LOG_ERROR("未找到ESP32-S3设备的COM端口");
     }
 
     return targetPort;
@@ -261,7 +257,7 @@ void SerialPortManager::start() {
             osReader.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
             if (osReader.hEvent == NULL) {
-                std::cerr << "创建读取事件失败，错误码: " << GetLastError() << std::endl;
+                LOG_ERROR("创建读取事件失败，错误码: " + GetLastError());
                 return;
             }
 
@@ -295,7 +291,7 @@ void SerialPortManager::start() {
                                 }
                             }
                             else {
-                                std::cerr << "GetOverlappedResult失败，错误码: " << GetLastError() << std::endl;
+                                LOG_ERROR("GetOverlappedResult失败，错误码: " + GetLastError());
                             }
                         }
                         else if (dwWait == WAIT_TIMEOUT) {
@@ -303,13 +299,12 @@ void SerialPortManager::start() {
                             CancelIo(hSerial);
                         }
                         else {
-                            // 其他错误
-                            std::cerr << "等待读取事件失败，错误码: " << GetLastError() << std::endl;
+                            LOG_ERROR("等待读取事件失败，错误码: " + GetLastError());
                         }
                     }
                     else {
                         // 其他错误
-                        std::cerr << "串口读取失败，错误码: " << dwError << std::endl;
+                        LOG_ERROR("串口读取失败，错误码: " + GetLastError());
                         if (dwError == ERROR_ACCESS_DENIED || dwError == ERROR_INVALID_HANDLE) {
                             // 严重错误，退出线程
                             break;
@@ -355,7 +350,7 @@ void SerialPortManager::start() {
             osWriter.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
             if (osWriter.hEvent == NULL) {
-                std::cerr << "创建写入事件失败，错误码: " << GetLastError() << std::endl;
+                LOG_ERROR("创建写入事件失败，错误码: " + GetLastError());
                 return;
             }
 
@@ -399,25 +394,26 @@ void SerialPortManager::start() {
                                 if (dwWait == WAIT_OBJECT_0) {
                                     // 写入完成，获取结果
                                     if (!GetOverlappedResult(hSerial, &osWriter, &bytesWritten, FALSE)) {
-                                        std::cerr << "GetOverlappedResult失败，错误码: " << GetLastError() << std::endl;
+                                        LOG_ERROR("GetOverlappedResult失败，错误码: " + GetLastError());
                                     }
                                     else if (bytesWritten != chunkLen) {
-                                        std::cout << "警告：只写入了部分数据 " << bytesWritten << "/" << chunkLen << " 字节" << std::endl;
+                                        LOG_WARN("警告：只写入了部分数据 " + QString(std::to_string(bytesWritten).c_str()) +
+                                                "/" + QString(std::to_string(chunkLen).c_str()) + " 字节");
                                     }
                                 }
                                 else if (dwWait == WAIT_TIMEOUT) {
                                     // 写入超时，取消I/O操作
-                                    std::cerr << "写入超时" << std::endl;
+                                    LOG_ERROR("写入超时");
                                     CancelIo(hSerial);
                                 }
                                 else {
                                     // 其他错误
-                                    std::cerr << "等待写入事件失败，错误码: " << GetLastError() << std::endl;
+                                    LOG_ERROR("等待写入事件失败，错误码: " + GetLastError());
                                 }
                             }
                             else {
                                 // 处理其他错误
-                                std::cerr << "串口写入失败，错误码: " << dwError << std::endl;
+                                LOG_ERROR("串口写入失败，错误码: " + dwError);
                                 m_status = SerialStatus::FAILED;
                                 break;  // 退出当前数据的发送循环
                             }
@@ -425,7 +421,8 @@ void SerialPortManager::start() {
                         else {
                             // 写入成功（同步完成）
                             if (bytesWritten != chunkLen) {
-                                std::cout << "警告：只写入了部分数据 " << bytesWritten << "/" << chunkLen << " 字节" << std::endl;
+                                LOG_WARN("警告：只写入了部分数据 " + QString(std::to_string(bytesWritten).c_str()) +
+                                            "/" + QString(std::to_string(chunkLen).c_str()) + " 字节");
                             }
                         }
 
@@ -436,7 +433,8 @@ void SerialPortManager::start() {
                     {
                         break;
                     }
-                    std::cout << "已发送数据: " << data << std::endl;
+                    LOG_DEBUG("已发送数据: " + QString(data.c_str()));
+                    // std::cout <<  << data << std::endl;
                 }
             }
             m_status = SerialStatus::FAILED;
@@ -496,31 +494,32 @@ void SerialPortManager::processReceivedData(std::string& receivedData) {
         receivedData = receivedData.substr(endPos + 2);
 
         // 处理提取出的数据包
-        std::cout << "接收到数据包: " << packet << std::endl;
+
+        LOG_DEBUG("接收到数据包: " + QString(packet.c_str()));
         PacketType type = parsePacket(packet);
 
         // 根据类型执行不同操作
         switch (type) {
         case PACKET_WIFI_SETUP:
-            std::cout << "[WiFi 配置提示] 请配置 WiFi\n";
+            LOG_INFO("[WiFi 配置提示] 请配置 WiFi");
             break;
         case PACKET_WIFI_SSID_PWD:
-            std::cout << "[WiFi 配置] 发送 SSID/PWD...\n";
+            LOG_INFO("[WiFi 配置] 发送 SSID/PWD...");
             break;
         case PACKET_WIFI_CONFIRM:
-            std::cout << "[WiFi 配置成功]\n";
+            LOG_INFO("[WiFi 配置成功]");
             break;
         case PACKET_WIFI_ERROR:
-            std::cout << "[WiFi 配置错误] SSID 或密码错误\n";
+            LOG_INFO("[WiFi 配置错误] SSID 或密码错误");
             break;
         case PACKET_DEVICE_STATUS:
-            std::cout << "[设备状态] 更新设备信息...\n";
+            LOG_INFO("[设备状态] 更新设备信息...");
             break;
         case PACKET_LIGHT_CONTROL:
-            std::cout << "[补光灯设置] 调整亮度\n";
+            LOG_INFO("[补光灯设置] 调整亮度");
             break;
         default:
-            std::cout << "[未知数据包] " << packet << "\n";
+            LOG_WARN("[未知数据包]: " + QString(packet.c_str()));
         }
     }
 }
@@ -545,12 +544,12 @@ PacketType SerialPortManager::parsePacket(const std::string& packet)
 {
     // 先将收到的字符串去除首尾空白（例如换行符、空格）
     std::string trimmedPacket = trim(packet);
-    std::cout << "[Debug] Parsing packet: [" << trimmedPacket << "]" << std::endl;
+    LOG_DEBUG("Parsing packet: [" + QString(trimmedPacket.c_str()) + "]");
 
     // 基本验证：检查包格式是否有效（A开头，B结尾加数字）
     if (trimmedPacket.length() < 3 || trimmedPacket[0] != 'A' ||
         trimmedPacket[trimmedPacket.length() - 2] != 'B') {
-        std::cout << "[Debug] 无效包格式" << std::endl;
+        LOG_DEBUG("无效包格式");
         return PACKET_UNKNOWN;
     }
 
@@ -563,30 +562,30 @@ PacketType SerialPortManager::parsePacket(const std::string& packet)
     switch (packetType) {
         case '1': // 数据包1：A101B1
             if (std::regex_match(trimmedPacket, std::regex("^A1(01)B1$"))) {
-                std::cout << "[Debug] 匹配到包类型1 (WiFi 配置提示)" << std::endl;
+                LOG_DEBUG("匹配到包类型1 (WiFi 配置提示)");
                 return PACKET_WIFI_SETUP;
             }
             break;
 
         case '2': // 数据包2：A2SSID[SSID内容]PWD[PWD]B2
             if (std::regex_match(trimmedPacket, match, std::regex("^A2SSID(.*?)PWD(.*?)B2$"))) {
-                std::cout << "[Debug] 匹配到包类型2 (WiFi 配置数据): SSID = "
-                          << match[1] << ", PWD = " << match[2] << std::endl;
+                LOG_DEBUG("匹配到包类型2 (WiFi 配置数据): SSID = " +
+                          QString(match[1].str().c_str()) + ", PWD = " + QString(match[2].str().c_str()));
                 return PACKET_WIFI_SSID_PWD;
             }
             break;
 
         case '3': // 数据包3：A303B3
             if (std::regex_match(trimmedPacket, std::regex("^A303B3$"))) {
-                std::cout << "[Debug] 匹配到包类型3 (WiFi 配置成功确认)" << std::endl;
+                LOG_DEBUG("匹配到包类型3 (WiFi 配置成功确认)");
                 return PACKET_WIFI_CONFIRM;
             }
             break;
 
         case '4': // 数据包4：A4SSID[SSID内容]PWD[PWD]B4
             if (std::regex_match(trimmedPacket, match, std::regex("^A4SSID(.*?)PWD(.*?)B4$"))) {
-                std::cout << "[Debug] 匹配到包类型4 (WiFi 配置错误): SSID = "
-                          << match[1] << ", PWD = " << match[2] << std::endl;
+                LOG_DEBUG("匹配到包类型4 (WiFi 配置错误): SSID = " +
+                          QString(match[1].str().c_str()) + ", PWD = " + QString(match[2].str().c_str()));
                 return PACKET_WIFI_ERROR;
             }
             break;
@@ -621,22 +620,19 @@ PacketType SerialPortManager::parsePacket(const std::string& packet)
                     deviceStatusCallback(formattedIp, brightness, power, version);
                 }
             } catch (const std::exception& e) {
-                std::cerr << "IP格式转换失败: " << e.what() << std::endl;
+                LOG_ERROR("IP格式转换失败: " + QString(e.what()));
                 formattedIp = rawIp; // 转换失败时使用原始IP
             }
-
-            std::cout << "[Debug] 匹配到包类型5 (设备状态): "
-                      << "亮度 = " << match[1]
-                      << ", IP = " << formattedIp  // 使用格式化后的IP
-                      << ", 电量 = " << match[3]
-                      << ", 固件版本 = " << match[4] << std::endl;
+            LOG_DEBUG("匹配到包类型5 (设备状态): 亮度 = " + QString(match[1].str().c_str()) +
+                      ", IP = " + QString(formattedIp.c_str()) + ", 电量 = " + QString(match[3].str().c_str()) +
+                      ", 固件版本 = " + QString(match[4].str().c_str()));
             return PACKET_DEVICE_STATUS;
             }
         break;
 
         case '6': // 数据包6：A6[亮度]B6
             if (std::regex_match(trimmedPacket, match, std::regex("^A6(\\d{1,3})B6$"))) {
-                std::cout << "[Debug] 匹配到包类型6 (补光灯控制), 亮度 = " << match[1] << std::endl;
+                LOG_DEBUG("匹配到包类型6 (补光灯控制): 亮度 = " + QString(match[1].str().c_str()));
                 return PACKET_LIGHT_CONTROL;
             }
             break;
@@ -644,8 +640,7 @@ PacketType SerialPortManager::parsePacket(const std::string& packet)
         default:
             break;
     }
-
-    std::cout << "[Debug] 未匹配任何数据包类型: " << packetType << std::endl;
+    LOG_DEBUG("未匹配任何数据包类型: " + QString(packetType));
     return PACKET_UNKNOWN;
 }
 void SerialPortManager::sendWiFiConfig(HANDLE hSerial, const std::string& ssid, const std::string& pwd)
@@ -653,7 +648,7 @@ void SerialPortManager::sendWiFiConfig(HANDLE hSerial, const std::string& ssid, 
     std::string packet = "A2SSID" + ssid + "PWD" + pwd + "B2";
     DWORD bytesWritten;
     WriteFile(hSerial, packet.c_str(), packet.size(), &bytesWritten, NULL);
-    std::cout << "发送 WiFi 配置: " << packet << std::endl;
+    LOG_INFO("发送 WiFi 配置: " + QString(packet.c_str()));
 }
 std::string formatIpAddress(const std::string& ipRaw) {
     // 假设输入格式为类似"169031168192"
@@ -677,7 +672,7 @@ void SerialPortManager::sendLightControl(HANDLE hSerial, int brightness)
     std::string packet = "A6" + std::to_string(brightness) + "B6";
     DWORD bytesWritten;
     WriteFile(hSerial, packet.c_str(), packet.size(), &bytesWritten, NULL);
-    std::cout << "发送补光灯亮度: " << brightness << std::endl;
+    LOG_INFO("发送补光灯亮度: " + QString(std::to_string(brightness).c_str()));
 }
 
 HANDLE SerialPortManager::initSerialPort(const wchar_t* portName)
@@ -685,7 +680,7 @@ HANDLE SerialPortManager::initSerialPort(const wchar_t* portName)
     HANDLE hSerial = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 
     if (hSerial == INVALID_HANDLE_VALUE) {
-        std::cerr << "打开串口失败: " << GetLastError() << std::endl;
+        LOG_ERROR("打开串口失败: " + GetLastError());
         return INVALID_HANDLE_VALUE;
     }
 
@@ -693,7 +688,7 @@ HANDLE SerialPortManager::initSerialPort(const wchar_t* portName)
     dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
 
     if (!GetCommState(hSerial, &dcbSerialParams)) {
-        std::cerr << "获取串口状态失败\n";
+        LOG_ERROR("获取串口状态失败");
         CloseHandle(hSerial);
         return INVALID_HANDLE_VALUE;
     }
@@ -712,12 +707,11 @@ HANDLE SerialPortManager::initSerialPort(const wchar_t* portName)
     // dcbSerialParams.fInX = FALSE;                 // 禁用XON/XOFF
 
     if (!SetCommState(hSerial, &dcbSerialParams)) {
-        std::cerr << "配置串口失败\n";
+        LOG_ERROR("配置串口失败");
         CloseHandle(hSerial);
         return INVALID_HANDLE_VALUE;
     }
 
-    // std::cout << "成功打开串口: " << portName << std::endl;
     // 清空串口缓冲区
     PurgeComm(hSerial, PURGE_RXCLEAR | PURGE_TXCLEAR);
     return hSerial;
