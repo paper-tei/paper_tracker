@@ -432,7 +432,10 @@ void SerialPortManager::start() {
                         // 添加小延时，避免连续写入过快
                         std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     }
-
+                    if (m_status == SerialStatus::FAILED)
+                    {
+                        break;
+                    }
                     std::cout << "已发送数据: " << data << std::endl;
                 }
             }
