@@ -268,11 +268,7 @@ void Inference::process_results() {
     }
 }
 
-void Inference::show_result() {
-    // 结果显示逻辑
-}
-
-std::vector<float> Inference::get_output() const
+std::vector<float> Inference::get_output()
 {
     if (output_tensors_.empty()) {
         return std::vector<float>();
@@ -283,6 +279,8 @@ std::vector<float> Inference::get_output() const
         const Ort::Value& output_tensor = output_tensors_.front();
         const float* output_data = output_tensor.GetTensorData<float>();
 
+
+
         // 获取输出形状
         auto shape_info = output_tensor.GetTensorTypeAndShapeInfo();
         auto output_shape = shape_info.GetShape();
@@ -292,9 +290,30 @@ std::vector<float> Inference::get_output() const
         for (auto dim : output_shape) {
             output_size *= dim;
         }
-
         // 复制数据到结果向量
         std::vector<float> result(output_data, output_data + output_size);
+
+        if (use_filter)
+        {
+#ifdef DEBUG
+            float raw = result[4];
+#endif
+            if (last_use_filter != use_filter)
+            {
+                last_use_filter = use_filter;
+                cv::Mat input = cv::Mat(cv::Size(1, 45), CV_32F, result.data());
+                kalman_filter_.set_state(input.clone());
+            }
+            kalman_filter_.predict();
+            auto measure = cv::Mat(cv::Size(1, 45), CV_32F, result.data());
+            kalman_filter_.correct(measure.clone());
+            result = kalman_filter_.state_post_.clone();
+#ifdef DEBUG
+            float filtered = result[4];
+            plot_curve(raw, filtered);
+#endif
+        }
+
         return result;
     }
     catch (const std::exception& e) {
@@ -303,3 +322,94 @@ std::vector<float> Inference::get_output() const
     }
 }
 
+void Inference::set_use_filter(bool use)
+{
+    use_filter = use;
+}
+
+void Inference::init_kalman_filter()
+{
+    auto state_size = 45;
+
+    // 测量矩阵 H（假设测量值是状态的直接观测）
+
+    // 初始化协方差矩阵 P（初始估计的不确定性）
+    cv::Mat P = cv::Mat::eye(state_size, state_size, CV_32F) * 1.0f;
+
+    // 过程噪声 Q（可以动态调整）
+    auto update_Q = []() {
+        return cv::Mat::eye(45, 45, CV_32F) * 5e-2f;
+    };
+
+    // 测量噪声 R（可以根据测量值动态调整）
+    auto update_R = [](const cv::Mat& measurement) {
+        return cv::Mat::eye(45, 45, CV_32F) * 1.f;
+    };
+
+    // 定义状态转移函数
+    auto TransMat = [state_size](const cv::Mat& state) {
+        cv::Mat F = cv::Mat::eye(state_size, state_size, CV_32F);
+        return F;
+    };
+
+    // 定义测量矩阵函数
+    auto MeasureMat = [state_size](const cv::Mat& state) {
+        cv::Mat H = cv::Mat::eye(state_size, state_size, CV_32F);
+        return H;
+    };
+
+    kalman_filter_ = KalmanFilter(TransMat, MeasureMat, update_Q, update_R, P.clone());
+}
+
+
+void Inference::plot_curve(float raw, float filtered)
+{
+    // 限制数据点数量
+    if (raw_data.size() >= max_points) {
+        raw_data.erase(raw_data.begin());       // 删除最旧数据
+        filtered_data.erase(filtered_data.begin());
+    }
+
+    // 追加新数据
+    raw_data.push_back(raw);
+    filtered_data.push_back(filtered);
+
+    // 创建画布
+    int width = 800, height = 400;
+    cv::Mat plot = cv::Mat::zeros(height, width, CV_8UC3);
+    plot.setTo(cv::Scalar(30, 30, 30));  // 设置深灰色背景
+
+    // 计算最大最小值，用于归一化到画布
+    float min_val = *std::min_element(raw_data.begin(), raw_data.end());
+    float max_val = *std::max_element(raw_data.begin(), raw_data.end());
+    min_val = std::min(min_val, *std::min_element(filtered_data.begin(), filtered_data.end()));
+    max_val = std::max(max_val, *std::max_element(filtered_data.begin(), filtered_data.end()));
+
+    float range = max_val - min_val;
+    if (range < 1e-6) range = 1.0f;  // 避免除零问题
+
+    int step = width / max_points;  // x 轴步长
+    int y_offset = height - 50;     // y 轴偏移量
+
+    cv::Scalar raw_color(0, 0, 255);       // 原始数据：红色
+    cv::Scalar filtered_color(0, 255, 0);  // 滤波数据：绿色
+
+    // 绘制曲线
+    for (size_t i = 1; i < raw_data.size(); i++) {
+        int x1 = (i - 1) * step;
+        int x2 = i * step;
+
+        int y1_raw = y_offset - ((raw_data[i - 1] - min_val) / range) * (height - 100);
+        int y2_raw = y_offset - ((raw_data[i] - min_val) / range) * (height - 100);
+
+        int y1_filtered = y_offset - ((filtered_data[i - 1] - min_val) / range) * (height - 100);
+        int y2_filtered = y_offset - ((filtered_data[i] - min_val) / range) * (height - 100);
+
+        cv::line(plot, cv::Point(x1, y1_raw), cv::Point(x2, y2_raw), raw_color, 2);        // 画原始数据线
+        cv::line(plot, cv::Point(x1, y1_filtered), cv::Point(x2, y2_filtered), filtered_color, 2);  // 画滤波后数据线
+    }
+
+    // 显示图像
+    cv::imshow("Filtered Comparison", plot);
+    cv::waitKey(1);
+}

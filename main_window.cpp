@@ -35,29 +35,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     ui.WifiConnectLabel->setText("Wifi未连接");
 
     // 初始化亮度控制相关成员
-    brightness_timer = new QTimer(this);
-    brightness_timer->setSingleShot(true);
-    connect(brightness_timer, &QTimer::timeout, this, &PaperTrackMainWindow::sendBrightnessValue);
     current_brightness = 0;
-    // functions
-    connect(ui.wifi_send_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
-    connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
-    connect(ui.RotateImageBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onRotateAngleChanged);
-    connect(ui.FlashFirmwareButton, &QPushButton::clicked, this, &PaperTrackMainWindow::flashESP32);
-    connect(ui.restart_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onRestartButtonClicked);
-    // params
-    connect(ui.JawOpenBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawOpenChanged);
-    connect(ui.JawLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawLeftChanged);
-    connect(ui.JawRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawRightChanged);
-    connect(ui.MouthLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onMouthLeftChanged);
-    connect(ui.MouthRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onMouthRightChanged);
-    connect(ui.TongueOutBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueOutChanged);
-    connect(ui.TongueLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueLeftChanged);
-    connect(ui.TongueRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueRightChanged);
-    connect(ui.TongueUpBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueUpChanged);
-    connect(ui.TongueDownBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueDownChanged);
-    connect(ui.CheekPuffLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffLeftChanged);
-    connect(ui.CheekPuffRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffRightChanged);
+    // 连接信号和槽
+    connect_callbacks();
 
     // 添加输入框焦点事件处理
     ui.SSIDText->installEventFilter(this);
@@ -89,6 +69,8 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
             // 可以添加其他状态更新的日志，如果需要的话
         }, Qt::QueuedConnection);
     });
+
+
     // 添加ROI事件
     ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect, bool isEnd)
     {
@@ -106,13 +88,13 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
             roi_rect.y = 0;
         }
         // if roi is bigger than image, resize rect
-        if (roi_rect.x + roi_rect.width > 240)
+        if (roi_rect.x + roi_rect.width > 280)
         {
-            roi_rect.width = 240 - roi_rect.x;
+            roi_rect.width = 280 - roi_rect.x;
         }
-        if (roi_rect.y + roi_rect.height > 240)
+        if (roi_rect.y + roi_rect.height > 280)
         {
-            roi_rect.height = 240 - roi_rect.y;
+            roi_rect.height = 280 - roi_rect.y;
         }
     },ui.ImageLabel);
     ui.ImageLabel->installEventFilter(roiFilter);
@@ -181,7 +163,18 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         ui.SerialConnectLabel->setText("串口连接失败");
         LOG_WARN("串口未连接，尝试从wifi缓存中读取地址...");
         auto ip = wifi_cache_file_writer->try_get_wifi_config();
-        if (ip.has_value() && !ip.value().empty())
+        if (!ip.has_value())
+        {
+            QMessageBox msgBox;
+            msgBox.setText("未找到WiFi配置信息，请将面捕通过数据线连接到电脑进行首次配置");
+            msgBox.exec();
+        }
+        if (ip.value().empty())
+        {
+            QMessageBox msgBox;
+            msgBox.setText("未找到WiFi配置信息，请将面捕通过数据线连接到电脑进行首次配置");
+            msgBox.exec();
+        } else
         {
             LOG_INFO("从wifi缓存中读取地址成功");
             current_ip_ = ip.value();
@@ -189,18 +182,26 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
             {
                 start_image_download();
             });
-        } else
-        {
-            QMessageBox msgBox;
-            msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
-            msgBox.exec();
         }
     } else
     {
+        LOG_INFO("串口连接成功");
         ui.SerialConnectLabel->setText("串口连接成功");
     }
-
-
+    vrcftProcess = new QProcess(this);
+    // 启动VRCFT应用程序
+    // 尝试方法2: PowerShell查找并启动
+    QString command2 = "powershell -Command \"$pkg = Get-AppxPackage | Where-Object {$_.Name -like '*96ba052f*'}; if($pkg) { Start-Process ($pkg.InstallLocation + '\\VRCFaceTracking.exe') }\"";
+    vrcftProcess->start(command2);
+    // 连接信号以检测进程状态
+    connect(vrcftProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+        [this](int exitCode, QProcess::ExitStatus exitStatus) {
+            if (exitStatus == QProcess::NormalExit) {
+               // ui.SerialConnectLabel->setText("VRCFT已正常退出，退出码: " + QString::number(exitCode));
+            } else {
+               // ui.SerialConnectLabel->setText("VRCFT异常退出");
+            }
+        });
     // 启动视频显示线程
     LOG_INFO("正在启动视频处理线程...");
     show_video_thread = std::thread([this]() {
@@ -236,7 +237,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 // 推理处理
                 if (image_captured)
                 {
-                    cv::resize(frame, frame, cv::Size(240, 240));
+                    cv::resize(frame, frame, cv::Size(280, 280));
                     if (image_updated)
                     {
                         int y = frame.rows / 2;
@@ -258,11 +259,10 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     // 发送OSC数据
                     std::vector<float> output = inference->get_output();
                     if (!output.empty()) {
-                        osc_manager_->sendModelOutput(output);
                         AmpMapToOutput(output);
                         updateCalibrationProgressBars(output);
+                        osc_manager_->sendModelOutput(output);
                     }
-
                 }
                 // draw rect on frame
                 QImage qimage;
@@ -272,9 +272,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 } else
                 {
                     // default image which displays: "没有图像载入“
-                    cv::Mat default_frame = cv::Mat::zeros(240, 240, CV_8UC3);
+                    cv::Mat default_frame = cv::Mat::zeros(280, 280, CV_8UC3);
                     default_frame = cv::Scalar(255, 255, 255);
-                    cv::putText(default_frame, "No Image Loaded", cv::Point(10, 100), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 0), 2);
+                    cv::putText(default_frame, "No Image", cv::Point(10, 100), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 0), 2);
                     qimage = QImage(default_frame.data, default_frame.cols, default_frame.rows, default_frame.step, QImage::Format_RGB888).copy();
                 }
 
@@ -310,6 +310,15 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
 PaperTrackMainWindow::~PaperTrackMainWindow() {
     // 安全关闭
     LOG_INFO("正在关闭系统...");
+    if (vrcftProcess) {
+        if (vrcftProcess->state() == QProcess::Running) {
+            vrcftProcess->terminate();
+            if (!vrcftProcess->waitForFinished(3000)) {  // 等待最多3秒
+                vrcftProcess->kill();  // 如果进程没有及时终止，则强制结束
+            }
+        }
+        delete vrcftProcess;
+    }
     window_closed = true;
     image_downloader_->stop();
     if (brightness_timer) {
@@ -435,12 +444,12 @@ void PaperTrackMainWindow::onSendButtonClicked() {
     QString password = ui.PasswordText->toPlainText();
 
     // 输入验证
-    if (ssid == "请输入SSID" || ssid.isEmpty()) {
-        QMessageBox::warning(this, "输入错误", "请输入有效的SSID");
+    if (ssid == "请输入WIFI名字（仅支持2.4ghz）" || ssid.isEmpty()) {
+        QMessageBox::warning(this, "输入错误", "请输入有效的WIFI名字");
         return;
     }
 
-    if (password == "请输入密码" || password.isEmpty()) {
+    if (password == "请输入WIFI密码" || password.isEmpty()) {
         QMessageBox::warning(this, "输入错误", "请输入有效的密码");
         return;
     }
@@ -595,11 +604,11 @@ bool PaperTrackMainWindow::eventFilter(QObject *obj, QEvent *event)
     // 处理焦点获取事件
     if (event->type() == QEvent::FocusIn) {
         if (obj == ui.SSIDText) {
-            if (ui.SSIDText->toPlainText() == "请输入SSID") {
+            if (ui.SSIDText->toPlainText() == "请输入WIFI名字（仅支持2.4ghz）") {
                 ui.SSIDText->setPlainText("");
             }
         } else if (obj == ui.PasswordText) {
-            if (ui.PasswordText->toPlainText() == "请输入密码") {
+            if (ui.PasswordText->toPlainText() == "请输入WIFI密码") {
                 ui.PasswordText->setPlainText("");
             }
         }
@@ -609,11 +618,11 @@ bool PaperTrackMainWindow::eventFilter(QObject *obj, QEvent *event)
     if (event->type() == QEvent::FocusOut) {
         if (obj == ui.SSIDText) {
             if (ui.SSIDText->toPlainText().isEmpty()) {
-                ui.SSIDText->setPlainText("请输入SSID");
+                ui.SSIDText->setPlainText("请输入WIFI名字（仅支持2.4ghz）");
             }
         } else if (obj == ui.PasswordText) {
             if (ui.PasswordText->toPlainText().isEmpty()) {
-                ui.PasswordText->setPlainText("请输入密码");
+                ui.PasswordText->setPlainText("请输入WIFI密码");
             }
         }
     }
@@ -822,9 +831,41 @@ void PaperTrackMainWindow::AmpMapToOutput(std::vector<float>& output)
             if (blendShapeAmpMap[blendShapes[i]] != 0)
             {
                 output[i] = output[i] * (blendShapeAmpMap[blendShapes[i]] * 0.02 + 1);
-                output[i] = min(1, output[i]);
+                output[i] = min(1.0f, output[i]);
             }
         }
     }
+}
 
+void PaperTrackMainWindow::onUseFilterClicked(int value)
+{
+    inference->set_use_filter(value);
+}
+
+void PaperTrackMainWindow::connect_callbacks()
+{
+    brightness_timer = new QTimer(this);
+    brightness_timer->setSingleShot(true);
+
+    connect(brightness_timer, &QTimer::timeout, this, &PaperTrackMainWindow::sendBrightnessValue);
+    // functions
+    connect(ui.wifi_send_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
+    connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
+    connect(ui.RotateImageBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onRotateAngleChanged);
+    connect(ui.FlashFirmwareButton, &QPushButton::clicked, this, &PaperTrackMainWindow::flashESP32);
+    connect(ui.restart_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onRestartButtonClicked);
+    // params
+    connect(ui.JawOpenBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawOpenChanged);
+    connect(ui.JawLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawLeftChanged);
+    connect(ui.JawRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawRightChanged);
+    connect(ui.MouthLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onMouthLeftChanged);
+    connect(ui.MouthRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onMouthRightChanged);
+    connect(ui.TongueOutBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueOutChanged);
+    connect(ui.TongueLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueLeftChanged);
+    connect(ui.TongueRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueRightChanged);
+    connect(ui.TongueUpBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueUpChanged);
+    connect(ui.TongueDownBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueDownChanged);
+    connect(ui.CheekPuffLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffLeftChanged);
+    connect(ui.CheekPuffRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffRightChanged);
+    connect(ui.UseFilterBox, &QCheckBox::checkStateChanged, this, &PaperTrackMainWindow::onUseFilterClicked);
 }

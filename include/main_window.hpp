@@ -3,11 +3,13 @@
 //
 
 #pragma once
-
+#include <QProcess>
 #include <QWidget>
 #include <thread>
 #include <future>
 #include <atomic>
+#include <algorithm>
+#include <QTimer>
 
 #include "ui_main_window.h"
 #include "video_reader.hpp"
@@ -23,7 +25,7 @@ class PaperTrackMainWindow : public QWidget {
 public:
     explicit PaperTrackMainWindow(QWidget *parent = nullptr);
     ~PaperTrackMainWindow() override;
-
+    QProcess* vrcftProcess;
 private slots:
     void sendBrightnessValue();
     void onSendButtonClicked();
@@ -44,6 +46,7 @@ private slots:
     void onTongueRightChanged(int value);
     void onTongueUpChanged(int value);
     void onTongueDownChanged(int value);
+    void onUseFilterClicked(int value);
 
 
 private:
@@ -54,6 +57,9 @@ private:
 
     std::string current_ip_;
     void bound_pages();
+
+    void connect_callbacks();
+
     void flashESP32();
     void restartESP32();
     std::string getPortFromSerialManager(); // 获取串口端口名
@@ -67,7 +73,6 @@ private:
     std::vector<std::string> blendShapes;
     // 初始化ARKit模型输出的映射表
     void initBlendShapeIndexMap();
-
 
     void start_image_download();
 

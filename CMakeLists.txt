@@ -79,19 +79,38 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-long-long -pedantic")
 endif()
 
-add_executable(PaperTracker main.cpp
-    main_window.ui
-    main_window.cpp
-    serial.cpp
-    video_reader.cpp
-    inference.cpp
-    include/osc.hpp
-    osc.cpp
-    roi_event.cpp
-    image_downloader.cpp
-)
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    add_executable(PaperTracker
+        main.cpp
+        main_window.ui
+        main_window.cpp
+        serial.cpp
+        video_reader.cpp
+        inference.cpp
+        include/osc.hpp
+        osc.cpp
+        roi_event.cpp
+        image_downloader.cpp
+        kalman_fliter.cpp
+    )
+else ()
+    add_executable(PaperTracker WIN32
+            main.cpp
+            main_window.ui
+            main_window.cpp
+            serial.cpp
+            video_reader.cpp
+            inference.cpp
+            include/osc.hpp
+            osc.cpp
+            roi_event.cpp
+            image_downloader.cpp
+            kalman_fliter.cpp
+    )
+endif ()
 
-target_include_directories(
+
+    target_include_directories(
     PaperTracker PUBLIC
     include
     ${OpenCV_INCLUDE_DIRS}

@@ -67,7 +67,7 @@ private:
     std::condition_variable writeQueueCV;
 
     // 初始化串口
-    static HANDLE initSerialPort(const wchar_t* portName);
+    HANDLE initSerialPort(const wchar_t* portName);
     
     // 查找ESP32-S3设备串口
     std::string FindEsp32S3Port();

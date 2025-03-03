@@ -11,6 +11,7 @@
 
 #include <QtCore/QVariant>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QPlainTextEdit>
@@ -45,6 +46,7 @@ public:
     QLabel *WifiConnectLabel;
     QLabel *label_17;
     QScrollBar *RotateImageBar;
+    QCheckBox *UseFilterBox;
     QWidget *page_2;
     QScrollArea *scrollArea;
     QWidget *scrollAreaWidgetContents;
@@ -154,6 +156,9 @@ public:
         RotateImageBar->setObjectName("RotateImageBar");
         RotateImageBar->setGeometry(QRect(390, 160, 261, 20));
         RotateImageBar->setOrientation(Qt::Orientation::Horizontal);
+        UseFilterBox = new QCheckBox(page);
+        UseFilterBox->setObjectName("UseFilterBox");
+        UseFilterBox->setGeometry(QRect(650, 90, 81, 19));
         stackedWidget->addWidget(page);
         page_2 = new QWidget();
         page_2->setObjectName("page_2");
@@ -165,7 +170,7 @@ public:
         scrollArea->setWidgetResizable(false);
         scrollAreaWidgetContents = new QWidget();
         scrollAreaWidgetContents->setObjectName("scrollAreaWidgetContents");
-        scrollAreaWidgetContents->setGeometry(QRect(0, -73, 639, 500));
+        scrollAreaWidgetContents->setGeometry(QRect(0, 0, 639, 500));
         scrollAreaWidgetContents->setMinimumSize(QSize(0, 500));
         label_5 = new QLabel(scrollAreaWidgetContents);
         label_5->setObjectName("label_5");
@@ -321,7 +326,7 @@ public:
 
         retranslateUi(PaperTrackerMainWindow);
 
-        stackedWidget->setCurrentIndex(1);
+        stackedWidget->setCurrentIndex(0);
 
 
         QMetaObject::connectSlotsByName(PaperTrackerMainWindow);
@@ -331,8 +336,8 @@ public:
     {
         PaperTrackerMainWindow->setWindowTitle(QCoreApplication::translate("PaperTrackerMainWindow", "PaperTrack", nullptr));
         ImageLabel->setText(QString());
-        SSIDText->setPlainText(QCoreApplication::translate("PaperTrackerMainWindow", "\350\257\267\350\276\223\345\205\245SSID", nullptr));
-        PasswordText->setPlainText(QCoreApplication::translate("PaperTrackerMainWindow", "\350\257\267\350\276\223\345\205\245\345\257\206\347\240\201", nullptr));
+        SSIDText->setPlainText(QCoreApplication::translate("PaperTrackerMainWindow", "\350\257\267\350\276\223\345\205\245WIFI\345\220\215\345\255\227\357\274\210\344\273\205\346\224\257\346\214\2012.4ghz\357\274\211", nullptr));
+        PasswordText->setPlainText(QCoreApplication::translate("PaperTrackerMainWindow", "\350\257\267\350\276\223\345\205\245WIFI\345\257\206\347\240\201", nullptr));
         label->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\344\272\256\345\272\246\350\260\203\346\225\264", nullptr));
         wifi_send_Button->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\345\217\221\351\200\201", nullptr));
         FlashFirmwareButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\345\210\267\345\206\231\345\233\272\344\273\266", nullptr));
@@ -342,6 +347,7 @@ public:
         SerialConnectLabel->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\344\270\262\345\217\243\346\234\252\350\277\236\346\216\245", nullptr));
         WifiConnectLabel->setText(QCoreApplication::translate("PaperTrackerMainWindow", "wifi\346\234\252\350\277\236\346\216\245", nullptr));
         label_17->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\227\213\350\275\254\350\247\222\345\272\246\350\260\203\346\225\264", nullptr));
+        UseFilterBox->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\345\220\257\347\224\250\346\273\244\346\263\242", nullptr));
         label_5->setText(QCoreApplication::translate("PaperTrackerMainWindow", "cheekPuffLeft", nullptr));
         label_10->setText(QCoreApplication::translate("PaperTrackerMainWindow", "mouthLeft", nullptr));
         label_13->setText(QCoreApplication::translate("PaperTrackerMainWindow", "tongueUp", nullptr));

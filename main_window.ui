@@ -26,7 +26,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QLabel" name="ImageLabel">
@@ -52,7 +52,7 @@
       </rect>
      </property>
      <property name="plainText">
-      <string>请输入SSID</string>
+      <string>请输入WIFI名字（仅支持2.4ghz）</string>
      </property>
     </widget>
     <widget class="QPlainTextEdit" name="PasswordText">
@@ -65,7 +65,7 @@
       </rect>
      </property>
      <property name="plainText">
-      <string>请输入密码</string>
+      <string>请输入WIFI密码</string>
      </property>
     </widget>
     <widget class="QScrollBar" name="BrightnessBar">
@@ -240,6 +240,19 @@
       <enum>Qt::Orientation::Horizontal</enum>
      </property>
     </widget>
+    <widget class="QCheckBox" name="UseFilterBox">
+     <property name="geometry">
+      <rect>
+       <x>650</x>
+       <y>90</y>
+       <width>81</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>启用滤波</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="page_2">
     <widget class="QScrollArea" name="scrollArea">
@@ -267,7 +280,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-73</y>
+        <y>0</y>
         <width>639</width>
         <height>500</height>
        </rect>
