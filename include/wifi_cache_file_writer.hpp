@@ -9,6 +9,7 @@
 #include <fstream>
 #include <optional>
 #include <windows.h>
+#include <iostream>
 
 class WifiCacheFileWriter {
 public:
