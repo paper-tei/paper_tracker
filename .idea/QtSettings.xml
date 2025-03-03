@@ -28,6 +28,14 @@
             </PerProfileState>
           </value>
         </entry>
+        <entry key="Release">
+          <value>
+            <PerProfileState>
+              <option name="myQmlPath" value="$PROJECT_DIR$/../QtMVSC/6.8.2/msvc2022_64/qml" />
+              <option name="myQtBinPath" value="$PROJECT_DIR$/../QtMVSC/6.8.2/msvc2022_64/bin" />
+            </PerProfileState>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

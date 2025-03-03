@@ -166,13 +166,13 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         if (!ip.has_value())
         {
             QMessageBox msgBox;
-            msgBox.setText("未找到WiFi配置信息，请将面捕通过数据线连接到电脑进行首次配置");
+            msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
             msgBox.exec();
         }
         if (ip.value().empty())
         {
             QMessageBox msgBox;
-            msgBox.setText("未找到WiFi配置信息，请将面捕通过数据线连接到电脑进行首次配置");
+            msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
             msgBox.exec();
         } else
         {
