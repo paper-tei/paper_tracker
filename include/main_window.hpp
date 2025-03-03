@@ -44,6 +44,7 @@ private slots:
     void onTongueRightChanged(int value);
     void onTongueUpChanged(int value);
     void onTongueDownChanged(int value);
+    void onUseFilterClicked(int value);
 
 
 private:
@@ -54,6 +55,9 @@ private:
 
     std::string current_ip_;
     void bound_pages();
+
+    void connect_callbacks();
+
     void flashESP32();
     void restartESP32();
     std::string getPortFromSerialManager(); // 获取串口端口名
