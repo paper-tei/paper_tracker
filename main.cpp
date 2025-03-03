@@ -19,8 +19,6 @@ int main(int argc, char *argv[]) {
         qWarning("无法打开 QSS 文件");
     }
 
-
-
     PaperTrackMainWindow window;
     window.setWindowIcon(QIcon("./resources/window_icon.png"));  // 设置窗口图标
     window.show();

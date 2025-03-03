@@ -42,6 +42,8 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     // 连接UI信号槽
     connect(ui.wifi_send_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
     connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
+    connect(ui.RotateImageBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onRotateAngleChanged);
+
     connect(ui.FlashFirmwareButton, &QPushButton::clicked, this, &PaperTrackMainWindow::flashESP32);
     connect(ui.restart_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onRestartButtonClicked);
     // 添加输入框焦点事件处理
@@ -91,16 +93,17 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
             roi_rect.y = 0;
         }
         // if roi is bigger than image, resize rect
-        if (roi_rect.x + roi_rect.width > 361)
+        if (roi_rect.x + roi_rect.width > 240)
         {
-            roi_rect.width = 361 - roi_rect.x;
+            roi_rect.width = 240 - roi_rect.x;
         }
-        if (roi_rect.y + roi_rect.height > 251)
+        if (roi_rect.y + roi_rect.height > 240)
         {
-            roi_rect.height = 251 - roi_rect.y;
+            roi_rect.height = 240 - roi_rect.y;
         }
     },ui.ImageLabel);
     ui.ImageLabel->installEventFilter(roiFilter);
+    ui.ImageLabelCal->installEventFilter(roiFilter);
 
     // 初始化页面导航
     bound_pages();
@@ -191,6 +194,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         cv::Mat frame;
         while (!window_closed) {
             try {
+                bool image_updated = false;
                 if (use_user_camera)
                 {
                     if (!video_reader->is_opened()) {
@@ -198,10 +202,12 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                         continue;
                     }
                     // 获取视频帧
-                     frame = video_reader->get_image();
+                    frame = video_reader->get_image();
+                    image_updated = true;
                 } else {
                     if (!image_buffer_queue.empty())
                     {
+                        image_updated = true;
                         frame = std::move(image_buffer_queue.front());
                         image_buffer_queue.pop();
                     }
@@ -213,10 +219,18 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 }
 
 
+
                 // 推理处理
                 if (image_captured)
                 {
-                    cv::resize(frame, frame, cv::Size(361, 251));
+                    cv::resize(frame, frame, cv::Size(240, 240));
+                    if (image_updated)
+                    {
+                        int y = frame.rows / 2;
+                        int x = frame.cols / 2;
+                        auto rotate_matrix = cv::getRotationMatrix2D(cv::Point(x, y), current_rotate_angle / 99.0 * 360.0, 1);
+                        cv::warpAffine(frame, frame, rotate_matrix, frame.size());
+                    }
                     cv::Mat infer_frame;
                     infer_frame = frame.clone();
                     if (!roi_rect.empty() && is_roi_end)
@@ -244,7 +258,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                 } else
                 {
                     // default image which displays: "没有图像载入“
-                    cv::Mat default_frame = cv::Mat::zeros(251, 361, CV_8UC3);
+                    cv::Mat default_frame = cv::Mat::zeros(240, 240, CV_8UC3);
                     default_frame = cv::Scalar(255, 255, 255);
                     cv::putText(default_frame, "No Image Loaded", cv::Point(10, 100), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 0), 2);
                     qimage = QImage(default_frame.data, default_frame.cols, default_frame.rows, default_frame.step, QImage::Format_RGB888).copy();
@@ -252,9 +266,17 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
 
                 // 使用Qt的线程安全方式更新UI
                 QMetaObject::invokeMethod(this, [this, qimage]() {
-                    ui.ImageLabel->setPixmap(QPixmap::fromImage(qimage));
-                    ui.ImageLabel->setScaledContents(true);
-                    ui.ImageLabel->update();
+                    auto pix_map = QPixmap::fromImage(qimage);
+                    if (ui.stackedWidget->currentIndex() == 0)
+                    {
+                        ui.ImageLabel->setPixmap(pix_map);
+                        ui.ImageLabel->setScaledContents(true);
+                        ui.ImageLabel->update();
+                    } else if (ui.stackedWidget->currentIndex() == 1) {
+                        ui.ImageLabelCal->setPixmap(pix_map);
+                        ui.ImageLabelCal->setScaledContents(true);
+                        ui.ImageLabelCal->update();
+                    }
                 }, Qt::QueuedConnection);
                 // 控制帧率
                 cv::waitKey(13);
@@ -427,6 +449,14 @@ void PaperTrackMainWindow::onBrightnessChanged(int value) {
     // 重置定时器，如果用户500毫秒内没有再次改变值，就发送数据包
     brightness_timer->start(100);
 }
+
+void PaperTrackMainWindow::onRotateAngleChanged(int value)
+{
+    current_rotate_angle = value;
+}
+
+
+
 // 添加新的发送亮度值函数
 void PaperTrackMainWindow::sendBrightnessValue() {
     // 发送亮度控制命令 - 确保亮度值为三位数字
