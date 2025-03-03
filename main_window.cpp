@@ -106,9 +106,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     bound_pages();
 
     // 异步加载视频
-    LOG_INFO("正在加载视频...");
     if (use_user_camera)
     {
+        LOG_INFO("正在加载视频...");
         auto video_future = std::async(std::launch::async, [this]() {
             try {
                 video_reader->open_video("D:/Babble/test_video.mkv");
@@ -156,7 +156,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     LOG_INFO("初始化ARKit模型输出映射表完成");
     LOG_INFO("系统初始化完成");
 
+    LOG_INFO("等待串口状态响应");
     while (serial_port_manager_->status() == SerialStatus::CLOSED) {}
+    LOG_INFO("串口状态响应完毕");
 
     if (serial_port_manager_->status() == SerialStatus::FAILED && !use_user_camera)
     {

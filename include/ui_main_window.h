@@ -125,11 +125,11 @@ public:
         PasswordText->setGeometry(QRect(390, 80, 221, 41));
         BrightnessBar = new QScrollBar(page);
         BrightnessBar->setObjectName("BrightnessBar");
-        BrightnessBar->setGeometry(QRect(460, 140, 261, 31));
+        BrightnessBar->setGeometry(QRect(450, 150, 261, 20));
         BrightnessBar->setOrientation(Qt::Orientation::Horizontal);
         label = new QLabel(page);
         label->setObjectName("label");
-        label->setGeometry(QRect(390, 140, 51, 31));
+        label->setGeometry(QRect(390, 150, 51, 21));
         wifi_send_Button = new QPushButton(page);
         wifi_send_Button->setObjectName("wifi_send_Button");
         wifi_send_Button->setGeometry(QRect(630, 30, 91, 91));
