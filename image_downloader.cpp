@@ -48,25 +48,6 @@ bool ESP32VideoStream::start() {
     }
     
     isRunning = true;
-    curl = curl_easy_init();
-    if (!curl) {
-        std::cerr << "初始化curl失败" << std::endl;
-        isRunning = false;
-        return false;
-    }
-
-    // 设置CURL选项
-    curl_easy_setopt(curl, CURLOPT_URL, currentStreamUrl.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 0L); // 无超时
-    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L); // 连接超时10秒
-
-    // 低速检测（防止连接丢失时卡住）
-    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1L);
-    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 10L);
-
-    std::cout << "开始连接ESP32视频流: " << currentStreamUrl << std::endl;
 
     // 创建线程处理视频流
     streamThread = std::thread(&ESP32VideoStream::streamThreadFunc, this);
@@ -162,9 +143,6 @@ void ESP32VideoStream::processFramesInBuffer() {
         }
     }
 
-
-
-
     // 防止缓冲区无限增长
     if (streamBuffer.size() > MAX_BUFFER_SIZE) {
         std::cerr << "警告: 缓冲区过大，可能丢失帧" << std::endl;
@@ -248,12 +226,32 @@ void ESP32VideoStream::processJpegFrame(const std::vector<char>& jpegData) {
 
 // 视频流处理线程
 void ESP32VideoStream::streamThreadFunc() {
-    // 启动连接
-    CURLcode res = curl_easy_perform(curl);
-    
-    if (res != CURLE_OK) {
-        std::cerr << "curl_easy_perform() 失败: " << curl_easy_strerror(res) << std::endl;
+    curl = curl_easy_init();
+    while (isRunning)
+    {
+        if (!curl) {
+            std::cerr << "初始化curl失败" << std::endl;
+            continue ;
+        }
+
+        // 设置CURL选项
+        curl_easy_setopt(curl, CURLOPT_URL, currentStreamUrl.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
+
+        // 低速检测（防止连接丢失时卡住）
+        curl_easy_setopt (curl, CURLOPT_LOW_SPEED_TIME, 1L);
+        curl_easy_setopt (curl, CURLOPT_LOW_SPEED_LIMIT, 3000L);
+
+        std::cout << "开始连接ESP32视频流: " << currentStreamUrl << std::endl;
+
+        // 启动连接
+        CURLcode res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK) {
+            std::cerr << "curl_easy_perform() 失败: " << curl_easy_strerror(res) << std::endl;
+            continue ;
+        }
     }
     std::cout << "ESP32视频流线程退出" << std::endl;
-    isRunning = false;
 }

@@ -1,7 +1,6 @@
 #include <QApplication>
 #include <QPushButton>
 
-#include "logger.h"
 #include "main_window.hpp"
 
 #include <curl/curl.h>
