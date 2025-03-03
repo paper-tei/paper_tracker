@@ -26,7 +26,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QLabel" name="ImageLabel">
@@ -34,8 +34,8 @@
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>371</width>
-       <height>261</height>
+       <width>280</width>
+       <height>280</height>
       </rect>
      </property>
      <property name="text">
@@ -45,8 +45,8 @@
     <widget class="QPlainTextEdit" name="SSIDText">
      <property name="geometry">
       <rect>
-       <x>390</x>
-       <y>30</y>
+       <x>310</x>
+       <y>10</y>
        <width>221</width>
        <height>41</height>
       </rect>
@@ -58,8 +58,8 @@
     <widget class="QPlainTextEdit" name="PasswordText">
      <property name="geometry">
       <rect>
-       <x>390</x>
-       <y>80</y>
+       <x>310</x>
+       <y>60</y>
        <width>221</width>
        <height>41</height>
       </rect>
@@ -71,8 +71,8 @@
     <widget class="QScrollBar" name="BrightnessBar">
      <property name="geometry">
       <rect>
-       <x>450</x>
-       <y>150</y>
+       <x>370</x>
+       <y>130</y>
        <width>261</width>
        <height>20</height>
       </rect>
@@ -84,8 +84,8 @@
     <widget class="QLabel" name="label">
      <property name="geometry">
       <rect>
-       <x>390</x>
-       <y>150</y>
+       <x>310</x>
+       <y>130</y>
        <width>51</width>
        <height>21</height>
       </rect>
@@ -97,8 +97,8 @@
     <widget class="QPushButton" name="wifi_send_Button">
      <property name="geometry">
       <rect>
-       <x>630</x>
-       <y>30</y>
+       <x>550</x>
+       <y>10</y>
        <width>91</width>
        <height>91</height>
       </rect>
@@ -110,8 +110,8 @@
     <widget class="QPushButton" name="FlashFirmwareButton">
      <property name="geometry">
       <rect>
-       <x>730</x>
-       <y>30</y>
+       <x>650</x>
+       <y>10</y>
        <width>91</width>
        <height>31</height>
       </rect>
@@ -137,9 +137,9 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>270</y>
+       <y>291</y>
        <width>111</width>
-       <height>31</height>
+       <height>20</height>
       </rect>
      </property>
      <property name="text">
@@ -149,8 +149,8 @@
     <widget class="QTextEdit" name="textEdit">
      <property name="geometry">
       <rect>
-       <x>390</x>
-       <y>220</y>
+       <x>310</x>
+       <y>240</y>
        <width>221</width>
        <height>41</height>
       </rect>
@@ -162,8 +162,8 @@
     <widget class="QLabel" name="label_16">
      <property name="geometry">
       <rect>
-       <x>390</x>
-       <y>180</y>
+       <x>310</x>
+       <y>210</y>
        <width>51</width>
        <height>31</height>
       </rect>
@@ -175,8 +175,8 @@
     <widget class="QPushButton" name="restart_Button">
      <property name="geometry">
       <rect>
-       <x>730</x>
-       <y>70</y>
+       <x>650</x>
+       <y>50</y>
        <width>91</width>
        <height>31</height>
       </rect>
@@ -188,8 +188,8 @@
     <widget class="QLabel" name="SerialConnectLabel">
      <property name="geometry">
       <rect>
-       <x>390</x>
-       <y>270</y>
+       <x>660</x>
+       <y>210</y>
        <width>71</width>
        <height>31</height>
       </rect>
@@ -204,14 +204,40 @@
     <widget class="QLabel" name="WifiConnectLabel">
      <property name="geometry">
       <rect>
-       <x>520</x>
-       <y>270</y>
+       <x>660</x>
+       <y>250</y>
        <width>71</width>
        <height>31</height>
       </rect>
      </property>
      <property name="text">
       <string>wifi未连接</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_17">
+     <property name="geometry">
+      <rect>
+       <x>310</x>
+       <y>160</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>旋转角度调整</string>
+     </property>
+    </widget>
+    <widget class="QScrollBar" name="RotateImageBar">
+     <property name="geometry">
+      <rect>
+       <x>390</x>
+       <y>160</y>
+       <width>261</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
     </widget>
    </widget>
@@ -247,13 +273,13 @@
       <rect>
        <x>0</x>
        <y>30</y>
-       <width>641</width>
+       <width>500</width>
        <height>441</height>
       </rect>
      </property>
      <property name="minimumSize">
       <size>
-       <width>641</width>
+       <width>500</width>
        <height>441</height>
       </size>
      </property>
@@ -835,7 +861,7 @@
     <widget class="QPushButton" name="StartCalibrationButton">
      <property name="geometry">
       <rect>
-       <x>660</x>
+       <x>510</x>
        <y>30</y>
        <width>131</width>
        <height>41</height>
@@ -848,10 +874,10 @@
     <widget class="QComboBox" name="CalibrationModeComboBox">
      <property name="geometry">
       <rect>
-       <x>660</x>
-       <y>110</y>
+       <x>650</x>
+       <y>30</y>
        <width>131</width>
-       <height>31</height>
+       <height>41</height>
       </rect>
      </property>
      <item>
@@ -868,8 +894,8 @@
     <widget class="QPushButton" name="ResetMaxButton">
      <property name="geometry">
       <rect>
-       <x>660</x>
-       <y>430</y>
+       <x>650</x>
+       <y>80</y>
        <width>131</width>
        <height>41</height>
       </rect>
@@ -881,8 +907,8 @@
     <widget class="QPushButton" name="ResetMinButton">
      <property name="geometry">
       <rect>
-       <x>660</x>
-       <y>380</y>
+       <x>510</x>
+       <y>80</y>
        <width>131</width>
        <height>41</height>
       </rect>
@@ -891,17 +917,17 @@
       <string>重置最小值</string>
      </property>
     </widget>
-    <widget class="QLabel" name="label_29">
+    <widget class="QLabel" name="ImageLabelCal">
      <property name="geometry">
       <rect>
-       <x>660</x>
-       <y>90</y>
-       <width>91</width>
-       <height>16</height>
+       <x>510</x>
+       <y>190</y>
+       <width>280</width>
+       <height>280</height>
       </rect>
      </property>
      <property name="text">
-      <string>标定模式选择</string>
+      <string/>
      </property>
     </widget>
    </widget>
