@@ -219,6 +219,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     std::vector<float> output = inference.get_output();
                     if (!output.empty()) {
                         osc_manager_.sendModelOutput(output);
+                        updateCalibrationProgressBars(output);
                     }
 
                 }
