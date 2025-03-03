@@ -240,9 +240,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
                     // 发送OSC数据
                     std::vector<float> output = inference->get_output();
                     if (!output.empty()) {
-                        osc_manager_->sendModelOutput(output);
                         AmpMapToOutput(output);
                         updateCalibrationProgressBars(output);
+                        osc_manager_->sendModelOutput(output);
                     }
 
                 }
