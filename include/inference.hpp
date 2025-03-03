@@ -5,16 +5,21 @@
 #ifndef BABBLE_INFERENCE_HPP
 #define BABBLE_INFERENCE_HPP
 
+#include <kalman_filter.hpp>
 #include <string>
 #include <memory>
 #include <vector>
 #include <opencv2/core.hpp>
 #include <onnxruntime_cxx_api.h>
 #include "logger.hpp"
+#include <chrono>
 
 class Inference {
 public:
-    Inference() : input_h_(256), input_w_(256), input_c_(1) {}
+    Inference() : input_h_(256), input_w_(256), input_c_(1)
+    {
+        init_kalman_filter();
+    }
     ~Inference() = default;
 
     // 加载模型
@@ -23,11 +28,12 @@ public:
     // 运行推理
     void inference(cv::Mat& image);
 
-    // 显示结果
-    void show_result();
+    std::vector<float> get_output();
 
-    std::vector<float> get_output() const;
+    void set_use_filter(bool use);
 private:
+    void init_kalman_filter();
+
     // 初始化输入输出名称
     void init_io_names();
 
@@ -42,6 +48,8 @@ private:
 
     // 处理结果
     void process_results();
+
+    void plot_curve(float raw, float filtered);
 
     // 会话和会话选项
     std::shared_ptr<Ort::Session> session_;
@@ -70,6 +78,13 @@ private:
     Ort::MemoryInfo memory_info_{nullptr};
     Ort::Value input_tensor_{nullptr};
     std::vector<Ort::Value> output_tensors_;
+
+    bool use_filter = false;
+    bool last_use_filter = use_filter;
+    KalmanFilter kalman_filter_;
+    std::vector<float> raw_data;       // 存储原始数据
+    std::vector<float> filtered_data;  // 存储滤波后数据
+    int max_points = 200;        // 只保留最近 200 个点，防止图像过长
 };
 
 #endif //BABBLE_INFERENCE_HPP
