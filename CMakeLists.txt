@@ -89,6 +89,7 @@ add_executable(PaperTracker main.cpp
     osc.cpp
     roi_event.cpp
     image_downloader.cpp
+        kalman_fliter.cpp
 )
 
 target_include_directories(
