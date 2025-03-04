@@ -40,7 +40,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
 
     wifi_cache_file_writer = std::make_shared<WifiCacheFileWriter>("./wifi_cache.txt");
     // 初始化串口
-    serial_port_manager_ = std::make_shared<SerialPortManager>();
+    serial_port_manager_ = std::make_shared<SerialPortManager>(ui.SerialConnectLabel);
     inference = std::make_shared<Inference>();
     osc_manager_ = std::make_shared<OscManager>();
     image_downloader_ = std::make_shared<ESP32VideoStream>(ui.WifiConnectLabel);

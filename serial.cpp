@@ -35,8 +35,8 @@
 #define COM_PORT L"COM101"  // 指定要打开的串口号
 
 // 修改SerialPortManager的构造函数
-SerialPortManager::SerialPortManager()
-    : hSerial(INVALID_HANDLE_VALUE), running(false) {
+SerialPortManager::SerialPortManager(QLabel* label)
+    : hSerial(INVALID_HANDLE_VALUE), running(false), label_(label) {
     m_status = SerialStatus::CLOSED;
     init();
 }
@@ -122,6 +122,7 @@ void SerialPortManager::init()
     if (hSerial != INVALID_HANDLE_VALUE) {
         LOG_INFO("串口打开成功！");
         running = true;
+        label_->setText("串口打开成功！");
     } else {
         LOG_ERROR("串口打开失败，错误码: " + GetLastError());
         m_status = SerialStatus::FAILED;
