@@ -3,7 +3,6 @@
 #include <QFile>
 
 #include "main_window.hpp"
-
 #include <curl/curl.h>
 
 int main(int argc, char *argv[]) {

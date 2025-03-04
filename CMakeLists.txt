@@ -162,7 +162,7 @@ add_library(
 target_include_directories(
     ui
     PUBLIC
-    include
+    ui/include
     ${OpenCV_INCLUDE_DIRS}
     ${ONNXRUNTIME_ROOT}/include
     ${CMAKE_SOURCE_DIR}/3rdParty/oscpack

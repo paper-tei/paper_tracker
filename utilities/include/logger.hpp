@@ -24,10 +24,10 @@ void init_logger(QPlainTextEdit* log_window);
 
 class Logger {
 public:
-    static void log(const std::string& message, LogLevel level);
+    static void log(LogLevel level, const std::string& message);
 
 private:
-    Logger(QPlainTextEdit* log_window) : log_window(log_window) {}
+    explicit Logger(QPlainTextEdit* log_window) : log_window(log_window) {}
 
     ~Logger() = default;
 
@@ -44,9 +44,9 @@ constexpr std::string INFO_STR = "INFO: ";
 constexpr std::string WARN_STR = "WARN: ";
 constexpr std::string ERROR_STR = "ERROR: ";
 
-#define LOG_DEBUG(message) Logger::log(DEBUG_STR + message, LogLevel::debug);
-#define LOG_INFO(message) Logger::log(INFO_STR + message, LogLevel::info)
-#define LOG_WARN(message) Logger::log(WARN_STR + message, LogLevel::warn)
-#define LOG_ERROR(message) Logger::log(ERROR_STR + message, LogLevel::error)
+#define LOG_DEBUG(message) Logger::log(LogLevel::debug, DEBUG_STR + message);
+#define LOG_INFO(message) Logger::log(LogLevel::info, INFO_STR + message)
+#define LOG_WARN(message) Logger::log(LogLevel::warn, WARN_STR + message)
+#define LOG_ERROR(message) Logger::log(LogLevel::error, ERROR_STR + message)
 
 #endif //LOGGER_HPP

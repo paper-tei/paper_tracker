@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <thread>
-#include <mutex>
 #include <atomic>
 #include <functional>
 #include <opencv2/core.hpp>
@@ -31,7 +30,7 @@ public:
     void stop();
 
     // 获取最新的帧
-    cv::Mat getLatestFrame();
+    cv::Mat getLatestFrame() const;
 
     // 检查流是否正在运行
     bool isStreaming() const { return isRunning; }

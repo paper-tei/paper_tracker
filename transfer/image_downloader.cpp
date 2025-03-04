@@ -30,16 +30,15 @@
 std::mutex frameMutex;
 
 // 定义MJPEG流的边界标记
-const std::string CONTENT_TYPE_HEADER = "Content-Type:";
-const std::string BOUNDARY_MARKER = "boundary=";
-const std::string CONTENT_LENGTH_HEADER = "Content-Length:";
-const std::string DOUBLE_NEWLINE = "\r\n\r\n";
+constexpr std::string CONTENT_TYPE_HEADER = "Content-Type:";
+constexpr std::string BOUNDARY_MARKER = "boundary=";
+constexpr std::string CONTENT_LENGTH_HEADER = "Content-Length:";
+constexpr std::string DOUBLE_NEWLINE = "\r\n\r\n";
 
 ESP32VideoStream::ESP32VideoStream()
     : isRunning(false), 
       frameCallback(nullptr),
-      curl(nullptr),
-       {}
+      curl(nullptr) {}
 
 ESP32VideoStream::~ESP32VideoStream() {
     stop();
@@ -48,7 +47,7 @@ ESP32VideoStream::~ESP32VideoStream() {
 // 初始化视频流，设置ESP32的URL和可选的回调函数
 bool ESP32VideoStream::init(const std::string& url, FrameCallback callback) {
     currentStreamUrl = url;
-    frameCallback = callback;
+    frameCallback = std::move(callback);
     
     // 初始化CURL
     curl_global_init(CURL_GLOBAL_ALL);
@@ -87,14 +86,15 @@ void ESP32VideoStream::stop() {
 }
 
 // 获取最新的帧
-cv::Mat ESP32VideoStream::getLatestFrame() {
+cv::Mat ESP32VideoStream::getLatestFrame() const
+{
     std::lock_guard<std::mutex> lock(frameMutex);
     return latestFrame.clone();
 }
 
 // CURL写回调函数 - 处理数据块
 size_t ESP32VideoStream::writeCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
-    ESP32VideoStream* stream = static_cast<ESP32VideoStream*>(userdata);
+    auto* stream = static_cast<ESP32VideoStream*>(userdata);
     return stream->handleStreamData(ptr, size * nmemb);
 }
 
@@ -149,7 +149,7 @@ void ESP32VideoStream::processFramesInBuffer() {
                 std::vector<char> newBuffer(streamBuffer.begin() + searchPos, streamBuffer.end());
                 streamBuffer.swap(newBuffer); // 交换比直接擦除更安全
             } catch (const std::exception& e) {
-                LOG_ERROR("清理缓冲区时出错: " + QString(e.what()));
+                LOG_ERROR("清理缓冲区时出错: " + e.what());
                 streamBuffer.clear(); // 如果失败则清空
             }
         } else {
@@ -235,7 +235,7 @@ void ESP32VideoStream::processJpegFrame(const std::vector<char>& jpegData) {
             }
         }
     } catch (const cv::Exception& e) {
-        LOG_ERROR("处理JPEG帧出错: " + QString(e.what()));
+        LOG_ERROR("处理JPEG帧出错: " + e.what());
     }
 }
 
@@ -258,19 +258,18 @@ void ESP32VideoStream::streamThreadFunc() {
         curl_easy_setopt (curl, CURLOPT_LOW_SPEED_TIME, 1L);
         curl_easy_setopt (curl, CURLOPT_LOW_SPEED_LIMIT, 3000L);
 
-        LOG_INFO("开始连接ESP32视频流: " + QString(currentStreamUrl.c_str()));
+        LOG_INFO("开始连接ESP32视频流: " + currentStreamUrl);
 
         // 启动连接
         CURLcode res = curl_easy_perform(curl);
 
         if (res != CURLE_OK) {
-            state_label->setText("WIFI连接失败");
-            LOG_ERROR("curl_easy_perform() 失败: " + QString(curl_easy_strerror(res)));
+            LOG_ERROR("curl_easy_perform() 失败: " + curl_easy_strerror(res));
             std::this_thread::sleep_for(std::chrono::seconds(1));
             continue ;
         } else
         {
-            state_label->setText("WIFI连接成功");
+            isRunning = false;
         }
     }
     LOG_INFO("ESP32视频流线程退出");

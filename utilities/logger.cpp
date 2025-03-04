@@ -4,7 +4,7 @@
 #include "logger.hpp"
 #include "iostream"
 
-void Logger::log(const std::string& message, LogLevel level)
+void Logger::log(LogLevel level, const std::string& message)
 {
     if (message.empty())
     {

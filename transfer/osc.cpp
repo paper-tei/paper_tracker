@@ -64,7 +64,7 @@ bool OscManager::init(const std::string& address, int port) {
         );
         return true;
     } catch (const std::exception& e) {
-        LOG_ERROR("OSC初始化错误: " + QString(e.what()));
+        LOG_ERROR("OSC初始化错误: " + e.what());
         return false;
     }
 }
@@ -87,7 +87,7 @@ bool OscManager::sendModelOutput(const std::vector<float>& output) {
 
     // 确保有足够的输出值
     if (output.size() < 45) {
-        LOG_ERROR("模型输出数组大小不足，需要45个元素，实际: " + QString::number(output.size()));
+        LOG_ERROR("模型输出数组大小不足，需要45个元素，实际: " + std::to_string(output.size()));
         return false;
     }
 
@@ -95,7 +95,7 @@ bool OscManager::sendModelOutput(const std::vector<float>& output) {
 
     try {
         // 计算最大裁剪值
-        float max_clip_value = std::pow(10, std::floor(std::log10(multiplier_)));
+        float max_clip_value = std::powf(10, std::floor(std::log10(multiplier_)));
 
         // 定义所有ARKit模型输出名称
         const std::string blend_shapes[] = {
@@ -145,7 +145,7 @@ bool OscManager::sendModelOutput(const std::vector<float>& output) {
 
         return true;
     } catch (const std::exception& e) {
-        LOG_ERROR("发送OSC消息错误: " + QString(e.what()));
+        LOG_ERROR("发送OSC消息错误: " + e.what());
         return false;
     }
 }
