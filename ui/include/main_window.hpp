@@ -22,34 +22,41 @@
 #include "logger.hpp"
 
 class PaperTrackMainWindow : public QWidget {
+private:
+    // UI组件
+    Ui::PaperTrackerMainWindow ui{};
 public:
     explicit PaperTrackMainWindow(QWidget *parent = nullptr);
     ~PaperTrackMainWindow() override;
     QProcess* vrcftProcess;
 private slots:
     void sendBrightnessValue();
+
     void onSendButtonClicked();
     void onBrightnessChanged(int value);
     void onRotateAngleChanged(int value);
     void onUseUserCameraClicked(int value);
     void onRestartButtonClicked();
-
-    void onCheeckPuffLeftChanged(int value);
-    void onCheeckPuffRightChanged(int value);
-    void onJawOpenChanged(int value);
-    void onJawLeftChanged(int value);
-    void onJawRightChanged(int value);
-    void onMouthLeftChanged(int value);
-    void onMouthRightChanged(int value);
-    void onTongueOutChanged(int value);
-    void onTongueLeftChanged(int value);
-    void onTongueRightChanged(int value);
-    void onTongueUpChanged(int value);
-    void onTongueDownChanged(int value);
     void onUseFilterClicked(int value);
-
+public:
+    using FuncWithoutArgs = std::function<void()>;
+    using FuncWithVal = std::function<void(int)>;
+    // let user decide what to do with these action
+    void setSendBrightnessValueFunc(FuncWithVal func) { sendBrightnessValueFunc = std::move(func); }
+    void setOnSendButtonClickedFunc(FuncWithoutArgs func) { onSendButtonClickedFunc = std::move(func); }
+    void setOnUseFilterClickedFunc(FuncWithVal func) { onUseFilterClickedFunc = std::move(func); }
+    void setOnUseUserCameraClickedFunc(FuncWithVal func) { onUseUserCameraClickedFunc = std::move(func); }
+    void setOnRestartButtonClickedFunc(FuncWithoutArgs func) { onRestartButtonClickedFunc = std::move(func); }
+    void setOnRotateAngleChangedFunc(FuncWithVal func) { onRotateAngleChangedFunc = std::move(func); }
 
 private:
+    FuncWithoutArgs onSendButtonClickedFunc;
+    FuncWithVal sendBrightnessValueFunc;
+    FuncWithVal onRotateAngleChangedFunc;
+    FuncWithVal onUseUserCameraClickedFunc;
+    FuncWithoutArgs onRestartButtonClickedFunc;
+    FuncWithVal onUseFilterClickedFunc;
+
     QTimer* brightness_timer;
 
     int current_brightness;
@@ -76,8 +83,6 @@ private:
 
     void start_image_download();
 
-    // UI组件
-    Ui::PaperTrackerMainWindow ui{};
 
     cv::Rect roi_rect;
     bool is_roi_end = true;

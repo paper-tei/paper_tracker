@@ -511,8 +511,10 @@ void PaperTrackMainWindow::sendBrightnessValue() {
     serial_port_manager_->write_data(packet);
 
     // 记录操作
-    LOG_INFO("已设置亮度: " + QString::number(current_brightness));
+    LOG_INFO("已设置亮度: " + std::to_string(current_brightness));
 }
+
+
 // 获取串口端口名称
 std::string PaperTrackMainWindow::getPortFromSerialManager() {
     // 从SerialPortManager获取COM端口名称
@@ -779,65 +781,11 @@ void PaperTrackMainWindow::start_image_download()
     }
 }
 
-void PaperTrackMainWindow::onCheeckPuffLeftChanged(int value)
-{
-    blendShapeAmpMap["cheekPuffLeft"] = value;
-}
-
-void PaperTrackMainWindow::onCheeckPuffRightChanged(int value)
-{
-    blendShapeAmpMap["cheekPuffRight"] = value;
-}
-
-void PaperTrackMainWindow::onJawOpenChanged(int value)
-{
-    blendShapeAmpMap["jawOpen"] = value;
-}
-
-void PaperTrackMainWindow::onJawLeftChanged(int value)
-{
-    blendShapeAmpMap["jawLeft"] = value;
-}
-
-void PaperTrackMainWindow::onJawRightChanged(int value)
-{
-    blendShapeAmpMap["jawRight"] = value;
-}
-
-void PaperTrackMainWindow::onMouthLeftChanged(int value)
-{
-    blendShapeAmpMap["mouthLeft"] = value;
-}
-
-void PaperTrackMainWindow::onMouthRightChanged(int value)
-{
-    blendShapeAmpMap["mouthRight"] = value;
-}
-
-void PaperTrackMainWindow::onTongueOutChanged(int value)
-{
-    blendShapeAmpMap["tongueOut"] = value;
-}
-
-void PaperTrackMainWindow::onTongueLeftChanged(int value)
-{
-    blendShapeAmpMap["tongueLeft"] = value;
-}
-
-void PaperTrackMainWindow::onTongueRightChanged(int value)
-{
-    blendShapeAmpMap["tongueRight"] = value;
-}
-
-void PaperTrackMainWindow::onTongueUpChanged(int value)
-{
-    blendShapeAmpMap["tongueUp"] = value;
-}
-
-void PaperTrackMainWindow::onTongueDownChanged(int value)
-{
-    blendShapeAmpMap["tongueDown"] = value;
-}
+///TODO: Update blend shape amp map
+// void PaperTrackMainWindow::onTongueDownChanged(int value)
+// {
+//     blendShapeAmpMap["tongueDown"] = value;
+// }
 
 void PaperTrackMainWindow::AmpMapToOutput(std::vector<float>& output)
 {
@@ -871,18 +819,5 @@ void PaperTrackMainWindow::connect_callbacks()
     connect(ui.RotateImageBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onRotateAngleChanged);
     connect(ui.FlashFirmwareButton, &QPushButton::clicked, this, &PaperTrackMainWindow::flashESP32);
     connect(ui.restart_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onRestartButtonClicked);
-    // params
-    connect(ui.JawOpenBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawOpenChanged);
-    connect(ui.JawLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawLeftChanged);
-    connect(ui.JawRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawRightChanged);
-    connect(ui.MouthLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onMouthLeftChanged);
-    connect(ui.MouthRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onMouthRightChanged);
-    connect(ui.TongueOutBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueOutChanged);
-    connect(ui.TongueLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueLeftChanged);
-    connect(ui.TongueRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueRightChanged);
-    connect(ui.TongueUpBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueUpChanged);
-    connect(ui.TongueDownBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueDownChanged);
-    connect(ui.CheekPuffLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffLeftChanged);
-    connect(ui.CheekPuffRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffRightChanged);
     connect(ui.UseFilterBox, &QCheckBox::checkStateChanged, this, &PaperTrackMainWindow::onUseFilterClicked);
 }
