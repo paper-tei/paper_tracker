@@ -19,12 +19,11 @@ const std::string BOUNDARY_MARKER = "boundary=";
 const std::string CONTENT_LENGTH_HEADER = "Content-Length:";
 const std::string DOUBLE_NEWLINE = "\r\n\r\n";
 
-ESP32VideoStream::ESP32VideoStream() 
+ESP32VideoStream::ESP32VideoStream(QLabel* state_label)
     : isRunning(false), 
       frameCallback(nullptr),
-      currentStreamUrl(""),
-      curl(nullptr) {
-}
+      curl(nullptr),
+      state_label(state_label) {}
 
 ESP32VideoStream::~ESP32VideoStream() {
     stop();
@@ -249,9 +248,13 @@ void ESP32VideoStream::streamThreadFunc() {
         CURLcode res = curl_easy_perform(curl);
 
         if (res != CURLE_OK) {
+            state_label->setText("WIFI连接失败");
             LOG_ERROR("curl_easy_perform() 失败: " + QString(curl_easy_strerror(res)));
             std::this_thread::sleep_for(std::chrono::seconds(1));
             continue ;
+        } else
+        {
+            state_label->setText("WIFI连接成功");
         }
     }
     LOG_INFO("ESP32视频流线程退出");

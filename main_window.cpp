@@ -28,7 +28,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     serial_port_manager_ = std::make_shared<SerialPortManager>();
     inference = std::make_shared<Inference>();
     osc_manager_ = std::make_shared<OscManager>();
-    image_downloader_ = std::make_shared<ESP32VideoStream>();
+    image_downloader_ = std::make_shared<ESP32VideoStream>(ui.WifiConnectLabel);
     video_reader = std::make_shared<VideoReader>();
     // 初始化串口连接状态
     ui.SerialConnectLabel->setText("串口未连接");
