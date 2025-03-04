@@ -166,12 +166,14 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         if (!ip.has_value())
         {
             QMessageBox msgBox;
+            msgBox.setWindowIcon(QIcon("./resources/window_icon.png"));
             msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
             msgBox.exec();
         }
         if (ip.value().empty())
         {
             QMessageBox msgBox;
+            msgBox.setWindowIcon(QIcon("./resources/window_icon.png"));
             msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
             msgBox.exec();
         } else

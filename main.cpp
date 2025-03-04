@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     }
 
     PaperTrackMainWindow window;
-    window.setWindowIcon(QIcon("./resources/window-icon.png"));  // 设置窗口图标
+    window.setWindowIcon(QIcon("./resources/window_icon.png"));  // 设置窗口图标
     window.show();
 
     return QApplication::exec();
