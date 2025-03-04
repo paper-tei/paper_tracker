@@ -1,7 +1,22 @@
 //
 // Created by JellyfishKnight on 2025/2/25.
 //
-
+/*
+ * PaperTracker - 面部追踪应用程序
+ * Copyright (C) 2025 PAPER TRACKER
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file contains code from projectbabble:
+ * Copyright 2023 Sameer Suri
+ * Licensed under the Apache License, Version 2.0
+ */
 #include "main_window.hpp"
 #include <QMessageBox>
 #include <codecvt>
@@ -166,13 +181,13 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         if (!ip.has_value())
         {
             QMessageBox msgBox;
-            msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
+            msgBox.setText("未找到WiFi配置信息，请将面捕通过数据线连接到电脑进行首次配置");
             msgBox.exec();
         }
         if (ip.value().empty())
         {
             QMessageBox msgBox;
-            msgBox.setText("未找到WiFi配置信息，请使用串口进行首次配置");
+            msgBox.setText("未找到WiFi配置信息，请将面捕通过数据线连接到电脑进行首次配置");
             msgBox.exec();
         } else
         {
@@ -520,7 +535,7 @@ void PaperTrackMainWindow::flashESP32() {
         QString esptoolPath = "\"" + appDir + "/esptool.exe\"";
         QString bootloaderPath = "\"" + appDir + "/bootloader.bin\"";
         QString partitionPath = "\"" + appDir + "/partition-table.bin\"";
-        QString firmwarePath = "\"" + appDir + "/WIFI.bin\"";
+        QString firmwarePath = "\"" + appDir + "/face_tracker.bin\"";
 
         // 构造命令
         QString commandStr = QString("%1 --chip ESP32-S3 --port %2 --baud 921600 --before default_reset --after hard_reset write_flash 0x0000 %3 0x8000 %4 0x10000 %5")
