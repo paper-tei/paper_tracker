@@ -5,7 +5,7 @@
 #ifndef BABBLE_INFERENCE_HPP
 #define BABBLE_INFERENCE_HPP
 
-#include <kalman_filter.hpp>
+#include "kalman_filter.hpp"
 #include <string>
 #include <memory>
 #include <vector>

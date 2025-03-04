@@ -24,8 +24,8 @@
 #include <cmath>
 #include <iostream>
 // 引入oscpack库
-#include "osc/OscOutboundPacketStream.h"
-#include "ip/UdpSocket.h"
+#include "../3rdParty/oscpack/osc/OscOutboundPacketStream.h"
+#include "../3rdParty/oscpack/ip/UdpSocket.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
@@ -36,8 +36,8 @@
 #include <iostream>
 
 // 引入oscpack库
-#include "osc/OscOutboundPacketStream.h"
-#include "ip/UdpSocket.h"
+#include "../3rdParty/oscpack/osc/OscOutboundPacketStream.h"
+#include "../3rdParty/oscpack/ip/UdpSocket.h"
 
 #define OUTPUT_BUFFER_SIZE 1024
 

@@ -22,9 +22,9 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include <curl/curl.h>
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
+#include <../3rdParty/curl-install/include/curl/curl.h>
+#include <../3rdParty/opencv-mvsc/opencv/build/include/opencv2/core.hpp>
+#include <../3rdParty/opencv-mvsc/opencv/build/include/opencv2/imgcodecs.hpp>
 
 // 互斥锁用于保护帧数据
 std::mutex frameMutex;

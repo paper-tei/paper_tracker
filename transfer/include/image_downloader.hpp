@@ -6,7 +6,6 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include <QLabel>
 #include <opencv2/core.hpp>
 #include "logger.hpp"
 
@@ -19,7 +18,7 @@ public:
     using FrameCallback = std::function<void(const cv::Mat&)>;
 
     // 构造函数和析构函数
-    ESP32VideoStream(QLabel *state_label);
+    ESP32VideoStream();
     ~ESP32VideoStream();
 
     // 初始化视频流，设置ESP32的URL和可选的回调函数
@@ -73,5 +72,4 @@ private:
     FrameCallback frameCallback;
     std::string currentStreamUrl;
     CURL* curl;
-    QLabel *state_label;
 };
