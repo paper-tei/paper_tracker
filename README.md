@@ -13,6 +13,9 @@ PaperTracker 是一款高效的面部追踪应用程序，能够捕获和分析�
 
 > **注意**：本项目目前处于 Alpha 开发阶段，文档可能不完善，并且可能存在潜在问题。欢迎提交反馈和建议！
 
+## 配网指南
+https://fcnk6r4c64fa.feishu.cn/wiki/B4pNwz2avi4kNqkVNw9cjRRXnth?from=from_copylink
+
 ## 主要功能
 
 - 🎥 支持 ESP32 摄像头连接
