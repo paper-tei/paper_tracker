@@ -6,8 +6,7 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
-#include <QLabel>
-#include <QPlainTextEdit>
+#include <functional>
 #include "logger.hpp"
 
 enum SerialStatus
@@ -30,7 +29,7 @@ enum PacketType {
 
 class SerialPortManager {
 public:
-    SerialPortManager(QLabel* label);
+    SerialPortManager();
     ~SerialPortManager();
     // 添加一个回调函数类型
     using DeviceStatusCallback = std::function<void(const std::string& ip, int brightness, int power, int version)>;
@@ -81,6 +80,4 @@ private:
     std::string currentPort = "COM101"; // 默认端口
 
     SerialStatus m_status;
-
-    QLabel* label_;
 };
