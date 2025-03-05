@@ -103,7 +103,7 @@ private:
     std::thread update_thread;
     std::thread inference_thread;
     bool app_is_running = true;
-    int max_fps = 30;
+    int max_fps = 38;
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 };

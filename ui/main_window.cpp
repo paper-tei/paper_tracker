@@ -411,13 +411,13 @@ void PaperTrackMainWindow::onEnergyModeChanged(int index)
 {
     if (index == 0)
     {
-        max_fps = 30;
+        max_fps = 38;
     } else if (index == 1)
     {
         max_fps = 15;
     } else if (index == 2)
     {
-        max_fps = 60;
+        max_fps = 70;
     }
 }
 

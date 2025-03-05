@@ -252,7 +252,7 @@ void update_ui(
             if (!frame.empty())
             {
                 show_image = frame;
-                cv::putText(show_image, "FPS: " + std::to_string(fps), cv::Point(10, 50), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(255, 255, 0), 2);
+            //    cv::putText(show_image, "FPS: " + std::to_string(fps), cv::Point(10, 50), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(255, 255, 0), 2);
             } else
             {
                 // default image which displays: "没有图像载入“
@@ -270,7 +270,7 @@ void update_ui(
         }
         auto end_time = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count ();
-        int delay_ms = max(0, static_cast<int>(1000.0 / window.get_max_fps() - elapsed));
+        int delay_ms = max(0, static_cast<int>(1000.0 / (window.get_max_fps()+30) - elapsed));
         std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
     }
 }
