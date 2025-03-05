@@ -34,7 +34,6 @@
 SerialPortManager::SerialPortManager()
     : hSerial(INVALID_HANDLE_VALUE), running(false) {
     m_status = SerialStatus::CLOSED;
-    init();
 }
 
 void SerialPortManager::init()
@@ -46,7 +45,7 @@ void SerialPortManager::init()
         LOG_WARN("无法找到ESP32-S3设备，尝试使用默认端口COM101");
         hSerial = initSerialPort(COM_PORT);
     } else {
-        //portName = "COM5";
+        portName = "COM5";
         currentPort = portName;
         // 转换为宽字符串
         std::wstring wPortName(L"\\\\.\\");
@@ -328,12 +327,12 @@ void SerialPortManager::start() {
                         else {
                             LOG_ERROR("等待读取事件失败，错误码: " + std::to_string(GetLastError()));
                         }
-                    }
-                    else {
+                    } else {
                         // 其他错误
                         LOG_ERROR("串口读取失败，错误码: " + std::to_string(GetLastError()));
                         if (dwError == ERROR_ACCESS_DENIED || dwError == ERROR_INVALID_HANDLE) {
                             // 严重错误，退出线程
+                            LOG_ERROR("严重错误，退出线程");
                             break;
                         }
                     }
@@ -477,9 +476,18 @@ void SerialPortManager::start() {
 void SerialPortManager::stop()
 {
     running = false;
-    read_thread.join();
-    write_thread.join();
-    write_junk_thread.join();
+    if (read_thread.joinable())
+    {
+        read_thread.join();
+    }
+    if (write_junk_thread.joinable())
+    {
+        write_junk_thread.join();
+    }
+    if (write_thread.joinable())
+    {
+        write_thread.join();
+    }
     if (hSerial != INVALID_HANDLE_VALUE) {
         CloseHandle(hSerial);
         hSerial = INVALID_HANDLE_VALUE;
@@ -489,7 +497,7 @@ void SerialPortManager::stop()
 void SerialPortManager::processReceivedData(std::string& receivedData) const
 {
     // 处理粘包问题 - 循环处理所有可能的完整数据包
-    while (true) {
+    while (running) {
         // 查找包起始字符 'A'
         size_t startPos = receivedData.find('A');
         if (startPos == std::string::npos) {
