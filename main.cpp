@@ -217,8 +217,7 @@ void update_ui(
 )
 {
     cv::Mat frame;
-    // while (!window_closed) {
-    while (true) {
+    while (window.isVisible()) {
         try {
             frame = image_downloader.getLatestFrame();
             bool image_captured = true;
