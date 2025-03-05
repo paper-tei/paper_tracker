@@ -76,7 +76,7 @@ private:
     
     // 处理接收到的数据
     void processReceivedData(std::string& receivedData) const;
-    std::string currentPort = "COM101"; // 默认端口
+    std::string currentPort = ""; // 默认端口
 
     SerialStatus m_status;
 };
