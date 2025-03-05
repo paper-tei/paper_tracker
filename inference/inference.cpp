@@ -189,13 +189,10 @@ void Inference::preprocess(const cv::Mat& input) {
     } else {
         gray_image_ = input;
     }
-
     // 调整大小
-    cv::resize(gray_image_, processed_image_, cv::Size(input_w_, input_h_));
-
+    cv::resize(gray_image_, processed_image_, cv::Size(input_w_, input_h_), cv::INTER_NEAREST);
     // 归一化处理 - 避免不必要的数据复制
     processed_image_.convertTo(processed_image_, CV_32F, 1.0/255.0);
-
     // 直接拷贝到输入数据缓冲区
     if (processed_image_.isContinuous()) {
         std::memcpy(input_data_.data(), processed_image_.ptr<float>(),

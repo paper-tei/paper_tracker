@@ -224,11 +224,11 @@ void update_ui(
             if (!frame.empty())
             {
                 auto rotate_angle = window.getRotateAngle();
-                cv::resize(frame, frame, cv::Size(280, 280));
+                cv::resize(frame, frame, cv::Size(280, 280), cv::INTER_NEAREST);
                 int y = frame.rows / 2;
                 int x = frame.cols / 2;
                 auto rotate_matrix = cv::getRotationMatrix2D(cv::Point(x, y), rotate_angle, 1);
-                cv::warpAffine(frame, frame, rotate_matrix, frame.size());
+                cv::warpAffine(frame, frame, rotate_matrix, frame.size(), cv::INTER_NEAREST);
                 cv::Mat infer_frame;
                 infer_frame = frame.clone();
 
@@ -265,13 +265,12 @@ void update_ui(
             }
             window.setVideoImage(show_image);
             // 控制帧率
-            cv::waitKey(13);
+            cv::waitKey(1);
         } catch (const std::exception& e) {
             // 使用Qt方式记录日志，而不是minilog
             QMetaObject::invokeMethod(&window, [&e]() {
                 LOG_ERROR("错误： 视频处理异常: " + e.what());
             }, Qt::QueuedConnection);
-            cv::waitKey(13);
         }
     }
 }
