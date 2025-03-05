@@ -26,8 +26,6 @@
 #include <devguid.h>    // 包含 GUID_DEVCLASS_PORTS
 #include <string>
 #include <cstring>      // for strstr()
-#include <vector>
-#include <locale>
 #include <thread>
 
 #define COM_PORT L"COM101"  // 指定要打开的串口号
@@ -143,6 +141,11 @@ SerialPortManager::~SerialPortManager()
 }
 
 std::string SerialPortManager::FindEsp32S3Port() {
+    if (!currentPort.empty())
+    {
+        return currentPort;
+    }
+
     std::string targetPort;
 
     // 设备标识符 - 支持两种可能的ID格式
@@ -751,5 +754,4 @@ SerialStatus SerialPortManager::status() const
 {
     return m_status;
 }
-
 

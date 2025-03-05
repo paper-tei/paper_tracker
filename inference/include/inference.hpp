@@ -19,6 +19,7 @@ public:
     Inference() : input_h_(256), input_w_(256), input_c_(1)
     {
         init_kalman_filter();
+        initBlendShapeIndexMap();
     }
     ~Inference() = default;
 
@@ -31,6 +32,8 @@ public:
     std::vector<float> get_output();
 
     void set_use_filter(bool use);
+
+    const std::unordered_map<std::string, size_t>& getBlendShapeIndexMap() { return blendShapeIndexMap; }
 private:
     void init_kalman_filter();
 
@@ -50,6 +53,16 @@ private:
     void process_results();
 
     void plot_curve(float raw, float filtered);
+
+    // 保存ARKit模型输出的映射表
+    std::unordered_map<std::string, size_t> blendShapeIndexMap;
+    std::unordered_map<std::string, int> blendShapeAmpMap;
+    std::vector<std::string> blendShapes;
+    // 初始化ARKit模型输出的映射表
+    void initBlendShapeIndexMap();
+    // 将原始数据放大增益
+    void AmpMapToOutput(std::vector<float>& output);
+
 
     // 会话和会话选项
     std::shared_ptr<Ort::Session> session_;

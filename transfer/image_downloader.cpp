@@ -26,18 +26,15 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 
-// 互斥锁用于保护帧数据
-std::mutex frameMutex;
 
 // 定义MJPEG流的边界标记
-constexpr std::string CONTENT_TYPE_HEADER = "Content-Type:";
-constexpr std::string BOUNDARY_MARKER = "boundary=";
-constexpr std::string CONTENT_LENGTH_HEADER = "Content-Length:";
-constexpr std::string DOUBLE_NEWLINE = "\r\n\r\n";
+const std::string CONTENT_TYPE_HEADER = "Content-Type:";
+const std::string BOUNDARY_MARKER = "boundary=";
+const std::string CONTENT_LENGTH_HEADER = "Content-Length:";
+const std::string DOUBLE_NEWLINE = "\r\n\r\n";
 
 ESP32VideoStream::ESP32VideoStream()
     : isRunning(false), 
-      frameCallback(nullptr),
       curl(nullptr) {}
 
 ESP32VideoStream::~ESP32VideoStream() {
@@ -45,10 +42,8 @@ ESP32VideoStream::~ESP32VideoStream() {
 }
 
 // 初始化视频流，设置ESP32的URL和可选的回调函数
-bool ESP32VideoStream::init(const std::string& url, FrameCallback callback) {
+bool ESP32VideoStream::init(const std::string& url) {
     currentStreamUrl = url;
-    frameCallback = std::move(callback);
-    
     // 初始化CURL
     curl_global_init(CURL_GLOBAL_ALL);
     return true;
@@ -88,8 +83,11 @@ void ESP32VideoStream::stop() {
 // 获取最新的帧
 cv::Mat ESP32VideoStream::getLatestFrame() const
 {
-    std::lock_guard<std::mutex> lock(frameMutex);
-    return latestFrame.clone();
+    if (image_buffer_queue.empty())
+    {
+        return {};
+    }
+    return image_buffer_queue.front().clone();
 }
 
 // CURL写回调函数 - 处理数据块
@@ -223,15 +221,13 @@ void ESP32VideoStream::processJpegFrame(const std::vector<char>& jpegData) {
         cv::Mat frame = cv::imdecode(cv::Mat(jpegData), cv::IMREAD_COLOR);
         
         if (!frame.empty()) {
-            // 更新最新帧
+            if (image_buffer_queue.empty())
             {
-                std::lock_guard<std::mutex> lock(frameMutex);
-                latestFrame = frame.clone();
-            }
-            
-            // 如果有回调函数，则调用
-            if (frameCallback) {
-                frameCallback(frame);
+                image_buffer_queue.push(std::move(frame));
+            } else
+            {
+                image_buffer_queue.pop();
+                image_buffer_queue.push(std::move(frame));
             }
         }
     } catch (const cv::Exception& e) {

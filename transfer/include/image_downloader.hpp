@@ -4,7 +4,7 @@
 #include <vector>
 #include <thread>
 #include <atomic>
-#include <functional>
+#include <queue>
 #include <opencv2/core.hpp>
 #include "logger.hpp"
 
@@ -13,15 +13,12 @@ typedef void CURL;
 
 class ESP32VideoStream {
 public:
-    // 回调函数类型，用于接收新的视频帧
-    using FrameCallback = std::function<void(const cv::Mat&)>;
-
     // 构造函数和析构函数
     ESP32VideoStream();
     ~ESP32VideoStream();
 
     // 初始化视频流，设置ESP32的URL和可选的回调函数
-    bool init(const std::string& url, FrameCallback callback = nullptr);
+    bool init(const std::string& url);
 
     // 开始接收视频流
     bool start();
@@ -68,7 +65,7 @@ private:
     std::thread streamThread;
     std::vector<char> streamBuffer;
     cv::Mat latestFrame;
-    FrameCallback frameCallback;
     std::string currentStreamUrl;
     CURL* curl;
+    std::queue<cv::Mat> image_buffer_queue;
 };

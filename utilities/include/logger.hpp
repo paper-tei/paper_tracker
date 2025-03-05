@@ -39,10 +39,10 @@ private:
     std::mutex log_mutex;
 };
 
-constexpr std::string DEBUG_STR = "DEBUG: ";
-constexpr std::string INFO_STR = "INFO: ";
-constexpr std::string WARN_STR = "WARN: ";
-constexpr std::string ERROR_STR = "ERROR: ";
+const std::string DEBUG_STR = "DEBUG: ";
+const std::string INFO_STR = "INFO: ";
+const std::string WARN_STR = "WARN: ";
+const std::string ERROR_STR = "ERROR: ";
 
 #define LOG_DEBUG(message) Logger::log(LogLevel::debug, DEBUG_STR + message);
 #define LOG_INFO(message) Logger::log(LogLevel::info, INFO_STR + message)

@@ -40,7 +40,7 @@ void Inference::load_model(const std::string &model_path) {
         std::string actual_model_path = model_path.empty() ? "D:/Babble/model/model.onnx" : model_path;
 
         if (!file_exists(actual_model_path)) {
-            LOG_ERROR("错误：模型文件不存在: " + QString(actual_model_path.c_str()));
+            LOG_ERROR("错误：模型文件不存在: " + actual_model_path.c_str());
             return;
         }
 
@@ -80,9 +80,9 @@ void Inference::load_model(const std::string &model_path) {
 
         LOG_INFO("模型加载完成");
     } catch (const Ort::Exception& e) {
-        LOG_ERROR("ONNX Runtime 错误: " + QString(e.what()));
+        LOG_ERROR("ONNX Runtime 错误: " + e.what());
     } catch (const std::exception& e) {
-        LOG_ERROR("标准异常: " + QString(e.what()));
+        LOG_ERROR("标准异常: " + e.what());
     }
 }
 
@@ -236,23 +236,12 @@ void Inference::run_model() {
         session_->Run(Ort::RunOptions{nullptr}, io_binding);
         // 获取输出
         output_tensors_ = io_binding.GetOutputValues();
-        // // 运行模型
-        // output_tensors_ = session_->Run(
-        //     Ort::RunOptions{nullptr},
-        //     input_name_ptrs_.data(),
-        //     &input_tensor_,
-        //     input_name_ptrs_.size(),
-        //     output_name_ptrs_.data(),
-        //     output_name_ptrs_.size()
-        // );
-
-
 
         // 处理结果
         process_results();
 
     } catch (const std::exception& e) {
-        LOG_ERROR("推理错误: " + QString(e.what()));
+        LOG_ERROR("推理错误: " + e.what());
     }
 }
 
@@ -264,8 +253,6 @@ void Inference::process_results() {
     // 处理第一个输出
     try {
         Ort::Value& output_tensor = output_tensors_.front();
-        float* output_data = output_tensor.GetTensorMutableData<float>();
-
         // 获取输出形状
         auto shape_info = output_tensor.GetTensorTypeAndShapeInfo();
         auto output_shape = shape_info.GetShape();
@@ -280,7 +267,7 @@ void Inference::process_results() {
         // 例如: 解析输出数据，更新结果等
 
     } catch (const std::exception& e) {
-        LOG_ERROR("处理结果出错: " + QString(e.what()));
+        LOG_ERROR("处理结果出错: " + e.what());
     }
 }
 
@@ -294,8 +281,6 @@ std::vector<float> Inference::get_output()
         // 获取第一个输出张量
         const Ort::Value& output_tensor = output_tensors_.front();
         const float* output_data = output_tensor.GetTensorData<float>();
-
-
 
         // 获取输出形状
         auto shape_info = output_tensor.GetTensorTypeAndShapeInfo();
@@ -330,10 +315,14 @@ std::vector<float> Inference::get_output()
 #endif
         }
 
+        // 输出限幅以及增益调整
+        AmpMapToOutput(result);
+
+
         return result;
     }
     catch (const std::exception& e) {
-        LOG_ERROR("获取输出数据错误: " + QString(e.what()));
+        LOG_ERROR("获取输出数据错误: " + e.what());
         return std::vector<float>();
     }
 }
@@ -428,4 +417,55 @@ void Inference::plot_curve(float raw, float filtered)
     // 显示图像
     cv::imshow("Filtered Comparison", plot);
     cv::waitKey(1);
+}
+
+
+void Inference::initBlendShapeIndexMap()
+{
+    // 定义所有ARKit模型输出名称及其索引
+    blendShapes = {
+        "cheekPuffLeft", "cheekPuffRight",
+        "cheekSuckLeft", "cheekSuckRight",
+        "jawOpen", "jawForward", "jawLeft", "jawRight",
+        "noseSneerLeft", "noseSneerRight",
+        "mouthFunnel", "mouthPucker",
+        "mouthLeft", "mouthRight",
+        "mouthRollUpper", "mouthRollLower",
+        "mouthShrugUpper", "mouthShrugLower",
+        "mouthClose",
+        "mouthSmileLeft", "mouthSmileRight",
+        "mouthFrownLeft", "mouthFrownRight",
+        "mouthDimpleLeft", "mouthDimpleRight",
+        "mouthUpperUpLeft", "mouthUpperUpRight",
+        "mouthLowerDownLeft", "mouthLowerDownRight",
+        "mouthPressLeft", "mouthPressRight",
+        "mouthStretchLeft", "mouthStretchRight",
+        "tongueOut", "tongueUp", "tongueDown",
+        "tongueLeft", "tongueRight",
+        "tongueRoll", "tongueBendDown",
+        "tongueCurlUp", "tongueSquish",
+        "tongueFlat", "tongueTwistLeft",
+        "tongueTwistRight"
+    };
+
+    // 构建映射
+    for (size_t i = 0; i < blendShapes.size(); ++i) {
+        blendShapeIndexMap[blendShapes[i]] = i;
+        blendShapeAmpMap.insert_or_assign(blendShapes[i], 0);
+    }
+}
+
+void Inference::AmpMapToOutput(std::vector<float>& output)
+{
+    for (int i = 0; i < blendShapes.size(); i++)
+    {
+        if (blendShapeAmpMap.contains(blendShapes[i]))
+        {
+            if (blendShapeAmpMap[blendShapes[i]] != 0)
+            {
+                output[i] = output[i] * (blendShapeAmpMap[blendShapes[i]] * 0.02 + 1);
+                output[i] = std::min(1.0f, output[i]);
+            }
+        }
+    }
 }
