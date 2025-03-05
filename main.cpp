@@ -370,7 +370,7 @@ int main(int argc, char *argv[]) {
 
     VideoReader video_reader;
     SerialPortManager serial_port_manager;
-    WifiCacheFileWriter wifi_cache_file_writer("wifi_cache.txt");
+    WifiCacheFileWriter wifi_cache_file_writer("./wifi_cache.txt");
     ESP32VideoStream image_downloader;
     Inference inference;
     OscManager osc_manager;
@@ -495,7 +495,7 @@ int main(int argc, char *argv[]) {
         window.setSerialStatusLabel("串口连接失败");
         LOG_WARN("串口未连接，尝试从wifi缓存中读取地址...");
         auto ip = wifi_cache_file_writer.try_get_wifi_config();
-        if (ip.has_value() && ip.value().empty())
+        if (ip.has_value() && !ip.value().empty())
         {
             LOG_INFO("从wifi缓存中读取地址成功");
             camera_ip = ip.value();
