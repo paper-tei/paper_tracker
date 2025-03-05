@@ -18,7 +18,7 @@
  * Licensed under the Apache License, Version 2.0
  */
 #include "video_reader.hpp"
-#include "opencv2/videoio.hpp"
+#include "../3rdParty/opencv-mvsc/opencv/build/include/opencv2/videoio.hpp"
 #include <QPainter>
 
 VideoReader::VideoReader(const std::string &video_path) : video_path(video_path){}

@@ -6,8 +6,7 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
-#include <QLabel>
-#include <QPlainTextEdit>
+#include <functional>
 #include "logger.hpp"
 
 enum SerialStatus
@@ -30,21 +29,20 @@ enum PacketType {
 
 class SerialPortManager {
 public:
-    SerialPortManager(QLabel* label);
+    SerialPortManager();
     ~SerialPortManager();
     // 添加一个回调函数类型
     using DeviceStatusCallback = std::function<void(const std::string& ip, int brightness, int power, int version)>;
+
     // 添加设置回调的方法
-    void setDeviceStatusCallback(DeviceStatusCallback callback) {
-        deviceStatusCallback = callback;
-    }
-    std::string getCurrentPort() const { return currentPort; }
+    void setDeviceStatusCallback(DeviceStatusCallback callback);
+
     void init();
     void start();
     void stop();
     void write_data(const std::string& data);
 
-    SerialStatus status() const;
+    [[nodiscard]] SerialStatus status() const;
 
     // 发送WiFi配置信息
     static void sendWiFiConfig(HANDLE hSerial, const std::string& ssid, const std::string& pwd);
@@ -52,7 +50,10 @@ public:
     // 发送补光灯控制命令
     static void sendLightControl(HANDLE hSerial, int brightness);
 
+    // 查找ESP32-S3设备串口
+    std::string FindEsp32S3Port();
 private:
+
     // 添加回调函数成员
     DeviceStatusCallback deviceStatusCallback;
     HANDLE hSerial;         // 串口句柄
@@ -69,18 +70,13 @@ private:
 
     // 初始化串口
     HANDLE initSerialPort(const wchar_t* portName);
-    
-    // 查找ESP32-S3设备串口
-    std::string FindEsp32S3Port();
-    
+
     // 解析接收的数据包
-    PacketType parsePacket(const std::string& packet);
+    [[nodiscard]] PacketType parsePacket(const std::string& packet) const;
     
     // 处理接收到的数据
-    void processReceivedData(std::string& receivedData);
+    void processReceivedData(std::string& receivedData) const;
     std::string currentPort = "COM101"; // 默认端口
 
     SerialStatus m_status;
-
-    QLabel* label_;
 };

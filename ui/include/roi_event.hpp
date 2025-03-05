@@ -6,12 +6,7 @@
 #define ROI_EVENT_HPP
 
 #include <QObject>
-#include <QRect>
-#include <QMouseEvent>
-#include <QLabel>
 #include <QPainter>
-#include <QDebug>
-#include "logger.hpp"
 
 
 class ROIEventFilter final : public QObject {

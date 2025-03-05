@@ -3,10 +3,8 @@
 #include <string>
 #include <vector>
 #include <thread>
-#include <mutex>
 #include <atomic>
-#include <functional>
-#include <QLabel>
+#include <queue>
 #include <opencv2/core.hpp>
 #include "logger.hpp"
 
@@ -15,15 +13,12 @@ typedef void CURL;
 
 class ESP32VideoStream {
 public:
-    // 回调函数类型，用于接收新的视频帧
-    using FrameCallback = std::function<void(const cv::Mat&)>;
-
     // 构造函数和析构函数
-    ESP32VideoStream(QLabel *state_label);
+    ESP32VideoStream();
     ~ESP32VideoStream();
 
     // 初始化视频流，设置ESP32的URL和可选的回调函数
-    bool init(const std::string& url, FrameCallback callback = nullptr);
+    bool init(const std::string& url);
 
     // 开始接收视频流
     bool start();
@@ -32,7 +27,7 @@ public:
     void stop();
 
     // 获取最新的帧
-    cv::Mat getLatestFrame();
+    cv::Mat getLatestFrame() const;
 
     // 检查流是否正在运行
     bool isStreaming() const { return isRunning; }
@@ -70,8 +65,7 @@ private:
     std::thread streamThread;
     std::vector<char> streamBuffer;
     cv::Mat latestFrame;
-    FrameCallback frameCallback;
     std::string currentStreamUrl;
     CURL* curl;
-    QLabel *state_label;
+    std::queue<cv::Mat> image_buffer_queue;
 };

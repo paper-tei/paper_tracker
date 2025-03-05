@@ -51,22 +51,6 @@ ELSE(WIN32)
     set(IpSystemTypePath ip/posix)
 ENDIF(WIN32)
 
-ADD_LIBRARY(oscpack
-        3rdParty/oscpack/ip/IpEndpointName.cpp
-        3rdParty/oscpack/${IpSystemTypePath}/NetworkingUtils.cpp
-        3rdParty/oscpack/${IpSystemTypePath}/UdpSocket.cpp
-        3rdParty/oscpack/osc/OscTypes.cpp
-        3rdParty/oscpack/osc/OscReceivedElements.cpp
-        3rdParty/oscpack/osc/OscPrintReceivedElements.cpp
-        3rdParty/oscpack/osc/OscOutboundPacketStream.cpp
-)
-
-target_include_directories(
-        oscpack
-        PUBLIC
-        ${CMAKE_SOURCE_DIR}/3rdParty/oscpack
-)
-
 if(MSVC)
     # Force to always compile with W4
     if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -79,40 +63,135 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-long-long -pedantic")
 endif()
 
+############### utilities ################
+add_library(
+    utilities
+    utilities/logger.cpp
+    utilities/wifi_cache_file_writer.cpp
+)
+
+target_link_libraries(
+    utilities PUBLIC
+    Qt6::Core Qt6::Gui Qt6::Widgets
+)
+
+target_include_directories(
+    utilities PUBLIC
+    utilities/include
+)
+
+
+############### osc pack ################
+add_library(oscpack
+    3rdParty/oscpack/ip/IpEndpointName.cpp
+    3rdParty/oscpack/${IpSystemTypePath}/NetworkingUtils.cpp
+    3rdParty/oscpack/${IpSystemTypePath}/UdpSocket.cpp
+    3rdParty/oscpack/osc/OscTypes.cpp
+    3rdParty/oscpack/osc/OscReceivedElements.cpp
+    3rdParty/oscpack/osc/OscPrintReceivedElements.cpp
+    3rdParty/oscpack/osc/OscOutboundPacketStream.cpp
+)
+
+target_include_directories(
+    oscpack
+    PUBLIC
+    ${CMAKE_SOURCE_DIR}/3rdParty/oscpack
+)
+
+############### inference ################
+add_library(
+    inference
+    inference/inference.cpp
+    inference/kalman_fliter.cpp
+)
+
+target_include_directories(
+    inference
+    PUBLIC
+    inference/include
+    ${OpenCV_INCLUDE_DIRS}
+    ${ONNXRUNTIME_ROOT}/include
+)
+
+target_link_libraries(
+    inference
+    PUBLIC
+    ${OpenCV_LIBS}
+    onnxruntime
+    utilities
+)
+
+############### transfer ################
+add_library(
+    transfer
+    transfer/serial.cpp
+    transfer/video_reader.cpp
+    transfer/osc.cpp
+    transfer/image_downloader.cpp
+)
+
+target_include_directories(
+    transfer
+    PUBLIC
+    transfer/include
+    ${OpenCV_INCLUDE_DIRS}
+    ${ONNXRUNTIME_ROOT}/include
+    ${CMAKE_SOURCE_DIR}/3rdParty/oscpack
+)
+
+target_link_libraries(
+    transfer
+    PUBLIC
+    ${OpenCV_LIBS}
+    onnxruntime
+    oscpack
+    CURL::libcurl
+    utilities
+    Setupapi
+    User32
+)
+
+############### ui ################
+add_library(
+    ui
+    ui/main_window.cpp
+    ui/roi_event.cpp
+    ui/main_window.ui
+)
+
+target_include_directories(
+    ui
+    PUBLIC
+    ui/include
+    ${OpenCV_INCLUDE_DIRS}
+    ${ONNXRUNTIME_ROOT}/include
+    ${CMAKE_SOURCE_DIR}/3rdParty/oscpack
+)
+
+target_link_libraries(
+    ui
+    PUBLIC
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    ${OpenCV_LIBS}
+    onnxruntime
+    oscpack
+    transfer
+    inference
+    CURL::libcurl
+    utilities
+)
+
+############### executable ################
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    add_executable(PaperTracker
-        main.cpp
-        main_window.ui
-        main_window.cpp
-        serial.cpp
-        video_reader.cpp
-        inference.cpp
-        include/osc.hpp
-        osc.cpp
-        roi_event.cpp
-        image_downloader.cpp
-        kalman_fliter.cpp
-    )
+    add_executable(PaperTracker main.cpp)
 else ()
-    add_executable(PaperTracker WIN32
-            main.cpp
-            main_window.ui
-            main_window.cpp
-            serial.cpp
-            video_reader.cpp
-            inference.cpp
-            include/osc.hpp
-            osc.cpp
-            roi_event.cpp
-            image_downloader.cpp
-            kalman_fliter.cpp
-    )
+    add_executable(PaperTracker WIN32 main.cpp)
 endif ()
 
-
-    target_include_directories(
+target_include_directories(
     PaperTracker PUBLIC
-    include
     ${OpenCV_INCLUDE_DIRS}
     ${ONNXRUNTIME_ROOT}/include
     ${CMAKE_SOURCE_DIR}/3rdParty/oscpack
@@ -127,14 +206,18 @@ target_link_libraries(PaperTracker PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
-    ${OpenCV_LIBS}
     onnxruntime
     oscpack
     ${LIBS}
     CURL::libcurl
+    ${OpenCV_LIBS}
     #add windows library
     Setupapi
     User32
+    utilities
+    ui
+    inference
+    transfer
 )
 
 # install dir model to the same dir as the executable
@@ -149,8 +232,6 @@ if (CUDA_FOUND)
 else ()
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/onnxruntime-win-x64-1.20.1/lib/  DESTINATION ${CMAKE_BINARY_DIR})
 endif ()
-
-
 # install resources
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_BINARY_DIR})
 
