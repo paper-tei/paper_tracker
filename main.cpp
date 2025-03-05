@@ -16,7 +16,7 @@ void start_image_download(ESP32VideoStream& image_downloader, const std::string&
         image_downloader.stop();
     }
     // 开始下载图片
-    image_downloader.init("http://" + camera_ip + "/capture");
+    image_downloader.init("http://" + camera_ip);
     image_downloader.start();
 }
 
@@ -37,12 +37,10 @@ void restart_esp32(SerialPortManager& serial_port_manager, PaperTrackMainWindow&
 
         // 构造完整的命令路径
         QString appDir = QCoreApplication::applicationDirPath();
-        QString esptoolPath = "\"" + appDir + "/esptool.exe\"";
 
         // 构造重启命令 - 只执行重启操作
         QString commandStr = QString("\"%1/esptool.exe\" --port %2 run")
-            .arg(appDir)
-            .arg(port.c_str());
+            .arg(appDir, port.c_str());
         LOG_INFO("执行重启命令: " + commandStr.toStdString());
 
         // 创建进度窗口
@@ -57,18 +55,18 @@ void restart_esp32(SerialPortManager& serial_port_manager, PaperTrackMainWindow&
         QProcess process;
 
         // 捕获标准输出和错误输出
-        window.connect(&process, &QProcess::readyReadStandardOutput, [&]() {
+        PaperTrackMainWindow::connect(&process, &QProcess::readyReadStandardOutput, [&]() {
             QString output = process.readAllStandardOutput();
             LOG_INFO(output.trimmed().toStdString());
         });
 
-        window.connect(&process, &QProcess::readyReadStandardError, [&]() {
+        PaperTrackMainWindow::connect(&process, &QProcess::readyReadStandardError, [&]() {
             QString error = process.readAllStandardError();
             LOG_ERROR("错误： " + error.trimmed().toStdString());
         });
 
         // 绑定取消按钮
-        window.connect(&progress, &QProgressDialog::canceled, [&]() {
+        PaperTrackMainWindow::connect(&progress, &QProgressDialog::canceled, [&]() {
             process.kill();
             LOG_INFO("用户取消了设备重启");
         });
@@ -87,7 +85,7 @@ void restart_esp32(SerialPortManager& serial_port_manager, PaperTrackMainWindow&
 
         // 使用事件循环等待进程完成，同时保持UI响应
         QEventLoop loop;
-        window.connect(&process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), &loop, &QEventLoop::quit);
+        PaperTrackMainWindow::connect(&process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), &loop, &QEventLoop::quit);
         loop.exec();
 
         // 进程完成
@@ -134,11 +132,7 @@ void flash_esp32(PaperTrackMainWindow& window, SerialPortManager& serial_port_ma
 
         // 构造命令
         QString commandStr = QString("%1 --chip ESP32-S3 --port %2 --baud 921600 --before default_reset --after hard_reset write_flash 0x0000 %3 0x8000 %4 0x10000 %5")
-            .arg(esptoolPath)
-            .arg(port.c_str())
-            .arg(bootloaderPath)
-            .arg(partitionPath)
-            .arg(firmwarePath);
+            .arg(esptoolPath, port.c_str(), bootloaderPath, partitionPath, firmwarePath);
         LOG_INFO("执行命令: " + commandStr.toStdString());
 
         // 创建进度窗口
@@ -153,18 +147,18 @@ void flash_esp32(PaperTrackMainWindow& window, SerialPortManager& serial_port_ma
         QProcess process;
 
         // 捕获标准输出和错误输出
-        window.connect(&process, &QProcess::readyReadStandardOutput, [&]() {
+        PaperTrackMainWindow::connect(&process, &QProcess::readyReadStandardOutput, [&]() {
             QString output = process.readAllStandardOutput();
             LOG_INFO(output.trimmed().toStdString());
         });
 
-        window.connect(&process, &QProcess::readyReadStandardError, [&]() {
+        PaperTrackMainWindow::connect(&process, &QProcess::readyReadStandardError, [&]() {
             QString error = process.readAllStandardError();
             LOG_ERROR("错误: " + error.trimmed().toStdString());
         });
 
         // 绑定取消按钮
-        window.connect(&progress, &QProgressDialog::canceled, [&]() {
+        PaperTrackMainWindow::connect(&progress, &QProgressDialog::canceled, [&]() {
             process.kill();
             LOG_WARN("用户取消了固件刷写");
         });
@@ -182,7 +176,7 @@ void flash_esp32(PaperTrackMainWindow& window, SerialPortManager& serial_port_ma
 
         // 使用事件循环等待进程完成，同时保持UI响应
         QEventLoop loop;
-        window.connect(&process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), &loop, &QEventLoop::quit);
+        PaperTrackMainWindow::connect(&process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), &loop, &QEventLoop::quit);
         loop.exec();
 
         // 进程完成
@@ -217,17 +211,17 @@ void update_ui(
 )
 {
     cv::Mat frame;
-    while (window.isVisible()) {
+    auto last_time = std::chrono::high_resolution_clock::now();
+    while (window.is_running()) {
         try {
+            // caculate fps
+            auto start = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(start - last_time);
+            last_time = start;
+            auto fps = 1000.0 / duration.count();
             frame = image_downloader.getLatestFrame();
-            bool image_captured = true;
-            if (frame.empty())
-            {
-                image_captured = false;
-            }
-
             // 推理处理
-            if (image_captured)
+            if (!frame.empty())
             {
                 auto rotate_angle = window.getRotateAngle();
                 cv::resize(frame, frame, cv::Size(280, 280));
@@ -258,9 +252,10 @@ void update_ui(
             }
             // draw rect on frame
             cv::Mat show_image;
-            if (image_captured)
+            if (!frame.empty())
             {
                 show_image = frame;
+                cv::putText(show_image, "FPS: " + std::to_string(fps), cv::Point(10, 50), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(255, 255, 0), 2);
             } else
             {
                 // default image which displays: "没有图像载入“
@@ -276,7 +271,7 @@ void update_ui(
             QMetaObject::invokeMethod(&window, [&e]() {
                 LOG_ERROR("错误： 视频处理异常: " + e.what());
             }, Qt::QueuedConnection);
-            cv::waitKey(1);
+            cv::waitKey(13);
         }
     }
 }
@@ -311,6 +306,13 @@ int main(int argc, char *argv[]) {
     ESP32VideoStream image_downloader;
     Inference inference;
     OscManager osc_manager;
+
+    window.setBeforeStop([&image_downloader, &serial_port_manager, &osc_manager] ()
+    {
+        serial_port_manager.stop();
+        image_downloader.stop();
+        osc_manager.close();
+    });
 
     // bound callback
     window.setOnSendButtonClickedFunc(
@@ -349,7 +351,7 @@ int main(int argc, char *argv[]) {
         std::string brightness_str = std::to_string(value);
         // 补齐三位数字，前面加0
         while (brightness_str.length() < 3) {
-            brightness_str = "0" + brightness_str;
+            brightness_str = std::string("0") + brightness_str;
         }
         std::string packet = "A6" + brightness_str + "B6";
         serial_port_manager.write_data(packet);
@@ -447,14 +449,15 @@ int main(int argc, char *argv[]) {
     }
 
     LOG_INFO("正在启动视频处理线程...");
-    std::thread update_ui_thread = std::thread( [&window, &image_downloader, &inference, &osc_manager] ()
-        {
-            update_ui(window, image_downloader, inference, osc_manager);
-        }
-    );
+    window.set_update_thread([ &window, &image_downloader, &inference, &osc_manager] ()
+    {
+        update_ui(window, image_downloader, inference, osc_manager);
+    });
 
-    int ret = QApplication::exec();
-    update_ui_thread.join();
+    int status = QApplication::exec();
 
-    return ret;
+    window.stop();
+
+    return status;
 }
+

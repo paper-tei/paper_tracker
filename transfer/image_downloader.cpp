@@ -263,9 +263,6 @@ void ESP32VideoStream::streamThreadFunc() {
             LOG_ERROR("curl_easy_perform() 失败: " + curl_easy_strerror(res));
             std::this_thread::sleep_for(std::chrono::seconds(1));
             continue ;
-        } else
-        {
-            isRunning = false;
         }
     }
     LOG_INFO("ESP32视频流线程退出");
