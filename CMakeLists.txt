@@ -206,11 +206,11 @@ target_link_libraries(PaperTracker PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
-    ${OpenCV_LIBS}
     onnxruntime
     oscpack
     ${LIBS}
     CURL::libcurl
+    ${OpenCV_LIBS}
     #add windows library
     Setupapi
     User32

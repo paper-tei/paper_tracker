@@ -1,16 +1,13 @@
 #include <image_downloader.hpp>
 #include <osc.hpp>
-#include <QApplication>
-#include <QPushButton>
 #include <QFile>
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <video_reader.hpp>
-
-#include "main_window.hpp"
-#include <curl/curl.h>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include "main_window.hpp"
+#include <curl/curl.h>
 
 void start_image_download(ESP32VideoStream& image_downloader, const std::string& camera_ip)
 {
@@ -242,17 +239,15 @@ void update_ui(
                 cv::Mat infer_frame;
                 infer_frame = frame.clone();
 
-                auto roi_tuple = window.getRoiRect();
-                auto roi_rect = std::get<0>(roi_tuple);
-                auto is_roi_end = std::get<1>(roi_tuple);
-                if (!roi_rect.empty() && is_roi_end)
+                auto roi_rect = window.getRoiRect();
+                if (!roi_rect.rect.empty() && roi_rect.is_roi_end)
                 {
-                    infer_frame = infer_frame(roi_rect);
+                    infer_frame = infer_frame(roi_rect.rect);
                 }
                 // 显示图像
                 cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
 
-                cv::rectangle(frame, roi_rect, cv::Scalar(0, 255, 0), 2);
+                cv::rectangle(frame, roi_rect.rect, cv::Scalar(0, 255, 0), 2);
                 inference.inference(infer_frame);
                 // 发送OSC数据
                 std::vector<float> output = inference.get_output();
@@ -362,8 +357,14 @@ int main(int argc, char *argv[]) {
         // 记录操作
         LOG_INFO("已设置亮度: " + std::to_string(value));
     });
-    window.setOnRestartButtonClickedFunc(std::bind(&restart_esp32, serial_port_manager, window));
-    window.setOnFlashButtonClickedFunc(std::bind(&flash_esp32, window, serial_port_manager));
+    window.setOnRestartButtonClickedFunc([&serial_port_manager, &window] ()
+    {
+        restart_esp32(serial_port_manager, window);
+    });
+    window.setOnFlashButtonClickedFunc([&serial_port_manager, &window] ()
+    {
+        flash_esp32(window, serial_port_manager);
+    });
     window.setOnUseFilterClickedFunc([&inference] (int value)
     {
         inference.set_use_filter(value);
@@ -447,16 +448,14 @@ int main(int argc, char *argv[]) {
     }
 
     LOG_INFO("正在启动视频处理线程...");
-    std::thread update_ui_thread = std::thread(
-        &update_ui, window, image_downloader, inference, osc_manager
+    std::thread update_ui_thread = std::thread( [&window, &image_downloader, &inference, &osc_manager] ()
+        {
+            update_ui(window, image_downloader, inference, osc_manager);
+        }
     );
 
-    auto qAppFuture = std::async(std::launch::async, []()
-    {
-        return QApplication::exec();
-    });
-
-    auto status = qAppFuture.get();
+    int ret = QApplication::exec();
     update_ui_thread.join();
-    return status;
+
+    return ret;
 }

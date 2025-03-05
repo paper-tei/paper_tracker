@@ -16,6 +16,12 @@
 #include "wifi_cache_file_writer.hpp"
 #include "logger.hpp"
 
+struct Rect
+{
+    cv::Rect rect;
+    bool is_roi_end = true;
+};
+
 class PaperTrackMainWindow : public QWidget {
 private:
     // UI组件
@@ -23,6 +29,23 @@ private:
 public:
     explicit PaperTrackMainWindow(QWidget *parent = nullptr);
     ~PaperTrackMainWindow() override;
+
+    void setSerialStatusLabel(const std::string& text) const;
+    void setWifiStatusLabel(const std::string& text) const;
+    void setIPText(const std::string& text) const;
+
+    QPlainTextEdit* getLogText() const;
+    Rect getRoiRect() const;
+    float getRotateAngle() const;
+    std::string getSSID() const;
+    std::string getPassword() const;
+
+    void setVideoImage(const cv::Mat& image);
+    // 根据模型输出更新校准页面的进度条
+    void updateCalibrationProgressBars(
+        const std::vector<float>& output,
+        const std::unordered_map<std::string, size_t>& blendShapeIndexMap
+    );
 
     using FuncWithoutArgs = std::function<void()>;
     using FuncWithVal = std::function<void(int)>;
@@ -32,30 +55,14 @@ public:
     void setOnUseFilterClickedFunc(FuncWithVal func);
     void setOnRestartButtonClickedFunc(FuncWithoutArgs func);
     void setOnFlashButtonClickedFunc(FuncWithoutArgs func);
-
-    void setSerialStatusLabel(const std::string& text) const { ui.SerialConnectLabel->setText(QString::fromStdString(text)); }
-    void setWifiStatusLabel(const std::string& text) const { ui.WifiConnectLabel->setText(QString::fromStdString(text)); }
-    void setIPText(const std::string& text) const { ui.textEdit->setText(QString::fromStdString(text)); }
-
-    [[no_discard]] QPlainTextEdit* getLogText() const { return ui.LogText; }
-    [[no_discard]] std::tuple<cv::Rect, bool> getRoiRect() const { return std::make_tuple(roi_rect, is_roi_end); }
-
-    [[no_discard]] float getRotateAngle() const;
-    [[no_discard]] std::string getSSID() const { return ui.SSIDText->toPlainText().toStdString(); }
-    [[no_discard]] std::string getPassword() const { return ui.PasswordText->toPlainText().toStdString(); }
-
-    void setVideoImage(const cv::Mat& image);
-
-    // 根据模型输出更新校准页面的进度条
-    void updateCalibrationProgressBars(
-        const std::vector<float>& output,
-        const std::unordered_map<std::string, size_t>& blendShapeIndexMap
-    );
-
 private slots:
     void onBrightnessChanged(int value);
+    void onSendBrightnessValue();
     void onRotateAngleChanged(int value);
-
+    void onSendButtonClicked() const;
+    void onRestartButtonClicked();
+    void onUseFilterClicked(int value) const;
+    void onFlashButtonClicked();
 private:
     QProcess* vrcftProcess;
 
@@ -76,9 +83,7 @@ private:
 
     void connect_callbacks();
 
-    cv::Rect roi_rect;
-    bool is_roi_end = true;
-
+    Rect roi_rect;
     // 线程控制
     std::atomic<bool> window_closed{false};
 protected:

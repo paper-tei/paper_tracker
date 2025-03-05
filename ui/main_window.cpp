@@ -24,8 +24,6 @@
 #include <windows.h>
 #include <QTimer>
 #include <QProcess>
-#include <QProgressDialog>
-#include <QEventLoop>
 #include <QCoreApplication>
 #include <roi_event.hpp>
 
@@ -58,27 +56,27 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     // 添加ROI事件
     ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect, bool isEnd)
     {
-        is_roi_end = isEnd;
-        roi_rect = cv::Rect(rect.x(), rect.y(), rect.width(), rect.height());
+        roi_rect.is_roi_end = isEnd;
+        roi_rect = Rect(cv::Rect(rect.x(), rect.y(), rect.width(), rect.height()));
         // if end point is out of image, move rect
-        if (roi_rect.x < 0)
+        if (roi_rect.rect.x < 0)
         {
-            roi_rect.width += rect.x();
-            roi_rect.x = 0;
+            roi_rect.rect.width += rect.x();
+            roi_rect.rect.x = 0;
         }
-        if (roi_rect.y < 0)
+        if (roi_rect.rect.y < 0)
         {
-            roi_rect.height += rect.y();
-            roi_rect.y = 0;
+            roi_rect.rect.height += rect.y();
+            roi_rect.rect.y = 0;
         }
         // if roi is bigger than image, resize rect
-        if (roi_rect.x + roi_rect.width > 280)
+        if (roi_rect.rect.x + roi_rect.rect.width > 280)
         {
-            roi_rect.width = 280 - roi_rect.x;
+            roi_rect.rect.width = 280 - roi_rect.rect.x;
         }
-        if (roi_rect.y + roi_rect.height > 280)
+        if (roi_rect.rect.y + roi_rect.rect.height > 280)
         {
-            roi_rect.height = 280 - roi_rect.y;
+            roi_rect.rect.height = 280 - roi_rect.rect.y;
         }
     },ui.ImageLabel);
     ui.ImageLabel->installEventFilter(roiFilter);
@@ -153,18 +151,6 @@ void PaperTrackMainWindow::bound_pages() {
     connect(ui.CalibrationPageButton, &QPushButton::clicked, [this] {
         ui.stackedWidget->setCurrentIndex(1);
     });
-}
-
-void PaperTrackMainWindow::onBrightnessChanged(int value) {
-    // 更新当前亮度值
-    current_brightness = value;
-    // 重置定时器，如果用户500毫秒内没有再次改变值，就发送数据包
-    brightness_timer->start(100);
-}
-
-void PaperTrackMainWindow::onRotateAngleChanged(int value)
-{
-    current_rotate_angle = value;
 }
 
 // 添加事件过滤器实现
@@ -268,12 +254,17 @@ void PaperTrackMainWindow::connect_callbacks()
 {
     brightness_timer = new QTimer(this);
     brightness_timer->setSingleShot(true);
+    connect(brightness_timer, &QTimer::timeout, this, &PaperTrackMainWindow::onSendBrightnessValue);
     // functions
     connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
     connect(ui.RotateImageBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onRotateAngleChanged);
+    connect(ui.restart_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onRestartButtonClicked);
+    connect(ui.FlashFirmwareButton, &QPushButton::clicked, this, &PaperTrackMainWindow::onFlashButtonClicked);
+    connect(ui.UseFilterBox, &QCheckBox::checkStateChanged, this, &PaperTrackMainWindow::onUseFilterClicked);
+    connect(ui.wifi_send_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
 }
 
-[[no_discard]] float PaperTrackMainWindow::getRotateAngle() const
+float PaperTrackMainWindow::getRotateAngle() const
 {
     float rotate_angle = current_rotate_angle;
     rotate_angle = rotate_angle / (ui.RotateImageBar->maximum() - ui.RotateImageBar->minimum()) * 360.0f;
@@ -283,34 +274,101 @@ void PaperTrackMainWindow::connect_callbacks()
 void PaperTrackMainWindow::setSendBrightnessValueFunc(FuncWithVal func)
 {
     sendBrightnessValueFunc = std::move(func);
-    connect(brightness_timer, &QTimer::timeout, this, sendBrightnessValueFunc);
+    // need to bound with timer after setting the function
 }
 
 void PaperTrackMainWindow::setOnFlashButtonClickedFunc(FuncWithoutArgs func)
 {
     onFlashButtonClickedFunc = std::move(func);
-    connect(ui.FlashFirmwareButton, &QPushButton::clicked, this, onFlashButtonClickedFunc);
 }
 
 void PaperTrackMainWindow::setOnUseFilterClickedFunc(FuncWithVal func)
 {
     onUseFilterClickedFunc = std::move(func);
-    connect(ui.UseFilterBox, &QCheckBox::checkStateChanged, this, onUseFilterClickedFunc);
 }
 
 void PaperTrackMainWindow::setOnSendButtonClickedFunc(FuncWithoutArgs func)
 {
     onSendButtonClickedFunc = std::move(func);
-    // need to restart esp32 after sending Wi-Fi config
-    connect(ui.wifi_send_Button, &QPushButton::clicked, this, [this] ()
-    {
-        onSendButtonClickedFunc();
-        onRestartButtonClickedFunc();
-    });
 }
 
 void PaperTrackMainWindow::setOnRestartButtonClickedFunc(FuncWithoutArgs func)
 {
     onRestartButtonClickedFunc = std::move(func);
-    connect(ui.restart_Button, &QPushButton::clicked, this, onRestartButtonClickedFunc);
 }
+
+void PaperTrackMainWindow::setSerialStatusLabel(const std::string& text) const
+{
+    ui.SerialConnectLabel->setText(QString::fromStdString(text));
+}
+
+void PaperTrackMainWindow::setWifiStatusLabel(const std::string& text) const
+{
+    ui.WifiConnectLabel->setText(QString::fromStdString(text));
+}
+
+void PaperTrackMainWindow::setIPText(const std::string& text) const
+{
+    ui.textEdit->setText(QString::fromStdString(text));
+}
+
+QPlainTextEdit* PaperTrackMainWindow::getLogText() const
+{
+    return ui.LogText;
+}
+
+Rect PaperTrackMainWindow::getRoiRect() const
+{
+    return roi_rect;
+}
+
+std::string PaperTrackMainWindow::getSSID() const
+{
+    return ui.SSIDText->toPlainText().toStdString();
+}
+
+std::string PaperTrackMainWindow::getPassword() const
+{
+    return ui.PasswordText->toPlainText().toStdString();
+}
+
+void PaperTrackMainWindow::onSendButtonClicked() const
+{
+    onSendButtonClickedFunc();
+    // need to restart esp32 after sending Wi-Fi config
+    onRestartButtonClickedFunc();
+}
+
+void PaperTrackMainWindow::onRestartButtonClicked()
+{
+    onRestartButtonClickedFunc();
+}
+
+void PaperTrackMainWindow::onUseFilterClicked(int value) const
+{
+    onUseFilterClickedFunc(value);
+}
+
+void PaperTrackMainWindow::onFlashButtonClicked()
+{
+    onFlashButtonClickedFunc();
+}
+
+void PaperTrackMainWindow::onBrightnessChanged(int value) {
+    // 更新当前亮度值
+    current_brightness = value;
+    // 重置定时器，如果用户500毫秒内没有再次改变值，就发送数据包
+    brightness_timer->start(100);
+}
+
+void PaperTrackMainWindow::onRotateAngleChanged(int value)
+{
+    current_rotate_angle = value;
+}
+
+void PaperTrackMainWindow::onSendBrightnessValue()
+{
+    sendBrightnessValueFunc(current_brightness);
+}
+
+
