@@ -243,6 +243,7 @@ void PaperTrackMainWindow::connect_callbacks()
     connect(ui.FlashFirmwareButton, &QPushButton::clicked, this, &PaperTrackMainWindow::onFlashButtonClicked);
     connect(ui.UseFilterBox, &QCheckBox::checkStateChanged, this, &PaperTrackMainWindow::onUseFilterClicked);
     connect(ui.wifi_send_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
+    connect(ui.EnergyModeBox, &QComboBox::currentIndexChanged, this, &PaperTrackMainWindow::onEnergyModeChanged);
 }
 
 float PaperTrackMainWindow::getRotateAngle() const
@@ -405,3 +406,24 @@ void PaperTrackMainWindow::stop()
     // 其他清理工作
     LOG_INFO("系统已安全关闭");
 }
+
+void PaperTrackMainWindow::onEnergyModeChanged(int index)
+{
+    if (index == 0)
+    {
+        max_fps = 30;
+    } else if (index == 1)
+    {
+        max_fps = 15;
+    } else if (index == 2)
+    {
+        max_fps = 60;
+    }
+}
+
+int PaperTrackMainWindow::get_max_fps() const
+{
+    return max_fps;
+}
+
+

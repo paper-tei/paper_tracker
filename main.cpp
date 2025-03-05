@@ -215,8 +215,11 @@ void update_ui(
     double fps_total = 0;
     double fps_count = 0;
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    static double max_rate = 15;
     while (window.is_running())
     {
+        auto start_time = std::chrono::high_resolution_clock::now();
         try {
             if (fps_total > 1000)
             {
@@ -259,13 +262,16 @@ void update_ui(
             }
             window.setVideoImage(show_image);
             // 控制帧率
-            cv::waitKey(1);
         } catch (const std::exception& e) {
             // 使用Qt方式记录日志，而不是minilog
             QMetaObject::invokeMethod(&window, [&e]() {
                 LOG_ERROR("错误： 视频处理异常: " + e.what());
             }, Qt::QueuedConnection);
         }
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count ();
+        int delay_ms = max(0, static_cast<int>(1000.0 / window.get_max_fps() - elapsed));
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
     }
 }
 
@@ -283,6 +289,8 @@ void inference_image(
     double fps_total = 0;
     double fps_count = 0;
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    static double max_rate = 15;
     while (window.is_running())
     {
         if (fps_total > 1000)
@@ -299,6 +307,8 @@ void inference_image(
         fps_count += 1;
         fps = fps_total/fps_count;
         LOG_DEBUG("模型FPS： " + std::to_string(fps));
+
+        auto start_time = std::chrono::high_resolution_clock::now();
 
         frame = image_downloader.getLatestFrame();
         // 推理处理
@@ -327,6 +337,10 @@ void inference_image(
                 osc_manager.sendModelOutput(output);
             }
         }
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count ();
+        int delay_ms = max(0, static_cast<int>(1000.0 / window.get_max_fps() - elapsed));
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
     }
 }
 

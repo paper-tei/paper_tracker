@@ -64,6 +64,8 @@ public:
     bool is_running() const;
 
     void stop();
+    int get_max_fps() const;
+
 private slots:
     void onBrightnessChanged(int value);
     void onSendBrightnessValue() const;
@@ -72,6 +74,8 @@ private slots:
     void onRestartButtonClicked();
     void onUseFilterClicked(int value) const;
     void onFlashButtonClicked();
+
+    void onEnergyModeChanged(int value);
 private:
     QProcess* vrcftProcess;
 
@@ -99,6 +103,7 @@ private:
     std::thread update_thread;
     std::thread inference_thread;
     bool app_is_running = true;
+    int max_fps = 30;
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 };

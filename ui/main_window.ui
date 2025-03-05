@@ -72,7 +72,7 @@
      <property name="geometry">
       <rect>
        <x>370</x>
-       <y>130</y>
+       <y>110</y>
        <width>261</width>
        <height>20</height>
       </rect>
@@ -85,7 +85,7 @@
      <property name="geometry">
       <rect>
        <x>310</x>
-       <y>130</y>
+       <y>110</y>
        <width>51</width>
        <height>21</height>
       </rect>
@@ -218,7 +218,7 @@
      <property name="geometry">
       <rect>
        <x>310</x>
-       <y>160</y>
+       <y>140</y>
        <width>81</width>
        <height>21</height>
       </rect>
@@ -231,7 +231,7 @@
      <property name="geometry">
       <rect>
        <x>390</x>
-       <y>160</y>
+       <y>140</y>
        <width>341</width>
        <height>20</height>
       </rect>
@@ -257,6 +257,47 @@
      </property>
      <property name="text">
       <string>启用滤波</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="EnergyModeBox">
+     <property name="geometry">
+      <rect>
+       <x>400</x>
+       <y>170</y>
+       <width>80</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="duplicatesEnabled">
+      <bool>false</bool>
+     </property>
+     <item>
+      <property name="text">
+       <string>普通模式</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>节能模式</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>性能模式</string>
+      </property>
+     </item>
+    </widget>
+    <widget class="QLabel" name="label_18">
+     <property name="geometry">
+      <rect>
+       <x>310</x>
+       <y>170</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>性能模式选择</string>
      </property>
     </widget>
    </widget>
@@ -307,7 +348,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>cheekPuffLeft</string>
+        <string>左脸颊</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_10">
@@ -320,7 +361,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>mouthLeft</string>
+        <string>嘴左移</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_13">
@@ -333,7 +374,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>tongueUp</string>
+        <string>舌头向上</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_6">
@@ -346,7 +387,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>cheekPuffRight</string>
+        <string>右脸颊</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_15">
@@ -359,7 +400,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>tongueLeft</string>
+        <string>舌头向左</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_7">
@@ -372,7 +413,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>jawOpen</string>
+        <string>张嘴</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_11">
@@ -385,7 +426,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>mouthRight</string>
+        <string>嘴右移</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_9">
@@ -398,7 +439,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>jawRight</string>
+        <string>下巴右移</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_14">
@@ -411,7 +452,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>tongueDown</string>
+        <string>舌头向下</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_8">
@@ -424,7 +465,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>jawLeft</string>
+        <string>下巴左移</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_12">
@@ -437,7 +478,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>tongueOut</string>
+        <string>舌头伸出</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_31">
@@ -450,7 +491,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>tongueRight</string>
+        <string>舌头向右</string>
        </property>
       </widget>
       <widget class="QProgressBar" name="CheekPullLeftValue">
@@ -767,7 +808,7 @@
       </widget>
      </widget>
     </widget>
-    <widget class="QPushButton" name="StartCalibrationButton">
+    <widget class="QPushButton" name="SaveParamConfigButton">
      <property name="geometry">
       <rect>
        <x>510</x>
@@ -777,28 +818,8 @@
       </rect>
      </property>
      <property name="text">
-      <string>开始标定(开发中)</string>
+      <string>保存参数(开发中)</string>
      </property>
-    </widget>
-    <widget class="QComboBox" name="CalibrationModeComboBox">
-     <property name="geometry">
-      <rect>
-       <x>650</x>
-       <y>30</y>
-       <width>131</width>
-       <height>41</height>
-      </rect>
-     </property>
-     <item>
-      <property name="text">
-       <string>Neutral模式</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Full模式</string>
-      </property>
-     </item>
     </widget>
     <widget class="QLabel" name="ImageLabelCal">
      <property name="geometry">
