@@ -363,6 +363,11 @@ void PaperTrackMainWindow::set_update_thread(FuncWithoutArgs func)
     update_thread = std::thread(std::move(func));
 }
 
+void PaperTrackMainWindow::set_inference_thread(FuncWithoutArgs func)
+{
+    inference_thread = std::thread(std::move(func));
+}
+
 bool PaperTrackMainWindow::is_running() const
 {
     return app_is_running;
@@ -375,6 +380,10 @@ void PaperTrackMainWindow::stop()
     if (update_thread.joinable())
     {
         update_thread.join();
+    }
+    if (inference_thread.joinable())
+    {
+        inference_thread.join();
     }
     if (brightness_timer) {
         brightness_timer->stop();

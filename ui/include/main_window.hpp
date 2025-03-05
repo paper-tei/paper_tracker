@@ -59,6 +59,7 @@ public:
     void setBeforeStop(FuncWithoutArgs func);
 
     void set_update_thread(FuncWithoutArgs func);
+    void set_inference_thread(FuncWithoutArgs func);
 
     bool is_running() const;
 
@@ -96,6 +97,7 @@ private:
     Rect roi_rect;
 
     std::thread update_thread;
+    std::thread inference_thread;
     bool app_is_running = true;
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;

@@ -212,15 +212,26 @@ void update_ui(
 {
     cv::Mat frame;
     auto last_time = std::chrono::high_resolution_clock::now();
-    while (window.is_running()) {
+    double fps_total = 0;
+    double fps_count = 0;
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    while (window.is_running())
+    {
         try {
+            if (fps_total > 1000)
+            {
+                fps_count = 0;
+                fps_total = 0;
+            }
             // caculate fps
             auto start = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(start - last_time);
             last_time = start;
             auto fps = 1000.0 / duration.count();
+            fps_total += fps;
+            fps_count += 1;
+            fps = fps_total/fps_count;
             frame = image_downloader.getLatestFrame();
-            // 推理处理
             if (!frame.empty())
             {
                 auto rotate_angle = window.getRotateAngle();
@@ -229,26 +240,9 @@ void update_ui(
                 int x = frame.cols / 2;
                 auto rotate_matrix = cv::getRotationMatrix2D(cv::Point(x, y), rotate_angle, 1);
                 cv::warpAffine(frame, frame, rotate_matrix, frame.size(), cv::INTER_NEAREST);
-                cv::Mat infer_frame;
-                infer_frame = frame.clone();
-
                 auto roi_rect = window.getRoiRect();
-                if (!roi_rect.rect.empty() && roi_rect.is_roi_end)
-                {
-                    infer_frame = infer_frame(roi_rect.rect);
-                }
                 // 显示图像
-                cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-
                 cv::rectangle(frame, roi_rect.rect, cv::Scalar(0, 255, 0), 2);
-                inference.inference(infer_frame);
-                // 发送OSC数据
-                std::vector<float> output = inference.get_output();
-
-                if (!output.empty()) {
-                    window.updateCalibrationProgressBars(output, inference.getBlendShapeIndexMap());
-                    osc_manager.sendModelOutput(output);
-                }
             }
             // draw rect on frame
             cv::Mat show_image;
@@ -271,6 +265,67 @@ void update_ui(
             QMetaObject::invokeMethod(&window, [&e]() {
                 LOG_ERROR("错误： 视频处理异常: " + e.what());
             }, Qt::QueuedConnection);
+        }
+    }
+}
+
+
+void inference_image(
+    PaperTrackMainWindow& window,
+    ESP32VideoStream& image_downloader,
+    Inference& inference,
+    OscManager& osc_manager
+)
+{
+    cv::Mat frame;
+    auto last_time = std::chrono::high_resolution_clock::now();
+
+    double fps_total = 0;
+    double fps_count = 0;
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    while (window.is_running())
+    {
+        if (fps_total > 1000)
+        {
+            fps_count = 0;
+            fps_total = 0;
+        }
+        // caculate fps
+        auto start = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(start - last_time);
+        last_time = start;
+        auto fps = 1000.0 / duration.count();
+        fps_total += fps;
+        fps_count += 1;
+        fps = fps_total/fps_count;
+        LOG_DEBUG("模型FPS： " + std::to_string(fps));
+
+        frame = image_downloader.getLatestFrame();
+        // 推理处理
+        if (!frame.empty())
+        {
+            auto rotate_angle = window.getRotateAngle();
+            cv::resize(frame, frame, cv::Size(280, 280), cv::INTER_NEAREST);
+            int y = frame.rows / 2;
+            int x = frame.cols / 2;
+            auto rotate_matrix = cv::getRotationMatrix2D(cv::Point(x, y), rotate_angle, 1);
+            cv::warpAffine(frame, frame, rotate_matrix, frame.size(), cv::INTER_NEAREST);
+            cv::Mat infer_frame;
+            infer_frame = frame.clone();
+
+            auto roi_rect = window.getRoiRect();
+            if (!roi_rect.rect.empty() && roi_rect.is_roi_end)
+            {
+                infer_frame = infer_frame(roi_rect.rect);
+            }
+            inference.inference(infer_frame);
+            // 发送OSC数据
+            std::vector<float> output = inference.get_output();
+
+            if (!output.empty()) {
+                window.updateCalibrationProgressBars(output, inference.getBlendShapeIndexMap());
+                osc_manager.sendModelOutput(output);
+            }
         }
     }
 }
@@ -451,6 +506,10 @@ int main(int argc, char *argv[]) {
     window.set_update_thread([ &window, &image_downloader, &inference, &osc_manager] ()
     {
         update_ui(window, image_downloader, inference, osc_manager);
+    });
+    window.set_inference_thread([ &window, &image_downloader, &inference, &osc_manager] ()
+    {
+        inference_image(window, image_downloader, inference, osc_manager);
     });
 
     int status = QApplication::exec();
