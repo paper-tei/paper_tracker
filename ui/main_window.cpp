@@ -247,8 +247,9 @@ void PaperTrackMainWindow::connect_callbacks()
 
 float PaperTrackMainWindow::getRotateAngle() const
 {
-    float rotate_angle = current_rotate_angle;
-    rotate_angle = rotate_angle / (ui.RotateImageBar->maximum() - ui.RotateImageBar->minimum()) * 360.0f;
+    auto rotate_angle = static_cast<float>(current_rotate_angle);
+    rotate_angle = rotate_angle / (static_cast<float>(ui.RotateImageBar->maximum()) -
+        static_cast<float>(ui.RotateImageBar->minimum())) * 360.0f;
     return rotate_angle;
 }
 

@@ -154,7 +154,9 @@ public:
         label_17->setGeometry(QRect(310, 160, 81, 21));
         RotateImageBar = new QScrollBar(page);
         RotateImageBar->setObjectName("RotateImageBar");
-        RotateImageBar->setGeometry(QRect(390, 160, 261, 20));
+        RotateImageBar->setGeometry(QRect(390, 160, 341, 20));
+        RotateImageBar->setMaximum(1080);
+        RotateImageBar->setPageStep(40);
         RotateImageBar->setOrientation(Qt::Orientation::Horizontal);
         UseFilterBox = new QCheckBox(page);
         UseFilterBox->setObjectName("UseFilterBox");

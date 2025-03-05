@@ -232,9 +232,15 @@
       <rect>
        <x>390</x>
        <y>160</y>
-       <width>261</width>
+       <width>341</width>
        <height>20</height>
       </rect>
+     </property>
+     <property name="maximum">
+      <number>1080</number>
+     </property>
+     <property name="pageStep">
+      <number>40</number>
      </property>
      <property name="orientation">
       <enum>Qt::Orientation::Horizontal</enum>

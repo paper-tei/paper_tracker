@@ -227,7 +227,7 @@ void update_ui(
                 cv::resize(frame, frame, cv::Size(280, 280));
                 int y = frame.rows / 2;
                 int x = frame.cols / 2;
-                auto rotate_matrix = cv::getRotationMatrix2D(cv::Point(x, y), rotate_angle / 99.0 * 360.0, 1);
+                auto rotate_matrix = cv::getRotationMatrix2D(cv::Point(x, y), rotate_angle, 1);
                 cv::warpAffine(frame, frame, rotate_matrix, frame.size());
                 cv::Mat infer_frame;
                 infer_frame = frame.clone();
