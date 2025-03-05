@@ -55,9 +55,17 @@ public:
     void setOnUseFilterClickedFunc(FuncWithVal func);
     void setOnRestartButtonClickedFunc(FuncWithoutArgs func);
     void setOnFlashButtonClickedFunc(FuncWithoutArgs func);
+
+    void setBeforeStop(FuncWithoutArgs func);
+
+    void set_update_thread(FuncWithoutArgs func);
+
+    bool is_running() const;
+
+    void stop();
 private slots:
     void onBrightnessChanged(int value);
-    void onSendBrightnessValue();
+    void onSendBrightnessValue() const;
     void onRotateAngleChanged(int value);
     void onSendButtonClicked() const;
     void onRestartButtonClicked();
@@ -65,6 +73,8 @@ private slots:
     void onFlashButtonClicked();
 private:
     QProcess* vrcftProcess;
+
+    FuncWithoutArgs beforeStopFunc;
 
     FuncWithoutArgs onSendButtonClickedFunc;
     FuncWithVal sendBrightnessValueFunc;
@@ -84,8 +94,9 @@ private:
     void connect_callbacks();
 
     Rect roi_rect;
-    // 线程控制
-    std::atomic<bool> window_closed{false};
+
+    std::thread update_thread;
+    bool app_is_running = true;
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 };

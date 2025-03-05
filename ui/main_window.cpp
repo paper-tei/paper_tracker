@@ -122,26 +122,7 @@ void PaperTrackMainWindow::setVideoImage(const cv::Mat& image)
     }, Qt::QueuedConnection);
 }
 
-PaperTrackMainWindow::~PaperTrackMainWindow() {
-    // 安全关闭
-    LOG_INFO("正在关闭系统...");
-    if (vrcftProcess) {
-        if (vrcftProcess->state() == QProcess::Running) {
-            vrcftProcess->terminate();
-            if (!vrcftProcess->waitForFinished(3000)) {  // 等待最多3秒
-                vrcftProcess->kill();  // 如果进程没有及时终止，则强制结束
-            }
-        }
-        delete vrcftProcess;
-    }
-    window_closed = true;
-    if (brightness_timer) {
-        brightness_timer->stop();
-        delete brightness_timer;
-    }
-    // 其他清理工作
-    LOG_INFO("系统已安全关闭");
-}
+PaperTrackMainWindow::~PaperTrackMainWindow() = default;
 
 void PaperTrackMainWindow::bound_pages() {
     // 页面导航逻辑
@@ -366,9 +347,51 @@ void PaperTrackMainWindow::onRotateAngleChanged(int value)
     current_rotate_angle = value;
 }
 
-void PaperTrackMainWindow::onSendBrightnessValue()
+void PaperTrackMainWindow::onSendBrightnessValue() const
 {
     sendBrightnessValueFunc(current_brightness);
 }
 
+void PaperTrackMainWindow::setBeforeStop(FuncWithoutArgs func)
+{
+    beforeStopFunc = std::move(func);
+}
 
+void PaperTrackMainWindow::set_update_thread(FuncWithoutArgs func)
+{
+    update_thread = std::thread(std::move(func));
+}
+
+bool PaperTrackMainWindow::is_running() const
+{
+    return app_is_running;
+}
+
+void PaperTrackMainWindow::stop()
+{
+    LOG_INFO("正在关闭系统...");
+    app_is_running = false;
+    if (update_thread.joinable())
+    {
+        update_thread.join();
+    }
+    if (brightness_timer) {
+        brightness_timer->stop();
+        delete brightness_timer;
+    }
+    if (beforeStopFunc)
+    {
+        beforeStopFunc();
+    }
+    if (vrcftProcess) {
+        if (vrcftProcess->state() == QProcess::Running) {
+            vrcftProcess->terminate();
+            if (!vrcftProcess->waitForFinished(3000)) {  // 等待最多3秒
+                vrcftProcess->kill();  // 如果进程没有及时终止，则强制结束
+            }
+        }
+        delete vrcftProcess;
+    }
+    // 其他清理工作
+    LOG_INFO("系统已安全关闭");
+}
