@@ -15,255 +15,249 @@
  * Licensed under the Apache License, Version 2.0
  */
 #include "image_downloader.hpp"
-#include <iostream>
-#include <vector>
-#include <string>
-#include <thread>
-#include <mutex>
-#include <atomic>
-#include <functional>
-#include <curl/curl.h>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#include <QUrl>
+#include <QMutexLocker>
 
+ESP32VideoStream::ESP32VideoStream(QObject *parent)
+    : QObject(parent), isRunning(false)
+{
+    // 连接WebSocket信号
+    connect(&webSocket, &QWebSocket::connected,
+            this, &ESP32VideoStream::onConnected);
+    connect(&webSocket, &QWebSocket::disconnected,
+            this, &ESP32VideoStream::onDisconnected);
+    connect(&webSocket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error),
+            this, &ESP32VideoStream::onError);
+    connect(&webSocket, &QWebSocket::binaryMessageReceived,
+            this, &ESP32VideoStream::onBinaryMessageReceived);
+}
 
-// 定义MJPEG流的边界标记
-const std::string CONTENT_TYPE_HEADER = "Content-Type:";
-const std::string BOUNDARY_MARKER = "boundary=";
-const std::string CONTENT_LENGTH_HEADER = "Content-Length:";
-const std::string DOUBLE_NEWLINE = "\r\n\r\n";
-
-ESP32VideoStream::ESP32VideoStream()
-    : isRunning(false), 
-      curl(nullptr) {}
-
-ESP32VideoStream::~ESP32VideoStream() {
+ESP32VideoStream::~ESP32VideoStream()
+{
     stop();
 }
 
-// 初始化视频流，设置ESP32的URL和可选的回调函数
-bool ESP32VideoStream::init(const std::string& url) {
+bool ESP32VideoStream::init(const std::string& url)
+{
+    // 保存URL，但不要立即连接
     currentStreamUrl = url;
-    // 初始化CURL
-    curl_global_init(CURL_GLOBAL_ALL);
+
+    // 检查URL是否为WebSocket URL (ws:// 或 wss://)
+    if (url.substr(0, 5) != "ws://" && url.substr(0, 6) != "wss://") {
+        LOG_INFO("转换HTTP URL为WebSocket URL: " + url);
+        // 如果是HTTP URL，转换为WebSocket URL
+        if (url.substr(0, 7) == "http://") {
+            currentStreamUrl = "ws://" + url.substr(7) + "/ws";
+        } else if (url.substr(0, 8) == "https://") {
+            currentStreamUrl = "wss://" + url.substr(8) + "/ws";
+        } else {
+            // 不是标准URL，假设是主机地址，添加ws://
+            // 注意：根据HTML测试页面，我们使用"ws://IP:81/ws"格式
+            currentStreamUrl = "ws://" + url;
+            // 确保URL有正确的端口和路径
+            if (currentStreamUrl.find(':') == std::string::npos) {
+                // 如果没有端口，添加默认端口81
+                currentStreamUrl += ":81";
+            }
+            if (currentStreamUrl.find("/ws") == std::string::npos) {
+                // 如果没有/ws路径，添加它
+                currentStreamUrl += "/ws";
+            }
+        }
+    }
+
+    LOG_INFO("初始化WebSocket视频流，URL: " + currentStreamUrl);
     return true;
 }
 
-// 开始接收视频流
-bool ESP32VideoStream::start() {
+bool ESP32VideoStream::start()
+{
     if (isRunning) {
-        LOG_ERROR("错误： 打开wifi缓存文件失败！");
+        LOG_WARN("视频流已经在运行中");
         return false;
     }
-    
-    isRunning = true;
 
-    // 创建线程处理视频流
-    streamThread = std::thread(&ESP32VideoStream::streamThreadFunc, this);
+    // 禁用代理设置，避免代理相关错误
+    webSocket.setProxy(QNetworkProxy::NoProxy);
+
+    // 连接WebSocket
+    LOG_INFO("开始连接WebSocket: " + currentStreamUrl);
+    webSocket.open(QUrl(QString::fromStdString(currentStreamUrl)));
+
     return true;
 }
 
-// 停止视频流
-void ESP32VideoStream::stop() {
+void ESP32VideoStream::stop()
+{
     if (!isRunning) {
         return;
     }
+
+    LOG_INFO("停止WebSocket视频流");
     isRunning = false;
-    // 清理
-    curl_easy_cleanup(curl);
-    curl = nullptr;
-    if (streamThread.joinable()) {
-        streamThread.join();
+
+    // 关闭WebSocket
+    webSocket.close();
+
+    // 清空图像队列
+    QMutexLocker locker(&mutex);
+    while (!image_buffer_queue.empty()) {
+        image_buffer_queue.pop();
     }
-    
-    // 清理curl
-    curl_global_cleanup();
 }
 
-// 获取最新的帧
 cv::Mat ESP32VideoStream::getLatestFrame() const
 {
-    if (image_buffer_queue.empty())
-    {
+    QMutexLocker locker(&mutex);
+    if (image_buffer_queue.empty()) {
         return {};
     }
     return image_buffer_queue.front().clone();
 }
 
-// CURL写回调函数 - 处理数据块
-size_t ESP32VideoStream::writeCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
-    auto* stream = static_cast<ESP32VideoStream*>(userdata);
-    return stream->handleStreamData(ptr, size * nmemb);
+void ESP32VideoStream::onConnected()
+{
+    LOG_INFO("WebSocket连接成功: " + currentStreamUrl);
+    isRunning = true;
 }
 
-// 处理流数据
-size_t ESP32VideoStream::handleStreamData(char* data, size_t dataSize) {
-    // 添加数据到缓冲区
-    streamBuffer.insert(streamBuffer.end(), data, data + dataSize);
-    
-    // 处理缓冲区中的所有可能完整的帧
-    processFramesInBuffer();
-    
-    return dataSize;
+void ESP32VideoStream::onDisconnected()
+{
+    LOG_INFO("WebSocket连接已关闭");
+    isRunning = false;
 }
 
-// 处理缓冲区中的所有可能完整的帧
-void ESP32VideoStream::processFramesInBuffer() {
-    // 查找并处理所有完整的帧
-    size_t searchPos = 0;
-    
-    while (searchPos < streamBuffer.size()) {
-        // 寻找帧边界
-        size_t boundaryPos = findNextBoundary(searchPos);
-        if (boundaryPos == std::string::npos) {
-            break;
-        }
-        
-        // 寻找双换行符（表示头部结束，内容开始）
-        size_t headerEnd = findDoubleNewline(boundaryPos);
-        if (headerEnd == std::string::npos) {
-            searchPos = boundaryPos + 1;
-            continue;
-        }
-        
-        // 寻找内容长度
-        int contentLength = parseContentLength(boundaryPos, headerEnd);
-        
-        // 计算内容开始位置
-        size_t contentStart = headerEnd + DOUBLE_NEWLINE.length();
-        
-        // 检查是否有足够的数据
-        if (contentLength > 0 && contentStart + contentLength <= streamBuffer.size()) {
-            // 提取JPEG数据
-            std::vector<char> jpegData(streamBuffer.begin() + contentStart, 
-                                      streamBuffer.begin() + contentStart + contentLength);
-            
-            // 处理JPEG帧
-            processJpegFrame(jpegData);
-            // 移动到下一个搜索位置
-            searchPos = contentStart + contentLength;
+void ESP32VideoStream::onError(QAbstractSocket::SocketError error)
+{
+    QString errorString = webSocket.errorString();
+    int errorCode = static_cast<int>(error);
+    LOG_ERROR("WebSocket错误: " + std::to_string(errorCode) +
+              " - " + errorString.toStdString() +
+              " (URL: " + currentStreamUrl + ")");
 
-            try {
-                std::vector<char> newBuffer(streamBuffer.begin() + searchPos, streamBuffer.end());
-                streamBuffer.swap(newBuffer); // 交换比直接擦除更安全
-            } catch (const std::exception& e) {
-                LOG_ERROR("清理缓冲区时出错: " + e.what());
-                streamBuffer.clear(); // 如果失败则清空
+    // 输出更多连接信息
+    LOG_ERROR("连接状态: " + std::to_string(static_cast<int>(webSocket.state())));
+    LOG_ERROR("代理类型: " + std::to_string(static_cast<int>(webSocket.proxy().type())));
+
+    // 如果是代理错误，尝试重新连接一次，使用不同的URL格式
+    if (error == QAbstractSocket::ProxyProtocolError) {
+        LOG_INFO("检测到代理错误，尝试使用不同的URL格式重新连接...");
+
+        // 尝试构建一个不同格式的URL
+        std::string newUrl = currentStreamUrl;
+        // 如果URL末尾有 "/ws"，尝试移除它
+        if (newUrl.size() > 3 && newUrl.substr(newUrl.size() - 3) == "/ws") {
+            newUrl = newUrl.substr(0, newUrl.size() - 3);
+            LOG_INFO("尝试新URL: " + newUrl);
+
+            // 重置WebSocket并尝试新URL
+            webSocket.close();
+            webSocket.setProxy(QNetworkProxy::NoProxy);
+            currentStreamUrl = newUrl;
+            webSocket.open(QUrl(QString::fromStdString(newUrl)));
+            return;
+        }
+    }
+
+    isRunning = false;
+}
+
+void ESP32VideoStream::onBinaryMessageReceived(const QByteArray &message)
+{
+    try {
+        // 打印接收到的数据长度以进行调试
+        LOG_DEBUG("接收到WebSocket数据: " + std::to_string(message.size()) + " 字节");
+
+        // 检查数据是否足够长
+        if (message.size() < 10) {
+            LOG_WARN("接收到的数据太短，不可能是有效的图像");
+            return;
+        }
+
+        // 直接使用OpenCV解码数据 - 模仿HTML测试页面的处理方式
+        std::vector<uchar> buffer(message.begin(), message.end());
+        cv::Mat rawFrame = cv::imdecode(buffer, cv::IMREAD_COLOR);
+
+        if (!rawFrame.empty()) {
+            LOG_DEBUG("成功解码图像，尺寸: " + std::to_string(rawFrame.cols) + "x" + std::to_string(rawFrame.rows));
+
+            QMutexLocker locker(&mutex);
+            if (image_buffer_queue.empty()) {
+                image_buffer_queue.push(std::move(rawFrame));
+            } else {
+                image_buffer_queue.pop();
+                image_buffer_queue.push(std::move(rawFrame));
+            }
+
+            // 记录成功帧
+            static int frameCount = 0;
+            frameCount++;
+            if (frameCount % 30 == 0) {  // 每30帧记录一次
+                LOG_INFO("已成功接收 " + std::to_string(frameCount) + " 帧");
             }
         } else {
-            // 没有足够的数据，等待更多
-            searchPos = boundaryPos + 1;
-        }
-    }
+            // 如果OpenCV解码失败，尝试Qt的方法
+            QImage image;
+            if (image.loadFromData(message, "JPEG")) {
+                LOG_DEBUG("Qt成功解码JPEG图像");
+                cv::Mat frame = QImageToCvMat(image);
 
-    // 防止缓冲区无限增长
-    if (streamBuffer.size() > MAX_BUFFER_SIZE) {
-        LOG_WARN("警告: 缓冲区过大，可能丢失帧");
-        streamBuffer.clear();
-    }
-}
+                if (!frame.empty()) {
+                    QMutexLocker locker(&mutex);
+                    if (image_buffer_queue.empty()) {
+                        image_buffer_queue.push(std::move(frame));
+                    } else {
+                        image_buffer_queue.pop();
+                        image_buffer_queue.push(std::move(frame));
+                    }
+                }
+            } else {
+                // 如果Qt也失败，记录数据头部信息
+                LOG_WARN("无法解码接收到的图像数据");
+                //LOG_DEBUG("数据前16字节: " + bytesToHexString(message.left(16)));
 
-// 寻找下一个边界位置
-size_t ESP32VideoStream::findNextBoundary(size_t startPos) {
-    // 这里简化了边界检测，实际可能需要动态确定边界字符串
-    const std::string boundaryStart = "--";
-    
-    return std::search(streamBuffer.begin() + startPos, streamBuffer.end(), 
-                      boundaryStart.begin(), boundaryStart.end()) - streamBuffer.begin();
-}
-
-// 寻找双换行符位置
-size_t ESP32VideoStream::findDoubleNewline(size_t startPos) {
-    auto pos = std::search(streamBuffer.begin() + startPos, streamBuffer.end(), 
-                           DOUBLE_NEWLINE.begin(), DOUBLE_NEWLINE.end()) - streamBuffer.begin();
-    
-    if (pos >= streamBuffer.size()) {
-        return std::string::npos;
-    }
-    
-    return pos;
-}
-
-// 解析Content-Length头
-int ESP32VideoStream::parseContentLength(size_t headerStart, size_t headerEnd) {
-    std::string header(streamBuffer.begin() + headerStart, streamBuffer.begin() + headerEnd);
-    
-    // 寻找Content-Length
-    size_t contentLengthPos = header.find(CONTENT_LENGTH_HEADER);
-    if (contentLengthPos != std::string::npos) {
-        // 获取冒号之后的位置
-        size_t colonPos = header.find(':', contentLengthPos);
-        if (colonPos != std::string::npos) {
-            // 查找行尾
-            size_t eolPos = header.find("\r\n", colonPos);
-            if (eolPos != std::string::npos) {
-                // 提取长度值
-                std::string lengthStr = header.substr(colonPos + 1, eolPos - colonPos - 1);
-                // 去除前导空格
-                lengthStr.erase(0, lengthStr.find_first_not_of(" \t"));
-                // 转换为整数
-                try {
-                    return std::stoi(lengthStr);
-                } catch (...) {
-                    return -1;
+                // 尝试检测数据类型
+                if (message.size() > 4) {
+                    uint32_t magic = 0;
+                    memcpy(&magic, message.data(), 4);
+                    LOG_DEBUG("数据前4字节魔数: 0x" + QString::number(magic, 16).toStdString());
                 }
             }
         }
-    }
-    
-    return -1;  // 未找到长度
-}
-
-// 处理JPEG帧
-void ESP32VideoStream::processJpegFrame(const std::vector<char>& jpegData) {
-    // 使用OpenCV解码JPEG数据
-    try {
-        cv::Mat frame = cv::imdecode(cv::Mat(jpegData), cv::IMREAD_COLOR);
-        
-        if (!frame.empty()) {
-            if (image_buffer_queue.empty())
-            {
-                image_buffer_queue.push(std::move(frame));
-            } else
-            {
-                image_buffer_queue.pop();
-                image_buffer_queue.push(std::move(frame));
-            }
-        }
-    } catch (const cv::Exception& e) {
-        LOG_ERROR("处理JPEG帧出错: " + e.what());
+    } catch (const std::exception& e) {
+        LOG_ERROR("处理WebSocket消息时出错: " + std::string(e.what()));
     }
 }
 
-// 视频流处理线程
-void ESP32VideoStream::streamThreadFunc() {
-    curl = curl_easy_init();
-    while (isRunning)
-    {
-        if (!curl) {
-            std::cerr << "初始化curl失败" << std::endl;
-            continue ;
-        }
-
-        // 设置CURL选项
-        curl_easy_setopt(curl, CURLOPT_URL, currentStreamUrl.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
-
-        // 低速检测（防止连接丢失时卡住）
-        curl_easy_setopt (curl, CURLOPT_LOW_SPEED_TIME, 1L);
-        curl_easy_setopt (curl, CURLOPT_LOW_SPEED_LIMIT, 3000L);
-
-        LOG_INFO("开始连接ESP32视频流: " + currentStreamUrl);
-
-        // 启动连接
-        CURLcode res = curl_easy_perform(curl);
-
-        if (res != CURLE_OK) {
-            LOG_ERROR("curl_easy_perform() 失败: " + curl_easy_strerror(res));
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            continue ;
-        }
+cv::Mat ESP32VideoStream::QImageToCvMat(const QImage &image) const
+{
+    switch (image.format()) {
+    case QImage::Format_RGB888: {
+        cv::Mat mat(image.height(), image.width(), CV_8UC3,
+                   const_cast<uchar*>(image.bits()), image.bytesPerLine());
+        cv::Mat result;
+        cv::cvtColor(mat, result, cv::COLOR_RGB2BGR);
+        return result;
     }
-    LOG_INFO("ESP32视频流线程退出");
+    case QImage::Format_ARGB32:
+    case QImage::Format_ARGB32_Premultiplied: {
+        cv::Mat mat(image.height(), image.width(), CV_8UC4,
+                   const_cast<uchar*>(image.bits()), image.bytesPerLine());
+        cv::Mat result;
+        cv::cvtColor(mat, result, cv::COLOR_RGBA2BGR);
+        return result;
+    }
+    default: {
+        // 对于其他格式，转换为RGB888再处理
+        QImage converted = image.convertToFormat(QImage::Format_RGB888);
+        cv::Mat mat(converted.height(), converted.width(), CV_8UC3,
+                   const_cast<uchar*>(converted.bits()), converted.bytesPerLine());
+        cv::Mat result;
+        cv::cvtColor(mat, result, cv::COLOR_RGB2BGR);
+        return result;
+    }
+    }
 }

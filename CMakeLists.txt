@@ -43,6 +43,7 @@ find_package(Qt6 COMPONENTS
     Gui
     Widgets
     REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Network WebSockets REQUIRED)
 
 IF(WIN32)
     set(IpSystemTypePath ip/win32)
@@ -141,6 +142,7 @@ target_include_directories(
 target_link_libraries(
     transfer
     PUBLIC
+    Qt6::Core Qt6::WebSockets  Qt6::Network
     ${OpenCV_LIBS}
     onnxruntime
     oscpack
@@ -205,6 +207,8 @@ target_link_libraries(PaperTracker PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::Network
+    Qt6::WebSockets
     onnxruntime
     oscpack
     ${LIBS}

@@ -6,18 +6,22 @@
 #include <atomic>
 #include <queue>
 #include <opencv2/core.hpp>
+#include <QWebSocket>
+#include <QObject>
+#include <QByteArray>
+#include <QImage>
+#include <QMutex>
 #include "logger.hpp"
 
-// 前向声明
-typedef void CURL;
+class ESP32VideoStream : public QObject {
 
-class ESP32VideoStream {
+
 public:
     // 构造函数和析构函数
-    ESP32VideoStream();
+    ESP32VideoStream(QObject *parent = nullptr);
     ~ESP32VideoStream();
 
-    // 初始化视频流，设置ESP32的URL和可选的回调函数
+    // 初始化视频流，设置ESP32的URL
     bool init(const std::string& url);
 
     // 开始接收视频流
@@ -32,40 +36,30 @@ public:
     // 检查流是否正在运行
     bool isStreaming() const { return isRunning; }
 
+    private slots:
+        // WebSocket连接成功的槽函数
+        void onConnected();
+
+    // WebSocket连接关闭的槽函数
+    void onDisconnected();
+
+    // WebSocket错误的槽函数
+    void onError(QAbstractSocket::SocketError error);
+
+    // 处理接收到的二进制消息(JPEG图片)
+    void onBinaryMessageReceived(const QByteArray &message);
+
 private:
-    // 缓冲区最大大小，防止无限增长
-    static constexpr size_t MAX_BUFFER_SIZE = 10 * 1024 * 1024;  // 10MB
+    // 将QImage转换为cv::Mat
+    cv::Mat QImageToCvMat(const QImage &image) const;
 
-    // CURL写回调函数 - 处理数据块
-    static size_t writeCallback(char* ptr, size_t size, size_t nmemb, void* userdata);
-
-    // 处理流数据
-    size_t handleStreamData(char* data, size_t dataSize);
-
-    // 处理缓冲区中的所有可能完整的帧
-    void processFramesInBuffer();
-
-    // 寻找下一个边界位置
-    size_t findNextBoundary(size_t startPos);
-
-    // 寻找双换行符位置
-    size_t findDoubleNewline(size_t startPos);
-
-    // 解析Content-Length头
-    int parseContentLength(size_t headerStart, size_t headerEnd);
-
-    // 处理JPEG帧
-    void processJpegFrame(const std::vector<char>& jpegData);
-
-    // 视频流处理线程
-    void streamThreadFunc();
+    // 辅助函数：将字节数组转换为十六进制字符串（用于调试）
+    std::string bytesToHexString(const QByteArray &bytes) const;
 
     // 成员变量
     std::atomic<bool> isRunning;
-    std::thread streamThread;
-    std::vector<char> streamBuffer;
-    cv::Mat latestFrame;
     std::string currentStreamUrl;
-    CURL* curl;
+    QWebSocket webSocket;
+    mutable QMutex mutex;
     std::queue<cv::Mat> image_buffer_queue;
 };

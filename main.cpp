@@ -10,21 +10,26 @@
 #include "main_window.hpp"
 #include <curl/curl.h>
 
-void start_image_download(PaperTrackMainWindow &window, ESP32VideoStream& image_downloader, const std::string& camera_ip)
+void start_image_download(PaperTrackMainWindow &window,ESP32VideoStream& image_downloader, const std::string& camera_ip)
 {
     if (image_downloader.isStreaming())
     {
         image_downloader.stop();
     }
-    // 开始下载图片
-    image_downloader.init(camera_ip);
+    // 开始下载图片 - 修改为支持WebSocket协议
+    // 检查URL格式
+    std::string url = camera_ip;
+    if (url.substr(0, 7) == "http://" || url.substr(0, 8) == "https://" ||
+        url.substr(0, 5) == "ws://" || url.substr(0, 6) == "wss://") {
+        // URL已经包含协议前缀，直接使用
+        image_downloader.init(url);
+        } else {
+            // 添加默认ws://前缀
+            image_downloader.init("ws://" + url);
+        }
     image_downloader.start();
-
-    if (image_downloader.isStreaming())
-    {
-        window.setWifiStatusLabel("Wifi已连接");
-    }
 }
+
 
 void restart_esp32(SerialPortManager& serial_port_manager, PaperTrackMainWindow& window)
 {
@@ -276,7 +281,7 @@ void update_ui(
         }
         auto end_time = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count ();
-        int delay_ms = max(0, static_cast<int>(1000.0 / (window.get_max_fps()+30) - elapsed));
+        int delay_ms = max(0, static_cast<int>(1000.0 / (min(window.get_max_fps()+30,60)) - elapsed));
         std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
     }
 }
