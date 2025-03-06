@@ -90,6 +90,9 @@ public:
     QScrollBar *TongueLeftBar;
     QPushButton *SaveParamConfigButton;
     QLabel *ImageLabelCal;
+    QLabel *label_3;
+    QLabel *label_4;
+    QLabel *label_19;
     QPushButton *MainPageButton;
     QPushButton *CalibrationPageButton;
 
@@ -125,7 +128,7 @@ public:
         wifi_send_Button->setGeometry(QRect(550, 10, 91, 91));
         FlashFirmwareButton = new QPushButton(page);
         FlashFirmwareButton->setObjectName("FlashFirmwareButton");
-        FlashFirmwareButton->setGeometry(QRect(650, 10, 91, 31));
+        FlashFirmwareButton->setGeometry(QRect(650, 10, 91, 41));
         LogText = new QPlainTextEdit(page);
         LogText->setObjectName("LogText");
         LogText->setGeometry(QRect(10, 310, 821, 171));
@@ -142,7 +145,7 @@ public:
         label_16->setGeometry(QRect(310, 210, 51, 31));
         restart_Button = new QPushButton(page);
         restart_Button->setObjectName("restart_Button");
-        restart_Button->setGeometry(QRect(650, 50, 91, 31));
+        restart_Button->setGeometry(QRect(650, 60, 91, 41));
         SerialConnectLabel = new QLabel(page);
         SerialConnectLabel->setObjectName("SerialConnectLabel");
         SerialConnectLabel->setGeometry(QRect(660, 210, 71, 31));
@@ -161,7 +164,7 @@ public:
         RotateImageBar->setOrientation(Qt::Orientation::Horizontal);
         UseFilterBox = new QCheckBox(page);
         UseFilterBox->setObjectName("UseFilterBox");
-        UseFilterBox->setGeometry(QRect(650, 90, 81, 19));
+        UseFilterBox->setGeometry(QRect(500, 170, 81, 21));
         EnergyModeBox = new QComboBox(page);
         EnergyModeBox->addItem(QString());
         EnergyModeBox->addItem(QString());
@@ -324,6 +327,15 @@ public:
         ImageLabelCal = new QLabel(page_2);
         ImageLabelCal->setObjectName("ImageLabelCal");
         ImageLabelCal->setGeometry(QRect(510, 190, 280, 280));
+        label_3 = new QLabel(page_2);
+        label_3->setObjectName("label_3");
+        label_3->setGeometry(QRect(200, 10, 61, 16));
+        label_4 = new QLabel(page_2);
+        label_4->setObjectName("label_4");
+        label_4->setGeometry(QRect(310, 10, 61, 16));
+        label_19 = new QLabel(page_2);
+        label_19->setObjectName("label_19");
+        label_19->setGeometry(QRect(130, 10, 61, 16));
         stackedWidget->addWidget(page_2);
         MainPageButton = new QPushButton(PaperTrackerMainWindow);
         MainPageButton->setObjectName("MainPageButton");
@@ -375,6 +387,9 @@ public:
         label_31->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\350\210\214\345\244\264\345\220\221\345\217\263", nullptr));
         SaveParamConfigButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\344\277\235\345\255\230\345\217\202\346\225\260", nullptr));
         ImageLabelCal->setText(QString());
+        label_3->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\224\276\345\244\247\345\200\215\347\216\207", nullptr));
+        label_4->setText(QCoreApplication::translate("PaperTrackerMainWindow", "x3", nullptr));
+        label_19->setText(QCoreApplication::translate("PaperTrackerMainWindow", "x1", nullptr));
         MainPageButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\344\270\273\351\241\265\351\235\242", nullptr));
         CalibrationPageButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\240\207\345\256\232\351\241\265\351\235\242", nullptr));
     } // retranslateUi
