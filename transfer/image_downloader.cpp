@@ -29,7 +29,7 @@ ESP32VideoStream::ESP32VideoStream(QObject *parent)
             this, &ESP32VideoStream::onConnected);
     connect(&webSocket, &QWebSocket::disconnected,
             this, &ESP32VideoStream::onDisconnected);
-    connect(&webSocket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error),
+    connect(&webSocket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::errorOccurred),
             this, &ESP32VideoStream::onError);
     connect(&webSocket, &QWebSocket::binaryMessageReceived,
             this, &ESP32VideoStream::onBinaryMessageReceived);
@@ -169,7 +169,7 @@ void ESP32VideoStream::onBinaryMessageReceived(const QByteArray &message)
 {
     try {
         // 打印接收到的数据长度以进行调试
-        LOG_DEBUG("接收到WebSocket数据: " + std::to_string(message.size()) + " 字节");
+        // LOG_DEBUG("接收到WebSocket数据: " + std::to_string(message.size()) + " 字节");
 
         // 检查数据是否足够长
         if (message.size() < 10) {
@@ -182,7 +182,7 @@ void ESP32VideoStream::onBinaryMessageReceived(const QByteArray &message)
         cv::Mat rawFrame = cv::imdecode(buffer, cv::IMREAD_COLOR);
 
         if (!rawFrame.empty()) {
-            LOG_DEBUG("成功解码图像，尺寸: " + std::to_string(rawFrame.cols) + "x" + std::to_string(rawFrame.rows));
+            // LOG_DEBUG("成功解码图像，尺寸: " + std::to_string(rawFrame.cols) + "x" + std::to_string(rawFrame.rows));
 
             QMutexLocker locker(&mutex);
             if (image_buffer_queue.empty()) {
@@ -190,13 +190,6 @@ void ESP32VideoStream::onBinaryMessageReceived(const QByteArray &message)
             } else {
                 image_buffer_queue.pop();
                 image_buffer_queue.push(std::move(rawFrame));
-            }
-
-            // 记录成功帧
-            static int frameCount = 0;
-            frameCount++;
-            if (frameCount % 30 == 0) {  // 每30帧记录一次
-                LOG_INFO("已成功接收 " + std::to_string(frameCount) + " 帧");
             }
         } else {
             // 如果OpenCV解码失败，尝试Qt的方法

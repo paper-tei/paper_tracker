@@ -5,10 +5,12 @@
 #include <QProgressDialog>
 #include <video_reader.hpp>
 #include <config_writer.hpp>
+#include <iostream>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include "main_window.hpp"
 #include <curl/curl.h>
+#include <coroutine>
 
 void start_image_download(PaperTrackMainWindow &window,ESP32VideoStream& image_downloader, const std::string& camera_ip)
 {
@@ -23,10 +25,10 @@ void start_image_download(PaperTrackMainWindow &window,ESP32VideoStream& image_d
         url.substr(0, 5) == "ws://" || url.substr(0, 6) == "wss://") {
         // URL已经包含协议前缀，直接使用
         image_downloader.init(url);
-        } else {
-            // 添加默认ws://前缀
-            image_downloader.init("ws://" + url);
-        }
+    } else {
+        // 添加默认ws://前缀
+        image_downloader.init("ws://" + url);
+    }
     image_downloader.start();
 }
 
@@ -528,10 +530,7 @@ int main(int argc, char *argv[]) {
             LOG_INFO("从配置文件中读取地址成功");
             camera_ip = config.wifi_ip;
             window.set_config(config);
-            auto esp32_future = std::async(std::launch::async, [&window, &image_downloader, camera_ip]()
-            {
-                start_image_download(window, image_downloader, camera_ip);
-            });
+            start_image_download(window, image_downloader, camera_ip);
         } else
         {
             QMessageBox msgBox;

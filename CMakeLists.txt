@@ -18,8 +18,8 @@ endif ()
 
 #if develop qt is on set path to the qt path else set the path to the qt path
 
-if (EXISTS "D:/QtMVSC/6.8.2/msvc2022_64")
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/QtMVSC/6.8.2/msvc2022_64")
+if (EXISTS "D:/QtNew/6.8.2/msvc2022_64")
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/QtNew/6.8.2/msvc2022_64")
 else ()
     set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "E:/Qt/6.8.2/msvc2022_64")
 endif ()
@@ -38,11 +38,6 @@ else()
 endif ()
 find_package(OpenCV CONFIG REQUIRED)
 find_package(CURL CONFIG REQUIRED)
-find_package(Qt6 COMPONENTS
-    Core
-    Gui
-    Widgets
-    REQUIRED)
 find_package(Qt6 COMPONENTS Core Gui Widgets Network WebSockets REQUIRED)
 
 IF(WIN32)
@@ -259,7 +254,7 @@ if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
                 "${QT_INSTALL_PATH}/plugins/platforms/qwindows${DEBUG_SUFFIX}.dll"
                 "$<TARGET_FILE_DIR:${PROJECT_NAME}>/plugins/platforms/")
     endif()
-    foreach(QT_LIB Core Gui Widgets )
+    foreach(QT_LIB Core Gui Widgets Network Websockets)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
                 "${QT_INSTALL_PATH}/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll"
