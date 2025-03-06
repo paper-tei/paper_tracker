@@ -218,6 +218,7 @@ void flash_esp32(PaperTrackMainWindow& window, SerialPortManager& serial_port_ma
 
 void update_ui(
     PaperTrackMainWindow& window,
+    SerialPortManager& serial_port_manager,
     ESP32VideoStream& image_downloader,
     Inference& inference,
     OscManager& osc_manager
@@ -232,6 +233,20 @@ void update_ui(
     static double max_rate = 15;
     while (window.is_running())
     {
+        if (image_downloader.isStreaming())
+        {
+            window.setWifiStatusLabel("Wifi已连接");
+        } else
+        {
+            window.setWifiStatusLabel("Wifi连接失败");
+        }
+        if (serial_port_manager.status() == SerialStatus::OPENED)
+        {
+            window.setSerialStatusLabel("串口已连接");
+        } else
+        {
+            window.setSerialStatusLabel("串口连接失败");
+        }
         auto start_time = std::chrono::high_resolution_clock::now();
         try {
             if (fps_total > 1000)
@@ -283,7 +298,7 @@ void update_ui(
         }
         auto end_time = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count ();
-        int delay_ms = max(0, static_cast<int>(1000.0 / (min(window.get_max_fps()+30,60)) - elapsed));
+        int delay_ms = max(0, static_cast<int>(1000.0 / min(window.get_max_fps() + 30, 60) - elapsed));
         std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
     }
 }
@@ -545,9 +560,9 @@ int main(int argc, char *argv[]) {
     }
 
     LOG_INFO("正在启动视频处理线程...");
-    window.set_update_thread([ &window, &image_downloader, &inference, &osc_manager] ()
+    window.set_update_thread([ &window, &image_downloader, &inference, &osc_manager, &serial_port_manager] ()
     {
-        update_ui(window, image_downloader, inference, osc_manager);
+        update_ui(window, serial_port_manager, image_downloader, inference, osc_manager);
     });
     window.set_inference_thread([ &window, &image_downloader, &inference, &osc_manager] ()
     {
@@ -555,6 +570,17 @@ int main(int argc, char *argv[]) {
     });
 
     int status = QApplication::exec();
+
+    LOG_INFO("开始自动保存");
+    if (config_writer.write_config(window.generate_config()))
+    {
+        LOG_INFO("已保存配置");
+    } else
+    {
+        LOG_ERROR("配置文件保存失败");
+    }
+
+
     window.stop();
 
     return status;
