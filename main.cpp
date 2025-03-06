@@ -17,7 +17,7 @@ void start_image_download(ESP32VideoStream& image_downloader, const std::string&
         image_downloader.stop();
     }
     // 开始下载图片
-    image_downloader.init("http://" + camera_ip);
+    image_downloader.init(camera_ip);
     image_downloader.start();
 }
 
@@ -452,6 +452,10 @@ int main(int argc, char *argv[]) {
             LOG_ERROR("配置文件保存失败");
         }
     });
+    window.setOnAmpMapChangedFunc([&window, &inference] ()
+    {
+        inference.set_amp_map(window.getAmpMap());
+    });
 
     std::string camera_ip;
 
@@ -468,9 +472,7 @@ int main(int argc, char *argv[]) {
                 // 更新IP地址显示，添加 http:// 前缀
                 window.setIPText("http://" + ip);
                 LOG_INFO("IP地址已更新: http://" + ip);
-                config.wifi_ip = ip;
-                window.set_config(config);
-                start_image_download(image_downloader, camera_ip);
+                start_image_download(image_downloader, "http://" + camera_ip);
             }
             // 可以添加其他状态更新的日志，如果需要的话
         }, Qt::QueuedConnection);
@@ -511,11 +513,11 @@ int main(int argc, char *argv[]) {
 
         // auto ip = wifi_cache_file_writer.try_get_wifi_config();
         config = config_writer.get_config<PaperTrackerConfig>();
-        window.set_config(config);
         if (!config.wifi_ip.empty())
         {
             LOG_INFO("从配置文件中读取地址成功");
             camera_ip = config.wifi_ip;
+            window.set_config(config);
             auto esp32_future = std::async(std::launch::async, [&image_downloader, camera_ip]()
             {
                 start_image_download(image_downloader, camera_ip);
@@ -544,17 +546,6 @@ int main(int argc, char *argv[]) {
     });
 
     int status = QApplication::exec();
-
-    // LOG_INFO("正在自动保存参数配置文件...");
-    // config = std::move(window.generate_config());
-    // if (config_writer.write_config(config))
-    // {
-    //     LOG_INFO("自动保存参数配置文件成功");
-    // } else
-    // {
-    //     LOG_INFO("自动保存参数配置文件失败");
-    // }
-
     window.stop();
 
     return status;

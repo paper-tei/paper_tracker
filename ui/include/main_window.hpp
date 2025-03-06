@@ -44,8 +44,9 @@ struct PaperTrackerConfig
     std::string wifi_ip;
     bool use_filter;
     std::unordered_map<std::string, int> amp_map;
+    Rect rect;
 
-    REFLECT(brightness, rotate_angle, energy_mode, wifi_ip, use_filter, amp_map);
+    REFLECT(brightness, rotate_angle, energy_mode, wifi_ip, use_filter, amp_map, rect);
 };
 
 class PaperTrackMainWindow : public QWidget {
@@ -82,6 +83,7 @@ public:
     void setOnRestartButtonClickedFunc(FuncWithoutArgs func);
     void setOnFlashButtonClickedFunc(FuncWithoutArgs func);
     void setOnSaveConfigButtonClickedFunc(FuncWithoutArgs func);
+    void setOnAmpMapChangedFunc(FuncWithoutArgs func);
 
 
     void setBeforeStop(FuncWithoutArgs func);
@@ -98,6 +100,8 @@ public:
 
     void set_config(const PaperTrackerConfig& config);
 
+    std::unordered_map<std::string, int> getAmpMap() const;
+
 private slots:
     void onBrightnessChanged(int value);
     void onSendBrightnessValue() const;
@@ -106,10 +110,21 @@ private slots:
     void onRestartButtonClicked();
     void onUseFilterClicked(int value) const;
     void onFlashButtonClicked();
-
     void onEnergyModeChanged(int value);
-
     void onSaveConfigButtonClicked() const;
+
+    void onCheeckPuffLeftChanged(int value) const;
+    void onCheeckPuffRightChanged(int value);
+    void onJawOpenChanged(int value);
+    void onJawLeftChanged(int value);
+    void onJawRightChanged(int value);
+    void onMouthLeftChanged(int value);
+    void onMouthRightChanged(int value);
+    void onTongueOutChanged(int value);
+    void onTongueLeftChanged(int value);
+    void onTongueRightChanged(int value);
+    void onTongueUpChanged(int value);
+    void onTongueDownChanged(int value);
 private:
     QProcess* vrcftProcess;
 
@@ -122,8 +137,9 @@ private:
     FuncWithVal onUseFilterClickedFunc;
     FuncWithoutArgs onFlashButtonClickedFunc;
     FuncWithoutArgs onSaveConfigButtonClickedFunc;
+    FuncWithoutArgs onAmpMapChangedFunc;
 
-    QTimer* brightness_timer;
+    QTimer* brightness_timer{};
 
     int current_brightness;
     int current_rotate_angle = 0;

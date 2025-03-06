@@ -245,6 +245,19 @@ void PaperTrackMainWindow::connect_callbacks()
     connect(ui.wifi_send_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
     connect(ui.EnergyModeBox, &QComboBox::currentIndexChanged, this, &PaperTrackMainWindow::onEnergyModeChanged);
     connect(ui.SaveParamConfigButton, &QPushButton::clicked, this, &PaperTrackMainWindow::onSaveConfigButtonClicked);
+
+    connect(ui.JawOpenBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawOpenChanged);
+    connect(ui.JawLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawLeftChanged);
+    connect(ui.JawRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onJawRightChanged);
+    connect(ui.MouthLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onMouthLeftChanged);
+    connect(ui.MouthRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onMouthRightChanged);
+    connect(ui.TongueOutBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueOutChanged);
+    connect(ui.TongueLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueLeftChanged);
+    connect(ui.TongueRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueRightChanged);
+    connect(ui.TongueUpBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueUpChanged);
+    connect(ui.TongueDownBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueDownChanged);
+    connect(ui.CheekPuffLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffLeftChanged);
+    connect(ui.CheekPuffRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffRightChanged);
 }
 
 float PaperTrackMainWindow::getRotateAngle() const
@@ -449,6 +462,7 @@ PaperTrackerConfig PaperTrackMainWindow::generate_config() const
         {"tongueLeft", ui.JawLeftBar->value()},
         {"tongueRight", ui.JawRightBar->value()},
     };
+    config.rect = roi_rect;
     return config;
 }
 
@@ -473,6 +487,7 @@ void PaperTrackMainWindow::set_config(const PaperTrackerConfig& config)
     ui.TongueDownBar->setValue(config.amp_map.at("tongueDown"));
     ui.TongueLeftBar->setValue(config.amp_map.at("tongueLeft"));
     ui.TongueRightBar->setValue(config.amp_map.at("tongueRight"));
+    roi_rect = config.rect;
 }
 
 void PaperTrackMainWindow::setOnSaveConfigButtonClickedFunc(FuncWithoutArgs func)
@@ -485,4 +500,85 @@ void PaperTrackMainWindow::onSaveConfigButtonClicked() const
     onSaveConfigButtonClickedFunc();
 }
 
+void PaperTrackMainWindow::setOnAmpMapChangedFunc(FuncWithoutArgs func)
+{
+    onAmpMapChangedFunc = std::move(func);
+}
 
+void PaperTrackMainWindow::onCheeckPuffLeftChanged(int value) const
+{
+    onAmpMapChangedFunc();
+}
+
+void PaperTrackMainWindow::onCheeckPuffRightChanged(int value)
+{
+    onAmpMapChangedFunc();
+}
+
+void PaperTrackMainWindow::onJawOpenChanged(int value)
+{
+    onAmpMapChangedFunc();
+}
+
+void PaperTrackMainWindow::onJawLeftChanged(int value)
+{
+    onAmpMapChangedFunc();
+}
+
+void PaperTrackMainWindow::onJawRightChanged(int value)
+{
+    onAmpMapChangedFunc();
+}
+
+void PaperTrackMainWindow::onMouthLeftChanged(int value)
+{
+    onAmpMapChangedFunc();
+}
+
+void PaperTrackMainWindow::onMouthRightChanged(int value)
+{
+    onAmpMapChangedFunc();
+}
+
+void PaperTrackMainWindow::onTongueOutChanged(int value)
+{
+    onAmpMapChangedFunc();
+}
+
+void PaperTrackMainWindow::onTongueLeftChanged(int value)
+{
+    onAmpMapChangedFunc();
+}
+
+void PaperTrackMainWindow::onTongueRightChanged(int value)
+{
+    onAmpMapChangedFunc();
+}
+
+void PaperTrackMainWindow::onTongueUpChanged(int value)
+{
+    onAmpMapChangedFunc();
+}
+
+void PaperTrackMainWindow::onTongueDownChanged(int value)
+{
+    onAmpMapChangedFunc();
+}
+
+std::unordered_map<std::string, int> PaperTrackMainWindow::getAmpMap() const
+{
+    return {
+        {"cheekPuffLeft", ui.CheekPuffLeftBar->value()},
+        {"cheekPuffRight", ui.CheekPuffRightBar->value()},
+        {"jawOpen", ui.JawOpenBar->value()},
+        {"jawLeft", ui.MouthLeftBar->value()},
+        {"jawRight", ui.MouthRightBar->value()},
+        {"mouthLeft", ui.TongueOutBar->value()},
+        {"mouthRight", ui.TongueUpBar->value()},
+        {"tongueOut", ui.TongueDownBar->value()},
+        {"tongueUp", ui.TongueLeftBar->value()},
+        {"tongueDown", ui.TongueRightBar->value()},
+        {"tongueLeft", ui.JawLeftBar->value()},
+        {"tongueRight", ui.JawRightBar->value()},
+    };
+}
