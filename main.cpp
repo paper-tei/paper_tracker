@@ -10,7 +10,7 @@
 #include "main_window.hpp"
 #include <curl/curl.h>
 
-void start_image_download(ESP32VideoStream& image_downloader, const std::string& camera_ip)
+void start_image_download(PaperTrackMainWindow &window, ESP32VideoStream& image_downloader, const std::string& camera_ip)
 {
     if (image_downloader.isStreaming())
     {
@@ -19,6 +19,11 @@ void start_image_download(ESP32VideoStream& image_downloader, const std::string&
     // 开始下载图片
     image_downloader.init(camera_ip);
     image_downloader.start();
+
+    if (image_downloader.isStreaming())
+    {
+        window.setWifiStatusLabel("Wifi已连接");
+    }
 }
 
 void restart_esp32(SerialPortManager& serial_port_manager, PaperTrackMainWindow& window)
@@ -472,7 +477,7 @@ int main(int argc, char *argv[]) {
                 // 更新IP地址显示，添加 http:// 前缀
                 window.setIPText("http://" + ip);
                 LOG_INFO("IP地址已更新: http://" + ip);
-                start_image_download(image_downloader, "http://" + camera_ip);
+                start_image_download(window, image_downloader, "http://" + camera_ip);
             }
             // 可以添加其他状态更新的日志，如果需要的话
         }, Qt::QueuedConnection);
@@ -518,9 +523,9 @@ int main(int argc, char *argv[]) {
             LOG_INFO("从配置文件中读取地址成功");
             camera_ip = config.wifi_ip;
             window.set_config(config);
-            auto esp32_future = std::async(std::launch::async, [&image_downloader, camera_ip]()
+            auto esp32_future = std::async(std::launch::async, [&window, &image_downloader, camera_ip]()
             {
-                start_image_download(image_downloader, camera_ip);
+                start_image_download(window, image_downloader, camera_ip);
             });
         } else
         {
