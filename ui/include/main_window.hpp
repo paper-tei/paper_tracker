@@ -23,6 +23,17 @@ struct Rect
     Rect(int x, int y, int width, int height) :
         rect(x, y, width, height), x(x), y(y), width(width), height(height) {}
 
+    // delete operate = to avoid copy
+    Rect& operator=(const Rect& other)
+    {
+        this->rect = cv::Rect(other.x, other.y, other.width, other.height);
+        this->x = other.x;
+        this->y = other.y;
+        this->width = other.width;
+        this->height = other.height;
+        return *this;
+    }
+
     explicit Rect(cv::Rect rect) : rect(rect), x(rect.x), y(rect.y), width(rect.width), height(rect.height) {}
 
     cv::Rect rect;

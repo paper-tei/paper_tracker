@@ -54,7 +54,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     setFocus();
 
     // 添加ROI事件
-    ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect, bool isEnd)
+    auto *roiFilter = new ROIEventFilter([this] (QRect rect, bool isEnd)
     {
         roi_rect.is_roi_end = isEnd;
         roi_rect = Rect(rect.x(), rect.y(), rect.width(), rect.height());
