@@ -7,7 +7,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT /Zc:preprocessor")
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MTd")
@@ -67,7 +67,6 @@ endif()
 add_library(
     utilities
     utilities/logger.cpp
-    utilities/wifi_cache_file_writer.cpp
 )
 
 target_link_libraries(

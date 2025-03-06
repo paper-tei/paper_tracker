@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <video_reader.hpp>
+#include <config_writer.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include "main_window.hpp"
@@ -370,10 +371,11 @@ int main(int argc, char *argv[]) {
 
     VideoReader video_reader;
     SerialPortManager serial_port_manager;
-    WifiCacheFileWriter wifi_cache_file_writer("./wifi_cache.txt");
     ESP32VideoStream image_downloader;
     Inference inference;
     OscManager osc_manager;
+    PaperTrackerConfig config;
+    ConfigWriter config_writer("./config.json");
 
     window.setBeforeStop([&image_downloader, &serial_port_manager, &osc_manager] ()
     {
@@ -438,16 +440,27 @@ int main(int argc, char *argv[]) {
     {
         inference.set_use_filter(value);
     });
+    window.setOnSaveConfigButtonClickedFunc([&window, &config_writer, &config] ()
+    {
+        LOG_INFO("保存配置中...");
+        config = std::move(window.generate_config());
+        if (config_writer.write_config(config))
+        {
+            LOG_INFO("已保存配置");
+        } else
+        {
+            LOG_ERROR("配置文件保存失败");
+        }
+    });
 
     std::string camera_ip;
 
-
     LOG_INFO("初始化串口");
     // init serial port manager
-    serial_port_manager.setDeviceStatusCallback([&window, &wifi_cache_file_writer, &camera_ip, &image_downloader]
+    serial_port_manager.setDeviceStatusCallback([&window, &camera_ip, &image_downloader, &config]
                                                         (const std::string& ip, int brightness, int power, int version) {
         // 使用Qt的线程安全方式更新UI
-        QMetaObject::invokeMethod(&window, [&window, &wifi_cache_file_writer, ip, brightness, power, version, &camera_ip, &image_downloader]() {
+        QMetaObject::invokeMethod(&window, [&window, ip, brightness, power, version, &camera_ip, &image_downloader, &config]() {
             // 只在 IP 地址变化时更新显示
             if (camera_ip != ip)
             {
@@ -455,7 +468,8 @@ int main(int argc, char *argv[]) {
                 // 更新IP地址显示，添加 http:// 前缀
                 window.setIPText("http://" + ip);
                 LOG_INFO("IP地址已更新: http://" + ip);
-                wifi_cache_file_writer.write_wifi_config(camera_ip);
+                config.wifi_ip = ip;
+                window.set_config(config);
                 start_image_download(image_downloader, camera_ip);
             }
             // 可以添加其他状态更新的日志，如果需要的话
@@ -493,12 +507,15 @@ int main(int argc, char *argv[]) {
     if (serial_port_manager.status() == SerialStatus::FAILED)
     {
         window.setSerialStatusLabel("串口连接失败");
-        LOG_WARN("串口未连接，尝试从wifi缓存中读取地址...");
-        auto ip = wifi_cache_file_writer.try_get_wifi_config();
-        if (ip.has_value() && !ip.value().empty())
+        LOG_WARN("串口未连接，尝试从配置文件中读取地址...");
+
+        // auto ip = wifi_cache_file_writer.try_get_wifi_config();
+        config = config_writer.get_config<PaperTrackerConfig>();
+        window.set_config(config);
+        if (!config.wifi_ip.empty())
         {
-            LOG_INFO("从wifi缓存中读取地址成功");
-            camera_ip = ip.value();
+            LOG_INFO("从配置文件中读取地址成功");
+            camera_ip = config.wifi_ip;
             auto esp32_future = std::async(std::launch::async, [&image_downloader, camera_ip]()
             {
                 start_image_download(image_downloader, camera_ip);
@@ -507,7 +524,7 @@ int main(int argc, char *argv[]) {
         {
             QMessageBox msgBox;
             msgBox.setWindowIcon(icon);
-            msgBox.setText("未找到WiFi配置信息，请将面捕通过数据线连接到电脑进行首次配置");
+            msgBox.setText("未找到配置文件信息，请将面捕通过数据线连接到电脑进行首次配置");
             msgBox.exec();
         }
     } else
@@ -528,8 +545,17 @@ int main(int argc, char *argv[]) {
 
     int status = QApplication::exec();
 
+    // LOG_INFO("正在自动保存参数配置文件...");
+    // config = std::move(window.generate_config());
+    // if (config_writer.write_config(config))
+    // {
+    //     LOG_INFO("自动保存参数配置文件成功");
+    // } else
+    // {
+    //     LOG_INFO("自动保存参数配置文件失败");
+    // }
+
     window.stop();
 
     return status;
 }
-

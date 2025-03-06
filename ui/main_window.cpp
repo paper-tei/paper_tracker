@@ -57,7 +57,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     ROIEventFilter *roiFilter = new ROIEventFilter([this] (QRect rect, bool isEnd)
     {
         roi_rect.is_roi_end = isEnd;
-        roi_rect = Rect(cv::Rect(rect.x(), rect.y(), rect.width(), rect.height()));
+        roi_rect = Rect(rect.x(), rect.y(), rect.width(), rect.height());
         // if end point is out of image, move rect
         if (roi_rect.rect.x < 0)
         {
@@ -244,6 +244,7 @@ void PaperTrackMainWindow::connect_callbacks()
     connect(ui.UseFilterBox, &QCheckBox::checkStateChanged, this, &PaperTrackMainWindow::onUseFilterClicked);
     connect(ui.wifi_send_Button, &QPushButton::clicked, this, &PaperTrackMainWindow::onSendButtonClicked);
     connect(ui.EnergyModeBox, &QComboBox::currentIndexChanged, this, &PaperTrackMainWindow::onEnergyModeChanged);
+    connect(ui.SaveParamConfigButton, &QPushButton::clicked, this, &PaperTrackMainWindow::onSaveConfigButtonClicked);
 }
 
 float PaperTrackMainWindow::getRotateAngle() const
@@ -424,6 +425,64 @@ void PaperTrackMainWindow::onEnergyModeChanged(int index)
 int PaperTrackMainWindow::get_max_fps() const
 {
     return max_fps;
+}
+
+PaperTrackerConfig PaperTrackMainWindow::generate_config() const
+{
+    PaperTrackerConfig config;
+    config.brightness = current_brightness;
+    config.rotate_angle = current_rotate_angle;
+    config.energy_mode = ui.EnergyModeBox->currentIndex();
+    config.use_filter = ui.UseFilterBox->isChecked();
+    config.wifi_ip = ui.textEdit->toPlainText().toStdString();
+    config.amp_map = {
+        {"cheekPuffLeft", ui.CheekPuffLeftBar->value()},
+        {"cheekPuffRight", ui.CheekPuffRightBar->value()},
+        {"jawOpen", ui.JawOpenBar->value()},
+        {"jawLeft", ui.MouthLeftBar->value()},
+        {"jawRight", ui.MouthRightBar->value()},
+        {"mouthLeft", ui.TongueOutBar->value()},
+        {"mouthRight", ui.TongueUpBar->value()},
+        {"tongueOut", ui.TongueDownBar->value()},
+        {"tongueUp", ui.TongueLeftBar->value()},
+        {"tongueDown", ui.TongueRightBar->value()},
+        {"tongueLeft", ui.JawLeftBar->value()},
+        {"tongueRight", ui.JawRightBar->value()},
+    };
+    return config;
+}
+
+void PaperTrackMainWindow::set_config(const PaperTrackerConfig& config)
+{
+    current_brightness = config.brightness;
+    current_rotate_angle = config.rotate_angle;
+    ui.BrightnessBar->setValue(config.brightness);
+    ui.RotateImageBar->setValue(config.rotate_angle);
+    ui.EnergyModeBox->setCurrentIndex(config.energy_mode);
+    ui.UseFilterBox->setChecked(config.use_filter);
+    ui.textEdit->setPlainText(QString::fromStdString(config.wifi_ip));
+    ui.CheekPuffLeftBar->setValue(config.amp_map.at("cheekPuffLeft"));
+    ui.CheekPuffRightBar->setValue(config.amp_map.at("cheekPuffRight"));
+    ui.JawOpenBar->setValue(config.amp_map.at("jawOpen"));
+    ui.JawLeftBar->setValue(config.amp_map.at("tongueLeft"));
+    ui.JawRightBar->setValue(config.amp_map.at("tongueRight"));
+    ui.MouthLeftBar->setValue(config.amp_map.at("mouthLeft"));
+    ui.MouthRightBar->setValue(config.amp_map.at("mouthRight"));
+    ui.TongueOutBar->setValue(config.amp_map.at("tongueOut"));
+    ui.TongueUpBar->setValue(config.amp_map.at("tongueUp"));
+    ui.TongueDownBar->setValue(config.amp_map.at("tongueDown"));
+    ui.TongueLeftBar->setValue(config.amp_map.at("tongueLeft"));
+    ui.TongueRightBar->setValue(config.amp_map.at("tongueRight"));
+}
+
+void PaperTrackMainWindow::setOnSaveConfigButtonClickedFunc(FuncWithoutArgs func)
+{
+    onSaveConfigButtonClickedFunc = std::move(func);
+}
+
+void PaperTrackMainWindow::onSaveConfigButtonClicked() const
+{
+    onSaveConfigButtonClickedFunc();
 }
 
 

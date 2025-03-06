@@ -466,3 +466,8 @@ void Inference::AmpMapToOutput(std::vector<float>& output)
         }
     }
 }
+
+void Inference::set_amp_map(const std::unordered_map<std::string, int>& amp_map)
+{
+    blendShapeAmpMap = amp_map;
+}

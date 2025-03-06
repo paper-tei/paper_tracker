@@ -13,13 +13,39 @@
 #include "ui_main_window.h"
 #include "inference.hpp"
 #include "serial.hpp"
-#include "wifi_cache_file_writer.hpp"
 #include "logger.hpp"
+#include "reflect.hpp"
 
 struct Rect
 {
+    Rect() = default;
+
+    Rect(int x, int y, int width, int height) :
+        rect(x, y, width, height), x(x), y(y), width(width), height(height) {}
+
+    explicit Rect(cv::Rect rect) : rect(rect), x(rect.x), y(rect.y), width(rect.width), height(rect.height) {}
+
     cv::Rect rect;
     bool is_roi_end = true;
+
+    int x{};
+    int y{};
+    int width{};
+    int height{};
+
+    REFLECT(x, y, width, height);
+};
+
+struct PaperTrackerConfig
+{
+    int brightness;
+    int rotate_angle;
+    int energy_mode;
+    std::string wifi_ip;
+    bool use_filter;
+    std::unordered_map<std::string, int> amp_map;
+
+    REFLECT(brightness, rotate_angle, energy_mode, wifi_ip, use_filter, amp_map);
 };
 
 class PaperTrackMainWindow : public QWidget {
@@ -55,6 +81,8 @@ public:
     void setOnUseFilterClickedFunc(FuncWithVal func);
     void setOnRestartButtonClickedFunc(FuncWithoutArgs func);
     void setOnFlashButtonClickedFunc(FuncWithoutArgs func);
+    void setOnSaveConfigButtonClickedFunc(FuncWithoutArgs func);
+
 
     void setBeforeStop(FuncWithoutArgs func);
 
@@ -66,6 +94,10 @@ public:
     void stop();
     int get_max_fps() const;
 
+    PaperTrackerConfig generate_config() const;
+
+    void set_config(const PaperTrackerConfig& config);
+
 private slots:
     void onBrightnessChanged(int value);
     void onSendBrightnessValue() const;
@@ -76,6 +108,8 @@ private slots:
     void onFlashButtonClicked();
 
     void onEnergyModeChanged(int value);
+
+    void onSaveConfigButtonClicked() const;
 private:
     QProcess* vrcftProcess;
 
@@ -87,6 +121,7 @@ private:
     FuncWithoutArgs onRestartButtonClickedFunc;
     FuncWithVal onUseFilterClickedFunc;
     FuncWithoutArgs onFlashButtonClickedFunc;
+    FuncWithoutArgs onSaveConfigButtonClickedFunc;
 
     QTimer* brightness_timer;
 

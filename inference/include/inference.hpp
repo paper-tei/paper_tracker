@@ -33,6 +33,8 @@ public:
 
     void set_use_filter(bool use);
 
+    void set_amp_map(const std::unordered_map<std::string, int>& amp_map);
+
     const std::unordered_map<std::string, size_t>& getBlendShapeIndexMap() { return blendShapeIndexMap; }
 private:
     void init_kalman_filter();
