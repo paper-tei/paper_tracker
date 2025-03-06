@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>835</width>
-    <height>553</height>
+    <width>839</width>
+    <height>561</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,7 +26,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QLabel" name="ImageLabel">
@@ -262,9 +262,9 @@
     <widget class="QComboBox" name="EnergyModeBox">
      <property name="geometry">
       <rect>
-       <x>400</x>
+       <x>390</x>
        <y>170</y>
-       <width>80</width>
+       <width>90</width>
        <height>23</height>
       </rect>
      </property>
@@ -355,7 +355,7 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>210</y>
+         <y>130</y>
          <width>91</width>
          <height>16</height>
         </rect>
@@ -368,7 +368,7 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>330</y>
+         <y>250</y>
          <width>91</width>
          <height>16</height>
         </rect>
@@ -394,7 +394,7 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>410</y>
+         <y>290</y>
          <width>91</width>
          <height>16</height>
         </rect>
@@ -420,26 +420,13 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>250</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>嘴右移</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_9">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
          <y>170</y>
          <width>91</width>
          <height>16</height>
         </rect>
        </property>
        <property name="text">
-        <string>下巴右移</string>
+        <string>嘴右移</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_14">
@@ -455,24 +442,11 @@
         <string>舌头向下</string>
        </property>
       </widget>
-      <widget class="QLabel" name="label_8">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>130</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>下巴左移</string>
-       </property>
-      </widget>
       <widget class="QLabel" name="label_12">
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>290</y>
+         <y>210</y>
          <width>91</width>
          <height>16</height>
         </rect>
@@ -485,7 +459,7 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>450</y>
+         <y>330</y>
          <width>91</width>
          <height>16</height>
         </rect>
@@ -520,19 +494,6 @@
         <number>24</number>
        </property>
       </widget>
-      <widget class="QProgressBar" name="JawLeftValue">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>120</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
       <widget class="QProgressBar" name="JawOpenValue">
        <property name="geometry">
         <rect>
@@ -550,20 +511,7 @@
        <property name="geometry">
         <rect>
          <x>350</x>
-         <y>200</y>
-         <width>151</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="value">
-        <number>24</number>
-       </property>
-      </widget>
-      <widget class="QProgressBar" name="JawRightValue">
-       <property name="geometry">
-        <rect>
-         <x>350</x>
-         <y>160</y>
+         <y>120</y>
          <width>151</width>
          <height>31</height>
         </rect>
@@ -576,7 +524,7 @@
        <property name="geometry">
         <rect>
          <x>350</x>
-         <y>280</y>
+         <y>200</y>
          <width>151</width>
          <height>31</height>
         </rect>
@@ -589,7 +537,7 @@
        <property name="geometry">
         <rect>
          <x>350</x>
-         <y>240</y>
+         <y>160</y>
          <width>151</width>
          <height>31</height>
         </rect>
@@ -615,7 +563,7 @@
        <property name="geometry">
         <rect>
          <x>350</x>
-         <y>320</y>
+         <y>240</y>
          <width>151</width>
          <height>31</height>
         </rect>
@@ -628,7 +576,7 @@
        <property name="geometry">
         <rect>
          <x>350</x>
-         <y>440</y>
+         <y>320</y>
          <width>151</width>
          <height>31</height>
         </rect>
@@ -641,7 +589,7 @@
        <property name="geometry">
         <rect>
          <x>350</x>
-         <y>400</y>
+         <y>280</y>
          <width>151</width>
          <height>31</height>
         </rect>
@@ -689,7 +637,7 @@
         <enum>Qt::Orientation::Horizontal</enum>
        </property>
       </widget>
-      <widget class="QScrollBar" name="JawLeftBar">
+      <widget class="QScrollBar" name="MouthLeftBar">
        <property name="geometry">
         <rect>
          <x>120</x>
@@ -702,7 +650,7 @@
         <enum>Qt::Orientation::Horizontal</enum>
        </property>
       </widget>
-      <widget class="QScrollBar" name="MouthLeftBar">
+      <widget class="QScrollBar" name="TongueOutBar">
        <property name="geometry">
         <rect>
          <x>120</x>
@@ -715,37 +663,11 @@
         <enum>Qt::Orientation::Horizontal</enum>
        </property>
       </widget>
-      <widget class="QScrollBar" name="JawRightBar">
-       <property name="geometry">
-        <rect>
-         <x>120</x>
-         <y>170</y>
-         <width>201</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-      </widget>
-      <widget class="QScrollBar" name="TongueOutBar">
-       <property name="geometry">
-        <rect>
-         <x>120</x>
-         <y>290</y>
-         <width>201</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-      </widget>
       <widget class="QScrollBar" name="MouthRightBar">
        <property name="geometry">
         <rect>
          <x>120</x>
-         <y>250</y>
+         <y>170</y>
          <width>201</width>
          <height>16</height>
         </rect>
@@ -771,7 +693,7 @@
        <property name="geometry">
         <rect>
          <x>120</x>
-         <y>330</y>
+         <y>250</y>
          <width>201</width>
          <height>16</height>
         </rect>
@@ -784,7 +706,7 @@
        <property name="geometry">
         <rect>
          <x>120</x>
-         <y>450</y>
+         <y>330</y>
          <width>201</width>
          <height>16</height>
         </rect>
@@ -797,6 +719,71 @@
        <property name="geometry">
         <rect>
          <x>120</x>
+         <y>290</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_8">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>410</y>
+         <width>91</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>下巴左移</string>
+       </property>
+      </widget>
+      <widget class="QProgressBar" name="JawRightValue">
+       <property name="geometry">
+        <rect>
+         <x>350</x>
+         <y>450</y>
+         <width>151</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="value">
+        <number>24</number>
+       </property>
+      </widget>
+      <widget class="QProgressBar" name="JawLeftValue">
+       <property name="geometry">
+        <rect>
+         <x>350</x>
+         <y>410</y>
+         <width>151</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="value">
+        <number>24</number>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="JawRightBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>450</y>
+         <width>201</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="JawLeftBar">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
          <y>410</y>
          <width>201</width>
          <height>16</height>
@@ -804,6 +791,19 @@
        </property>
        <property name="orientation">
         <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_9">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>450</y>
+         <width>91</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>下巴右移</string>
        </property>
       </widget>
      </widget>

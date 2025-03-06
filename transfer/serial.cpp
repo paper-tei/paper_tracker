@@ -332,7 +332,7 @@ void SerialPortManager::start() {
                         LOG_ERROR("串口读取失败，错误码: " + std::to_string(GetLastError()));
                         if (dwError == ERROR_ACCESS_DENIED || dwError == ERROR_INVALID_HANDLE) {
                             // 严重错误，退出线程
-                            LOG_ERROR("严重错误，退出线程");
+                            //LOG_ERROR("严重错误，退出线程");
                             break;
                         }
                     }
