@@ -478,8 +478,8 @@ void PaperTrackMainWindow::set_config(const PaperTrackerConfig& config)
     ui.CheekPuffLeftBar->setValue(config.amp_map.at("cheekPuffLeft"));
     ui.CheekPuffRightBar->setValue(config.amp_map.at("cheekPuffRight"));
     ui.JawOpenBar->setValue(config.amp_map.at("jawOpen"));
-    ui.JawLeftBar->setValue(config.amp_map.at("tongueLeft"));
-    ui.JawRightBar->setValue(config.amp_map.at("tongueRight"));
+    ui.JawLeftBar->setValue(config.amp_map.at("jawLeft"));
+    ui.JawRightBar->setValue(config.amp_map.at("jawRight"));
     ui.MouthLeftBar->setValue(config.amp_map.at("mouthLeft"));
     ui.MouthRightBar->setValue(config.amp_map.at("mouthRight"));
     ui.TongueOutBar->setValue(config.amp_map.at("tongueOut"));
@@ -571,14 +571,14 @@ std::unordered_map<std::string, int> PaperTrackMainWindow::getAmpMap() const
         {"cheekPuffLeft", ui.CheekPuffLeftBar->value()},
         {"cheekPuffRight", ui.CheekPuffRightBar->value()},
         {"jawOpen", ui.JawOpenBar->value()},
-        {"jawLeft", ui.MouthLeftBar->value()},
-        {"jawRight", ui.MouthRightBar->value()},
-        {"mouthLeft", ui.TongueOutBar->value()},
-        {"mouthRight", ui.TongueUpBar->value()},
-        {"tongueOut", ui.TongueDownBar->value()},
-        {"tongueUp", ui.TongueLeftBar->value()},
-        {"tongueDown", ui.TongueRightBar->value()},
-        {"tongueLeft", ui.JawLeftBar->value()},
-        {"tongueRight", ui.JawRightBar->value()},
+        {"jawLeft", ui.JawLeftBar->value()},
+        {"jawRight", ui.JawRightBar->value()},
+        {"mouthLeft", ui.MouthLeftBar->value()},
+        {"mouthRight", ui.MouthRightBar->value()},
+        {"tongueOut", ui.TongueOutBar->value()},
+        {"tongueUp", ui.TongueUpBar->value()},
+        {"tongueDown", ui.TongueDownBar->value()},
+        {"tongueLeft", ui.TongueLeftBar->value()},
+        {"tongueRight", ui.TongueRightBar->value()},
     };
 }
