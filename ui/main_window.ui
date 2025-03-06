@@ -259,7 +259,7 @@
       <string>启用滤波</string>
      </property>
     </widget>
-    <widget class="QComboBox" name="comboBox">
+    <widget class="QComboBox" name="EnergyModeBox">
      <property name="geometry">
       <rect>
        <x>400</x>
@@ -818,7 +818,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>保存参数(开发中)</string>
+      <string>保存参数</string>
      </property>
     </widget>
     <widget class="QLabel" name="ImageLabelCal">
