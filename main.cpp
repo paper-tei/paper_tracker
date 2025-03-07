@@ -264,6 +264,10 @@ int main(int argc, char *argv[]) {
     PaperTrackerConfig config;
     ConfigWriter config_writer("./config.json");
 
+    LOG_INFO("读取配置文件中...");
+    config = std::move(config_writer.get_config<PaperTrackerConfig>());
+    LOG_INFO("读取配置文件成功");
+
     window.setBeforeStop([&image_downloader, &serial_port_manager, &osc_manager] ()
     {
         serial_port_manager.stop();
@@ -361,10 +365,12 @@ int main(int argc, char *argv[]) {
             if (camera_ip != ip)
             {
                 camera_ip = ip;
+                config.wifi_ip = "http://" + camera_ip;
                 // 更新IP地址显示，添加 http:// 前缀
                 window.setIPText("http://" + ip);
                 LOG_INFO("IP地址已更新: http://" + ip);
                 start_image_download(image_downloader, "http://" + camera_ip);
+                window.set_config(config);
             }
             // 可以添加其他状态更新的日志，如果需要的话
         }, Qt::QueuedConnection);
@@ -401,9 +407,6 @@ int main(int argc, char *argv[]) {
     {
         window.setSerialStatusLabel("串口连接失败");
         LOG_WARN("串口未连接，尝试从配置文件中读取地址...");
-
-        // auto ip = wifi_cache_file_writer.try_get_wifi_config();
-        config = config_writer.get_config<PaperTrackerConfig>();
         if (!config.wifi_ip.empty())
         {
             LOG_INFO("从配置文件中读取地址成功");
@@ -455,7 +458,6 @@ int main(int argc, char *argv[]) {
     {
         LOG_ERROR("配置文件保存失败");
     }
-
 
     window.stop();
 
