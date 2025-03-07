@@ -475,18 +475,24 @@ void PaperTrackMainWindow::set_config(const PaperTrackerConfig& config)
     ui.EnergyModeBox->setCurrentIndex(config.energy_mode);
     ui.UseFilterBox->setChecked(config.use_filter);
     ui.textEdit->setPlainText(QString::fromStdString(config.wifi_ip));
-    ui.CheekPuffLeftBar->setValue(config.amp_map.at("cheekPuffLeft"));
-    ui.CheekPuffRightBar->setValue(config.amp_map.at("cheekPuffRight"));
-    ui.JawOpenBar->setValue(config.amp_map.at("jawOpen"));
-    ui.JawLeftBar->setValue(config.amp_map.at("jawLeft"));
-    ui.JawRightBar->setValue(config.amp_map.at("jawRight"));
-    ui.MouthLeftBar->setValue(config.amp_map.at("mouthLeft"));
-    ui.MouthRightBar->setValue(config.amp_map.at("mouthRight"));
-    ui.TongueOutBar->setValue(config.amp_map.at("tongueOut"));
-    ui.TongueUpBar->setValue(config.amp_map.at("tongueUp"));
-    ui.TongueDownBar->setValue(config.amp_map.at("tongueDown"));
-    ui.TongueLeftBar->setValue(config.amp_map.at("tongueLeft"));
-    ui.TongueRightBar->setValue(config.amp_map.at("tongueRight"));
+    try
+    {
+        ui.CheekPuffLeftBar->setValue(config.amp_map.at("cheekPuffLeft"));
+        ui.CheekPuffRightBar->setValue(config.amp_map.at("cheekPuffRight"));
+        ui.JawOpenBar->setValue(config.amp_map.at("jawOpen"));
+        ui.JawLeftBar->setValue(config.amp_map.at("jawLeft"));
+        ui.JawRightBar->setValue(config.amp_map.at("jawRight"));
+        ui.MouthLeftBar->setValue(config.amp_map.at("mouthLeft"));
+        ui.MouthRightBar->setValue(config.amp_map.at("mouthRight"));
+        ui.TongueOutBar->setValue(config.amp_map.at("tongueOut"));
+        ui.TongueUpBar->setValue(config.amp_map.at("tongueUp"));
+        ui.TongueDownBar->setValue(config.amp_map.at("tongueDown"));
+        ui.TongueLeftBar->setValue(config.amp_map.at("tongueLeft"));
+        ui.TongueRightBar->setValue(config.amp_map.at("tongueRight"));
+    } catch (std::exception& e)
+    {
+        LOG_ERROR("配置文件中的振幅映射错误: " + std::string(e.what()));
+    }
     roi_rect = config.rect;
 }
 
