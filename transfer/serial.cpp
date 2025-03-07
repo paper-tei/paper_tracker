@@ -213,10 +213,18 @@ std::string SerialPortManager::FindEsp32S3Port() {
     return targetPort;
 }
 
-void SerialPortManager::start() const
+void SerialPortManager::start()
 {
     readerThread->start();
     writerThread->start();
+    junk_data_thread = std::thread([this]() {
+        while (m_status == SerialStatus::OPENED) {
+            // 发送垃圾数据以保持串口连接
+            write_data("A0B0");
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+    });
+
 }
 
 void SerialPortManager::stop()
@@ -225,6 +233,7 @@ void SerialPortManager::stop()
     {
         return ;
     }
+    m_status = SerialStatus::CLOSED;
     if (reader)
     {
         readerThread->quit();
@@ -244,7 +253,10 @@ void SerialPortManager::stop()
         serialPort->close();
         delete serialPort;
     }
-    m_status = SerialStatus::CLOSED;
+    if (junk_data_thread.joinable())
+    {
+        junk_data_thread.join();
+    }
 }
 
 // 处理接收到的数据

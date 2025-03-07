@@ -134,7 +134,7 @@ public:
 
     void init();
 
-    void start() const;
+    void start();
 
     void stop();
 
@@ -163,4 +163,6 @@ private:
     SerialWriter* writer{};
     QThread* readerThread{};
     QThread* writerThread{};
+
+    std::thread junk_data_thread;
 };
