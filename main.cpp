@@ -11,8 +11,10 @@
 #include "main_window.hpp"
 #include <curl/curl.h>
 #include <coroutine>
+#include <QCoreApplication>
+#include <QThread>
 
-void start_image_download(PaperTrackMainWindow &window,ESP32VideoStream& image_downloader, const std::string& camera_ip)
+void start_image_download(ESP32VideoStream& image_downloader, const std::string& camera_ip)
 {
     if (image_downloader.isStreaming())
     {
@@ -20,7 +22,7 @@ void start_image_download(PaperTrackMainWindow &window,ESP32VideoStream& image_d
     }
     // 开始下载图片 - 修改为支持WebSocket协议
     // 检查URL格式
-    std::string url = camera_ip;
+    const std::string& url = camera_ip;
     if (url.substr(0, 7) == "http://" || url.substr(0, 8) == "https://" ||
         url.substr(0, 5) == "ws://" || url.substr(0, 6) == "wss://") {
         // URL已经包含协议前缀，直接使用
@@ -30,190 +32,6 @@ void start_image_download(PaperTrackMainWindow &window,ESP32VideoStream& image_d
         image_downloader.init("ws://" + url);
     }
     image_downloader.start();
-}
-
-
-void restart_esp32(SerialPortManager& serial_port_manager, PaperTrackMainWindow& window)
-{
-    // 记录操作
-    LOG_INFO("准备重启ESP32设备...");
-    serial_port_manager.stop();
-
-    try {
-        // 从SerialPortManager获取端口名
-        std::string port = serial_port_manager.FindEsp32S3Port();
-        if (port.empty()) {
-            port = "COM2"; // 默认端口
-        }
-
-        LOG_INFO("使用端口: " + port);
-
-        // 构造完整的命令路径
-        QString appDir = QCoreApplication::applicationDirPath();
-
-        // 构造重启命令 - 只执行重启操作
-        QString commandStr = QString("\"%1/esptool.exe\" --port %2 run")
-            .arg(appDir, port.c_str());
-        LOG_INFO("执行重启命令: " + commandStr.toStdString());
-
-        // 创建进度窗口
-        QProgressDialog progress("正在重启设备，请稍候...", "取消", 0, 0, &window);
-        progress.setWindowTitle("设备重启");
-        progress.setWindowModality(Qt::WindowModal);
-        progress.setMinimumDuration(0);
-        progress.setValue(0);
-        progress.setMaximum(0); // 设置为0表示未知进度
-
-        // 使用QProcess执行命令
-        QProcess process;
-
-        // 捕获标准输出和错误输出
-        PaperTrackMainWindow::connect(&process, &QProcess::readyReadStandardOutput, [&]() {
-            QString output = process.readAllStandardOutput();
-            LOG_INFO(output.trimmed().toStdString());
-        });
-
-        PaperTrackMainWindow::connect(&process, &QProcess::readyReadStandardError, [&]() {
-            QString error = process.readAllStandardError();
-            LOG_ERROR("错误： " + error.trimmed().toStdString());
-        });
-
-        // 绑定取消按钮
-        PaperTrackMainWindow::connect(&progress, &QProgressDialog::canceled, [&]() {
-            process.kill();
-            LOG_INFO("用户取消了设备重启");
-        });
-
-        // 启动进程
-        process.start(commandStr);
-
-        // 等待进程启动
-        if (!process.waitForStarted(3000)) {
-            LOG_ERROR("无法启动esptool.exe: " + process.errorString().toStdString());
-            QMessageBox::critical(&window, "启动失败", "无法启动esptool.exe: " + process.errorString());
-            return;
-        }
-
-        LOG_INFO("重启进程已启动，请等待完成...");
-
-        // 使用事件循环等待进程完成，同时保持UI响应
-        QEventLoop loop;
-        PaperTrackMainWindow::connect(&process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), &loop, &QEventLoop::quit);
-        loop.exec();
-
-        // 进程完成
-        progress.setValue(100);
-
-        // 处理结果
-        if (process.exitCode() == 0) {
-            LOG_INFO("设备重启成功！");
-            QMessageBox::information(&window, "重启完成", "ESP32设备重启成功！");
-        } else {
-            LOG_ERROR("设备重启失败，退出码: " + std::to_string(process.exitCode()));
-            QMessageBox::critical(&window, "重启失败", "ESP32设备重启失败，请检查连接！");
-        }
-
-        // 重新初始化和启动串口
-        serial_port_manager.init();
-        serial_port_manager.start();
-    } catch (const std::exception& e) {
-        LOG_ERROR("重启过程发生异常: " + e.what());
-        QMessageBox::critical(&window, "错误", "重启过程中发生异常: " + QString(e.what()));
-    }
-}
-
-void flash_esp32(PaperTrackMainWindow& window, SerialPortManager& serial_port_manager)
-{
-        // 记录操作
-    LOG_INFO("准备刷写ESP32固件...");
-    serial_port_manager.stop();
-    // 不再调用stop()，而是手动关闭程序持有的串口句柄
-    // 这样可以释放COM端口而不会导致其他部分的问题
-    try {
-        // 从SerialPortManager获取端口名
-        std::string port = serial_port_manager.FindEsp32S3Port();
-        if (port.empty()) {
-            port = "COM2"; // 默认端口
-        }
-        LOG_INFO("使用端口: " + port);
-        // 构造完整的命令路径
-        QString appDir = QCoreApplication::applicationDirPath();
-        QString esptoolPath = "\"" + appDir + "/esptool.exe\"";
-        QString bootloaderPath = "\"" + appDir + "/bootloader.bin\"";
-        QString partitionPath = "\"" + appDir + "/partition-table.bin\"";
-        QString firmwarePath = "\"" + appDir + "/face_tracker.bin\"";
-
-        // 构造命令
-        QString commandStr = QString("%1 --chip ESP32-S3 --port %2 --baud 921600 --before default_reset --after hard_reset write_flash 0x0000 %3 0x8000 %4 0x10000 %5")
-            .arg(esptoolPath, port.c_str(), bootloaderPath, partitionPath, firmwarePath);
-        LOG_INFO("执行命令: " + commandStr.toStdString());
-
-        // 创建进度窗口
-        QProgressDialog progress("正在刷写固件，请稍候...", "取消", 0, 0, &window);
-        progress.setWindowTitle("固件刷写");
-        progress.setWindowModality(Qt::WindowModal);
-        progress.setMinimumDuration(0);
-        progress.setValue(0);
-        progress.setMaximum(0); // 设置为0表示未知进度
-
-        // 使用QProcess执行命令
-        QProcess process;
-
-        // 捕获标准输出和错误输出
-        PaperTrackMainWindow::connect(&process, &QProcess::readyReadStandardOutput, [&]() {
-            QString output = process.readAllStandardOutput();
-            LOG_INFO(output.trimmed().toStdString());
-        });
-
-        PaperTrackMainWindow::connect(&process, &QProcess::readyReadStandardError, [&]() {
-            QString error = process.readAllStandardError();
-            LOG_ERROR("错误: " + error.trimmed().toStdString());
-        });
-
-        // 绑定取消按钮
-        PaperTrackMainWindow::connect(&progress, &QProgressDialog::canceled, [&]() {
-            process.kill();
-            LOG_WARN("用户取消了固件刷写");
-        });
-
-        // 启动进程
-        process.start(commandStr);
-
-        // 等待进程启动
-        if (!process.waitForStarted(3000)) {
-            LOG_ERROR("无法启动esptool.exe: " + process.errorString().toStdString());
-            QMessageBox::critical(&window, "启动失败", "无法启动esptool.exe: " + process.errorString());
-            return;
-        }
-        LOG_INFO("刷写进程已启动，请等待完成...");
-
-        // 使用事件循环等待进程完成，同时保持UI响应
-        QEventLoop loop;
-        PaperTrackMainWindow::connect(&process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), &loop, &QEventLoop::quit);
-        loop.exec();
-
-        // 进程完成
-        progress.setValue(100);
-
-        // 处理结果
-        if (process.exitCode() == 0) {
-            LOG_INFO("固件刷写成功！");
-            QMessageBox::information(&window, "刷写完成", "ESP32固件刷写成功！");
-        } else {
-            LOG_ERROR("固件刷写失败，退出码: " + std::to_string(process.exitCode()));
-            QMessageBox::critical(&window, "刷写失败", "ESP32固件刷写失败，请检查连接和固件文件！");
-        }
-
-        // 重新启动程序
-        // QString appPath = QCoreApplication::applicationFilePath();
-        // QProcess::startDetached(appPath);
-        // QApplication::quit();
-        serial_port_manager.init();
-        serial_port_manager.start();
-    } catch (const std::exception& e) {
-        LOG_ERROR("发生异常: " + e.what());
-        QMessageBox::critical(&window, "错误", "刷写过程中发生异常: " + QString(e.what()));
-    }
 }
 
 void update_ui(
@@ -229,8 +47,6 @@ void update_ui(
     double fps_total = 0;
     double fps_count = 0;
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    static double max_rate = 15;
     while (window.is_running())
     {
         if (image_downloader.isStreaming())
@@ -258,7 +74,7 @@ void update_ui(
             auto start = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(start - last_time);
             last_time = start;
-            auto fps = 1000.0 / duration.count();
+            auto fps = 1000.0 / static_cast<double>(duration.count());
             fps_total += fps;
             fps_count += 1;
             fps = fps_total/fps_count;
@@ -317,8 +133,6 @@ void inference_image(
     double fps_total = 0;
     double fps_count = 0;
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    static double max_rate = 15;
     while (window.is_running())
     {
         if (fps_total > 1000)
@@ -326,15 +140,15 @@ void inference_image(
             fps_count = 0;
             fps_total = 0;
         }
-        // caculate fps
+        // calculate fps
         auto start = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(start - last_time);
         last_time = start;
-        auto fps = 1000.0 / duration.count();
+        auto fps = 1000.0 / static_cast<double>(duration.count());
         fps_total += fps;
         fps_count += 1;
         fps = fps_total/fps_count;
-        LOG_DEBUG("模型FPS： " + std::to_string(fps));
+        // LOG_DEBUG("模型FPS： " + std::to_string(fps));
 
         auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -371,6 +185,52 @@ void inference_image(
         std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
     }
 }
+
+struct RestartWorker : public QThread
+{
+    explicit RestartWorker(PaperTrackMainWindow* window,
+        SerialPortManager* serial_port_manager,
+        ESP32VideoStream* img_downloader, QObject *parent = nullptr) :
+    QThread(parent), window(window), serial_port_manager(serial_port_manager),
+    img_downloader(img_downloader) {}
+
+public slots:
+    void run()
+    {
+        while (!isInterruptionRequested()) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            if (serial_port_manager->status() == SerialStatus::FAILED)
+            {
+                serial_port_manager->stop();
+                serial_port_manager->init();
+                serial_port_manager->start();
+                while (serial_port_manager->status() == SerialStatus::CLOSED);
+                if (serial_port_manager->status() == SerialStatus::OPENED)
+                {
+                    LOG_INFO("串口已重新连接");
+                    window->setSerialStatusLabel("串口连接成功");
+                }
+            }
+            if (!img_downloader->isStreaming())
+            {
+                img_downloader->stop();
+                img_downloader->start();
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                if (img_downloader->isStreaming())
+                {
+                    LOG_INFO("Wifi已重新连接");
+                    window->setSerialStatusLabel("Wifi连接成功");
+                }
+            }
+        }
+    }
+
+public:
+    PaperTrackMainWindow* window;
+    SerialPortManager* serial_port_manager;
+    ESP32VideoStream* img_downloader;
+    bool stop = false;
+};
 
 
 int main(int argc, char *argv[]) {
@@ -455,13 +315,17 @@ int main(int argc, char *argv[]) {
         // 记录操作
         LOG_INFO("已设置亮度: " + std::to_string(value));
     });
-    window.setOnRestartButtonClickedFunc([&serial_port_manager, &window] ()
+    window.setOnRestartButtonClickedFunc([&serial_port_manager, &window, &image_downloader] ()
     {
-        restart_esp32(serial_port_manager, window);
+        serial_port_manager.restartESP32(&window);
+        image_downloader.stop();
+        image_downloader.start();
     });
-    window.setOnFlashButtonClickedFunc([&serial_port_manager, &window] ()
+    window.setOnFlashButtonClickedFunc([&serial_port_manager, &window, &image_downloader] ()
     {
-        flash_esp32(window, serial_port_manager);
+        serial_port_manager.flashESP32(&window);
+        image_downloader.stop();
+        image_downloader.start();
     });
     window.setOnUseFilterClickedFunc([&inference] (int value)
     {
@@ -487,6 +351,7 @@ int main(int argc, char *argv[]) {
     std::string camera_ip;
 
     LOG_INFO("初始化串口");
+    serial_port_manager.init();
     // init serial port manager
     serial_port_manager.setDeviceStatusCallback([&window, &camera_ip, &image_downloader, &config]
                                                         (const std::string& ip, int brightness, int power, int version) {
@@ -499,12 +364,11 @@ int main(int argc, char *argv[]) {
                 // 更新IP地址显示，添加 http:// 前缀
                 window.setIPText("http://" + ip);
                 LOG_INFO("IP地址已更新: http://" + ip);
-                start_image_download(window, image_downloader, "http://" + camera_ip);
+                start_image_download(image_downloader, "http://" + camera_ip);
             }
             // 可以添加其他状态更新的日志，如果需要的话
         }, Qt::QueuedConnection);
     });
-    serial_port_manager.init();
 
     // Load model
     LOG_INFO("正在加载推理模型...");
@@ -545,7 +409,7 @@ int main(int argc, char *argv[]) {
             LOG_INFO("从配置文件中读取地址成功");
             camera_ip = config.wifi_ip;
             window.set_config(config);
-            start_image_download(window, image_downloader, camera_ip);
+            start_image_download(image_downloader, camera_ip);
         } else
         {
             QMessageBox msgBox;
@@ -568,6 +432,18 @@ int main(int argc, char *argv[]) {
     {
         inference_image(window, image_downloader, inference, osc_manager);
     });
+
+    auto restart_worker = new RestartWorker(
+        &window,
+        &serial_port_manager,
+        &image_downloader
+    );
+    QObject::connect(qApp, &QCoreApplication::aboutToQuit, [=]() {
+        restart_worker->requestInterruption();
+        restart_worker->wait();
+    });
+
+    restart_worker->start();
 
     int status = QApplication::exec();
 

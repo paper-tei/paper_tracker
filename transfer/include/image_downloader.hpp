@@ -8,21 +8,17 @@
 #include <opencv2/core.hpp>
 #include <QWebSocket>
 #include <QObject>
-#include <QByteArray>
-#include <QImage>
 #include <QMutex>
 #include "logger.hpp"
 
 class ESP32VideoStream : public QObject {
-
-
 public:
     // 构造函数和析构函数
-    ESP32VideoStream(QObject *parent = nullptr);
-    ~ESP32VideoStream();
+    explicit ESP32VideoStream(QObject *parent = nullptr);
+    ~ESP32VideoStream() override;
 
     // 初始化视频流，设置ESP32的URL
-    bool init(const std::string& url);
+    bool init(const std::string& url = {});
 
     // 开始接收视频流
     bool start();
@@ -59,7 +55,7 @@ private:
     // 成员变量
     std::atomic<bool> isRunning;
     std::string currentStreamUrl;
-    QWebSocket webSocket;
+    QWebSocket* webSocket;
     mutable QMutex mutex;
     std::queue<cv::Mat> image_buffer_queue;
 };

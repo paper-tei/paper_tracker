@@ -22,18 +22,8 @@
 #include <QMutexLocker>
 
 ESP32VideoStream::ESP32VideoStream(QObject *parent)
-    : QObject(parent), isRunning(false)
-{
-    // 连接WebSocket信号
-    connect(&webSocket, &QWebSocket::connected,
-            this, &ESP32VideoStream::onConnected);
-    connect(&webSocket, &QWebSocket::disconnected,
-            this, &ESP32VideoStream::onDisconnected);
-    connect(&webSocket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::errorOccurred),
-            this, &ESP32VideoStream::onError);
-    connect(&webSocket, &QWebSocket::binaryMessageReceived,
-            this, &ESP32VideoStream::onBinaryMessageReceived);
-}
+    : QObject(parent), isRunning(false), webSocket(nullptr)
+{}
 
 ESP32VideoStream::~ESP32VideoStream()
 {
@@ -42,6 +32,10 @@ ESP32VideoStream::~ESP32VideoStream()
 
 bool ESP32VideoStream::init(const std::string& url)
 {
+    if (url.empty())
+    {
+        return !currentStreamUrl.empty();
+    }
     // 保存URL，但不要立即连接
     currentStreamUrl = url;
 
@@ -75,17 +69,28 @@ bool ESP32VideoStream::init(const std::string& url)
 
 bool ESP32VideoStream::start()
 {
+    webSocket = new QWebSocket();
+
+    connect(webSocket, &QWebSocket::connected,
+        this, &ESP32VideoStream::onConnected);
+    connect(webSocket, &QWebSocket::disconnected,
+            this, &ESP32VideoStream::onDisconnected);
+    connect(webSocket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::errorOccurred),
+            this, &ESP32VideoStream::onError);
+    connect(webSocket, &QWebSocket::binaryMessageReceived,
+            this, &ESP32VideoStream::onBinaryMessageReceived);
+
     if (isRunning) {
         LOG_WARN("视频流已经在运行中");
         return false;
     }
 
     // 禁用代理设置，避免代理相关错误
-    webSocket.setProxy(QNetworkProxy::NoProxy);
+    webSocket->setProxy(QNetworkProxy::NoProxy);
 
     // 连接WebSocket
     LOG_INFO("开始连接WebSocket: " + currentStreamUrl);
-    webSocket.open(QUrl(QString::fromStdString(currentStreamUrl)));
+    webSocket->open(QUrl(QString::fromStdString(currentStreamUrl)));
 
     return true;
 }
@@ -100,7 +105,11 @@ void ESP32VideoStream::stop()
     isRunning = false;
 
     // 关闭WebSocket
-    webSocket.close();
+    if (webSocket)
+    {
+        webSocket->close();
+        delete webSocket;
+    }
 
     // 清空图像队列
     QMutexLocker locker(&mutex);
@@ -132,15 +141,15 @@ void ESP32VideoStream::onDisconnected()
 
 void ESP32VideoStream::onError(QAbstractSocket::SocketError error)
 {
-    QString errorString = webSocket.errorString();
+    QString errorString = webSocket->errorString();
     int errorCode = static_cast<int>(error);
     LOG_ERROR("WebSocket错误: " + std::to_string(errorCode) +
               " - " + errorString.toStdString() +
               " (URL: " + currentStreamUrl + ")");
 
     // 输出更多连接信息
-    LOG_ERROR("连接状态: " + std::to_string(static_cast<int>(webSocket.state())));
-    LOG_ERROR("代理类型: " + std::to_string(static_cast<int>(webSocket.proxy().type())));
+    LOG_ERROR("连接状态: " + std::to_string(static_cast<int>(webSocket->state())));
+    LOG_ERROR("代理类型: " + std::to_string(static_cast<int>(webSocket->proxy().type())));
 
     // 如果是代理错误，尝试重新连接一次，使用不同的URL格式
     if (error == QAbstractSocket::ProxyProtocolError) {
@@ -154,10 +163,10 @@ void ESP32VideoStream::onError(QAbstractSocket::SocketError error)
             LOG_INFO("尝试新URL: " + newUrl);
 
             // 重置WebSocket并尝试新URL
-            webSocket.close();
-            webSocket.setProxy(QNetworkProxy::NoProxy);
+            webSocket->close();
+            webSocket->setProxy(QNetworkProxy::NoProxy);
             currentStreamUrl = newUrl;
-            webSocket.open(QUrl(QString::fromStdString(newUrl)));
+            webSocket->open(QUrl(QString::fromStdString(newUrl)));
             return;
         }
     }
