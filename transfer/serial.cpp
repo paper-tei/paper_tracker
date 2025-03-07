@@ -26,13 +26,17 @@
 #include <devguid.h>    // 包含 GUID_DEVCLASS_PORTS
 #include <string>
 #include <cstring>      // for strstr()
+#include <QMessageBox>
+#include <QProcess>
+#include <QProgressDialog>
 #include <thread>
 
-#define COM_PORT L"COM101"  // 指定要打开的串口号
+#define COM_PORT "COM101"  // 指定要打开的串口号
+
+
 
 // 修改SerialPortManager的构造函数
-SerialPortManager::SerialPortManager()
-    : hSerial(INVALID_HANDLE_VALUE), running(false) {
+SerialPortManager::SerialPortManager(QObject* parent) : QObject(parent), serialPort(new QSerialPort(parent)) {
     m_status = SerialStatus::CLOSED;
 }
 
@@ -40,103 +44,48 @@ void SerialPortManager::init()
 {
     LOG_INFO("正在搜索ESP32-S3设备...");
     std::string portName = FindEsp32S3Port();
-
+    serialPort = new QSerialPort(nullptr);
+    serialPort->setBaudRate(QSerialPort::Baud115200);
+    serialPort->setParity(QSerialPort::NoParity);
+    serialPort->setDataBits(QSerialPort::Data8);
+    serialPort->setFlowControl(QSerialPort::NoFlowControl);
+    serialPort->setStopBits(QSerialPort::OneStop);
     if (portName.empty()) {
         LOG_WARN("无法找到ESP32-S3设备，尝试使用默认端口COM101");
-        hSerial = initSerialPort(COM_PORT);
+        serialPort->setPortName(COM_PORT);
     } else {
-        //portName = "COM5";
+        // portName = "COM5";
         currentPort = portName;
-        // 转换为宽字符串
-        std::wstring wPortName(L"\\\\.\\");
-        wPortName += std::wstring(portName.begin(), portName.end());
-
         LOG_INFO("尝试连接到端口:" + portName);
-
-        // 使用FILE_FLAG_OVERLAPPED打开串口以启用异步I/O
-        hSerial = CreateFileW(
-            wPortName.c_str(),
-            GENERIC_READ | GENERIC_WRITE,
-            0,
-            nullptr,
-            OPEN_EXISTING,
-            FILE_FLAG_OVERLAPPED,  // 关键修改：启用非阻塞I/O
-            nullptr
-        );
-
-        if (hSerial != INVALID_HANDLE_VALUE) {
-            // 配置串口参数
-            DCB dcbSerialParams = {0};
-            dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
-
-            if (GetCommState(hSerial, &dcbSerialParams)) {
-                dcbSerialParams.BaudRate = CBR_115200;
-                dcbSerialParams.ByteSize = 8;
-                dcbSerialParams.StopBits = ONESTOPBIT;
-                dcbSerialParams.Parity   = NOPARITY;
-
-                // 禁用所有流控制
-                dcbSerialParams.fOutxCtsFlow = FALSE;
-                dcbSerialParams.fRtsControl = RTS_CONTROL_DISABLE;
-                dcbSerialParams.fDtrControl = DTR_CONTROL_DISABLE;
-                dcbSerialParams.fOutX = FALSE;
-                dcbSerialParams.fInX = FALSE;
-
-                if (!SetCommState(hSerial, &dcbSerialParams)) {
-                    LOG_ERROR("配置串口失败，错误码: " + std::to_string(GetLastError()));
-                    CloseHandle(hSerial);
-                    hSerial = INVALID_HANDLE_VALUE;
-                }
-            } else {
-                LOG_ERROR("获取串口状态失败，错误码: " + std::to_string(GetLastError()));
-                CloseHandle(hSerial);
-                hSerial = INVALID_HANDLE_VALUE;
-            }
-
-            // 设置串口超时参数
-            COMMTIMEOUTS timeouts;
-            timeouts.ReadIntervalTimeout = 50;          // 字符间超时
-            timeouts.ReadTotalTimeoutConstant = 100;    // 读取操作固定超时
-            timeouts.ReadTotalTimeoutMultiplier = 10;   // 读取每字节的附加超时
-            timeouts.WriteTotalTimeoutConstant = 100;   // 写入操作固定超时
-            timeouts.WriteTotalTimeoutMultiplier = 10;  // 写入每字节的附加超时
-
-            if (!SetCommTimeouts(hSerial, &timeouts)) {
-                LOG_ERROR("设置串口超时参数失败，错误码: " + std::to_string(GetLastError()));
-            }
-
-            // 清空串口缓冲区
-            PurgeComm(hSerial, PURGE_RXCLEAR | PURGE_TXCLEAR);
-        } else
-        {
-            m_status = SerialStatus::FAILED;
-            LOG_ERROR("创建串口失败。");
-        }
+        serialPort->setPortName(QString::fromStdString(portName));
+        // 使用FILE_FLAG_OVERLAPPED打开串口   以启用异步I/O
     }
+    readerThread = new QThread;
+    reader = new SerialReader(serialPort, &m_status);
+    writerThread = new QThread;
+    writer = new SerialWriter(serialPort, &m_status);
+    // 读取线程实现
+    reader->moveToThread(readerThread);
+    connect(serialPort, &QSerialPort::readyRead, reader, &SerialReader::onReadyRead);
+    // connect(readerThread, &QThread::started, reader, &SerialReader::onReadyRead);  // 确保读取线程开始后读取数据
 
-    if (hSerial != INVALID_HANDLE_VALUE) {
-        LOG_INFO("串口打开成功！");
-        running = true;
+    // 创建和管理写入线程
+    writer->moveToThread(writerThread);
+    connect(writerThread, &QThread::started, writer, &SerialWriter::processWriteQueue);
+    if (serialPort->open(QIODevice::ReadWrite))
+    {
+        LOG_INFO("串口打开成功");
         m_status = SerialStatus::OPENED;
-    } else {
-        LOG_ERROR("串口打开失败，错误码: " + std::to_string(GetLastError()));
+    } else
+    {
+        LOG_ERROR("串口打开失败");
         m_status = SerialStatus::FAILED;
     }
-
 }
 
 SerialPortManager::~SerialPortManager()
 {
     stop();
-    if (read_thread.joinable()) {
-        read_thread.join();
-    }
-    if (write_thread.joinable()) {
-        write_thread.join();
-    }
-    if (write_junk_thread.joinable()) {
-        write_junk_thread.join();
-    }
 }
 
 std::string SerialPortManager::FindEsp32S3Port() {
@@ -264,240 +213,40 @@ std::string SerialPortManager::FindEsp32S3Port() {
     return targetPort;
 }
 
-
-void SerialPortManager::setDeviceStatusCallback(DeviceStatusCallback callback) {
-    deviceStatusCallback = std::move(callback);
-}
-
-void SerialPortManager::start() {
-    // 读取线程实现
-    read_thread = std::thread(
-        [this]
-        {
-            char buffer[256];
-            DWORD bytesRead;
-            std::string receivedData;
-
-            // 为异步读取创建OVERLAPPED结构
-            OVERLAPPED osReader = {0};
-            osReader.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
-
-            if (osReader.hEvent == nullptr) {
-                LOG_ERROR("创建读取事件失败，错误码: " + std::to_string(GetLastError()));
-                return;
-            }
-
-            while (running) {
-                // 开始异步读取
-                BOOL readResult = ReadFile(
-                    hSerial,
-                    buffer,
-                    sizeof(buffer) - 1,
-                    &bytesRead,
-                    &osReader
-                );
-
-                // 检查读取结果
-                if (!readResult) {
-                    DWORD dwError = GetLastError();
-
-                    if (dwError == ERROR_IO_PENDING) {
-                        // 等待读取完成，设置超时
-                        DWORD dwWait = WaitForSingleObject(osReader.hEvent, 3000); // 1秒超时
-
-                        if (dwWait == WAIT_OBJECT_0) {
-                            // 读取完成，获取结果
-                            if (GetOverlappedResult(hSerial, &osReader, &bytesRead, FALSE)) {
-                                if (bytesRead > 0) {
-                                    buffer[bytesRead] = '\0';
-                                    receivedData += buffer;
-
-                                    // 处理接收到的数据
-                                    processReceivedData(receivedData);
-                                }
-                            }
-                            else {
-                                LOG_ERROR("GetOverlappedResult失败，错误码: " + std::to_string(GetLastError()));
-                            }
-                        }
-                        else if (dwWait == WAIT_TIMEOUT) {
-                            // 读取超时，取消I/O操作
-                            CancelIo(hSerial);
-                        }
-                        else {
-                            LOG_ERROR("等待读取事件失败，错误码: " + std::to_string(GetLastError()));
-                        }
-                    } else {
-                        // 其他错误
-                        LOG_ERROR("串口读取失败，错误码: " + std::to_string(GetLastError()));
-                        if (dwError == ERROR_ACCESS_DENIED || dwError == ERROR_INVALID_HANDLE) {
-                            // 严重错误，退出线程
-                            //LOG_ERROR("严重错误，退出线程");
-                            break;
-                        }
-                    }
-                }
-                else {
-                    // 同步读取成功
-                    if (bytesRead > 0) {
-                        buffer[bytesRead] = '\0';
-                        receivedData += buffer;
-
-                        // 处理接收到的数据
-                        processReceivedData(receivedData);
-                    }
-                }
-
-                // 延时一小段时间避免过度占用CPU
-                Sleep(10);
-            }
-            m_status = SerialStatus::FAILED;
-            // 清理资源
-            CloseHandle(osReader.hEvent);
-        }
-    );
-
-    // 写入线程实现
-    write_junk_thread = std::thread(
-        [this]
-        {
-            while (running) {
-                std::string junk = " junk data ";
-                write_data(junk);
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            }
-        }
-    );
-    write_thread = std::thread(
-        [this]
-        {
-            // 为异步写入创建OVERLAPPED结构
-            OVERLAPPED osWriter = {0};
-            osWriter.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
-
-            if (osWriter.hEvent == nullptr) {
-                LOG_ERROR("创建写入事件失败，错误码: " + std::to_string(GetLastError()));
-                m_status = SerialStatus::FAILED;
-                return;
-            }
-
-            while (running) {
-                std::unique_lock<std::mutex> lock(writeQueueMutex);
-                writeQueueCV.wait_for(lock, std::chrono::milliseconds(100), [this] { return !writeQueue.empty(); });
-
-                if (!writeQueue.empty()) {
-                    std::string data = writeQueue.front();
-                    writeQueue.pop();
-                    lock.unlock();  // 释放锁
-
-                    DWORD bytesWritten = 0;
-
-                    // 分块发送数据，每次最多发送64字节
-                    constexpr size_t CHUNK_SIZE = 64;
-                    for (size_t i = 0; i < data.size() && running; i += CHUNK_SIZE) {
-                        size_t chunkLen = std::min(CHUNK_SIZE, data.size() - i);
-
-                        // 确保osWriter结构的成员被清零
-                        ResetEvent(osWriter.hEvent);
-                        osWriter.Offset = 0;
-                        osWriter.OffsetHigh = 0;
-
-                        // 异步写入
-                        BOOL writeResult = WriteFile(
-                            hSerial,
-                            data.c_str() + i,
-                            chunkLen,
-                            &bytesWritten,
-                            &osWriter
-                        );
-
-                        if (!writeResult) {
-                            DWORD dwError = GetLastError();
-
-                            if (dwError == ERROR_IO_PENDING) {
-                                // 等待写入完成，设置超时
-                                DWORD dwWait = WaitForSingleObject(osWriter.hEvent, 1000); // 1秒超时
-
-                                if (dwWait == WAIT_OBJECT_0) {
-                                    // 写入完成，获取结果
-                                    if (!GetOverlappedResult(hSerial, &osWriter, &bytesWritten, FALSE)) {
-                                        LOG_ERROR("GetOverlappedResult失败，错误码: " + std::to_string(GetLastError()));
-                                    }
-                                    else if (bytesWritten != chunkLen) {
-                                        LOG_WARN("警告：只写入了部分数据 " + std::to_string(bytesWritten) +
-                                                "/" + std::to_string(chunkLen) + " 字节");
-                                    }
-                                }
-                                else if (dwWait == WAIT_TIMEOUT) {
-                                    // 写入超时，取消I/O操作
-                                    LOG_ERROR("写入超时");
-                                    CancelIo(hSerial);
-                                    m_status = SerialStatus::FAILED;
-                                }
-                                else {
-                                    // 其他错误
-                                    LOG_ERROR("等待写入事件失败，错误码: " + std::to_string(GetLastError()));
-                                    m_status = SerialStatus::FAILED;
-                                }
-                            }
-                            else {
-                                // 处理其他错误
-                                LOG_ERROR("串口写入失败，错误码: " + std::to_string(dwError));
-                                m_status = SerialStatus::FAILED;
-                                break;  // 退出当前数据的发送循环
-                            }
-                        }
-                        else {
-                            // 写入成功（同步完成）
-                            if (bytesWritten != chunkLen) {
-                                LOG_WARN("警告：只写入了部分数据 " + std::to_string(bytesWritten) +
-                                            "/" + std::to_string(chunkLen) + " 字节");
-                            }
-                        }
-                        m_status = SerialStatus::OPENED;
-                        // 添加小延时，避免连续写入过快
-                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                    }
-                    if (m_status == SerialStatus::FAILED)
-                    {
-                        break;
-                    }
-                    LOG_DEBUG("已发送数据: " + data);
-                }
-            }
-            m_status = SerialStatus::FAILED;
-
-            // 清理资源
-            CloseHandle(osWriter.hEvent);
-        }
-    );
-    running = true;
-}
-void SerialPortManager::stop()
+void SerialPortManager::start() const
 {
-    running = false;
-    if (read_thread.joinable())
+    readerThread->start();
+    writerThread->start();
+}
+
+void SerialPortManager::stop() const
+{
+    if (reader)
     {
-        read_thread.join();
+        readerThread->quit();
+        readerThread->wait();
+        delete readerThread;
+        delete reader;
     }
-    if (write_junk_thread.joinable())
+    if (writer)
     {
-        write_junk_thread.join();
+        writer->stopWriting();
+        writerThread->quit();
+        writerThread->wait();
+        delete writerThread;
+        delete writer;
     }
-    if (write_thread.joinable())
-    {
-        write_thread.join();
-    }
-    if (hSerial != INVALID_HANDLE_VALUE) {
-        CloseHandle(hSerial);
-        hSerial = INVALID_HANDLE_VALUE;
+    if (serialPort) {
+        serialPort->close();
+        delete serialPort;
     }
 }
+
 // 处理接收到的数据
-void SerialPortManager::processReceivedData(std::string& receivedData) const
+void SerialReader::processReceivedData(std::string& receivedData) const
 {
     // 处理粘包问题 - 循环处理所有可能的完整数据包
-    while (running) {
+    while (true) {
         // 查找包起始字符 'A'
         size_t startPos = receivedData.find('A');
         if (startPos == std::string::npos) {
@@ -560,14 +309,14 @@ void SerialPortManager::processReceivedData(std::string& receivedData) const
         }
     }
 }
-void SerialPortManager::write_data(const std::string& data)
+void SerialPortManager::write_data(const std::string& data) const
 {
+    if (writer)
     {
-        std::lock_guard<std::mutex> lock(writeQueueMutex);
-        writeQueue.push(data);
+        writer->sendData(QByteArray::fromStdString(data));
     }
-    writeQueueCV.notify_one();
 }
+
 static std::string trim(const std::string& str) {
     const std::string whitespace = " \t\n\r";
     size_t start = str.find_first_not_of(whitespace);
@@ -577,7 +326,7 @@ static std::string trim(const std::string& str) {
     return str.substr(start, end - start + 1);
 }
 
-PacketType SerialPortManager::parsePacket(const std::string& packet) const
+PacketType SerialReader::parsePacket(const std::string& packet) const
 {
     // 先将收到的字符串去除首尾空白（例如换行符、空格）
     std::string trimmedPacket = trim(packet);
@@ -680,13 +429,13 @@ PacketType SerialPortManager::parsePacket(const std::string& packet) const
     //LOG_DEBUG("未匹配任何数据包类型: " + QString(packetType));
     return PACKET_UNKNOWN;
 }
-void SerialPortManager::sendWiFiConfig(HANDLE hSerial, const std::string& ssid, const std::string& pwd)
+void SerialPortManager::sendWiFiConfig(const std::string& ssid, const std::string& pwd) const
 {
     std::string packet = "A2SSID" + ssid + "PWD" + pwd + "B2";
-    DWORD bytesWritten;
-    WriteFile(hSerial, packet.c_str(), packet.size(), &bytesWritten, nullptr);
+    write_data(packet);
     LOG_INFO("发送 WiFi 配置: " + packet);
 }
+
 std::string formatIpAddress(const std::string& ipRaw) {
     // 假设输入格式为类似"169031168192"
     // 如果长度不足，前面补0
@@ -704,62 +453,206 @@ std::string formatIpAddress(const std::string& ipRaw) {
 
     return formattedIp;
 }
-void SerialPortManager::sendLightControl(HANDLE hSerial, int brightness)
+
+void SerialPortManager::sendLightControl(int brightness) const
 {
     std::string packet = "A6" + std::to_string(brightness) + "B6";
-    DWORD bytesWritten;
-    WriteFile(hSerial, packet.c_str(), packet.size(), &bytesWritten, nullptr);
+    write_data(packet);
     LOG_INFO("发送补光灯亮度: " + std::to_string(brightness));
 }
-
-HANDLE SerialPortManager::initSerialPort(const wchar_t* portName)
-{
-    HANDLE hSerial = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
-
-    if (hSerial == INVALID_HANDLE_VALUE) {
-        LOG_ERROR("打开串口失败: " + std::to_string(GetLastError()));
-        m_status = SerialStatus::FAILED;
-        return INVALID_HANDLE_VALUE;
-    }
-
-    DCB dcbSerialParams = {0};
-    dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
-
-    if (!GetCommState(hSerial, &dcbSerialParams)) {
-        LOG_ERROR("获取串口状态失败");
-        CloseHandle(hSerial);
-        m_status = SerialStatus::FAILED;
-        return INVALID_HANDLE_VALUE;
-    }
-
-    // 修改配置
-    dcbSerialParams.BaudRate = CBR_115200;        // 设置波特率
-    dcbSerialParams.ByteSize = 8;                 // 数据位
-    dcbSerialParams.StopBits = ONESTOPBIT;        // 停止位
-    dcbSerialParams.Parity = NOPARITY;            // 无校验
-    dcbSerialParams.fDtrControl = DTR_CONTROL_ENABLE;  // 启用DTR
-
-    // 禁用流控制
-    // dcbSerialParams.fOutxCtsFlow = FALSE;         // 禁用CTS流控
-    // dcbSerialParams.fRtsControl = DTR_CONTROL_ENABLE;  // 启用RTS但不用于流控
-    // dcbSerialParams.fOutX = FALSE;                // 禁用XON/XOFF
-    // dcbSerialParams.fInX = FALSE;                 // 禁用XON/XOFF
-
-    if (!SetCommState(hSerial, &dcbSerialParams)) {
-        LOG_ERROR("配置串口失败");
-        m_status = SerialStatus::FAILED;
-        CloseHandle(hSerial);
-        return INVALID_HANDLE_VALUE;
-    }
-
-    // 清空串口缓冲区
-    PurgeComm(hSerial, PURGE_RXCLEAR | PURGE_TXCLEAR);
-    return hSerial;
-}
-
 
 SerialStatus SerialPortManager::status() const
 {
     return m_status;
 }
 
+void SerialPortManager::flashESP32(QWidget* window)
+{
+    // 记录操作
+    LOG_INFO("准备刷写ESP32固件...");
+    if (m_status == SerialStatus::FAILED)
+    {
+        LOG_INFO("串口未连接，重启失败");
+        QMessageBox::critical(window, "启动失败", "串口未连接");
+        return ;
+    }
+
+    stop();
+    // 不再调用stop()，而是手动关闭程序持有的串口句柄
+    // 这样可以释放COM端口而不会导致其他部分的问题
+    try {
+        // 从SerialPortManager获取端口名
+        std::string port = FindEsp32S3Port();
+        if (port.empty()) {
+            port = "COM2"; // 默认端口
+        }
+        LOG_INFO("使用端口: " + port);
+        // 构造完整的命令路径
+        QString appDir = QCoreApplication::applicationDirPath();
+        QString esptoolPath = "\"" + appDir + "/esptool.exe\"";
+        QString bootloaderPath = "\"" + appDir + "/bootloader.bin\"";
+        QString partitionPath = "\"" + appDir + "/partition-table.bin\"";
+        QString firmwarePath = "\"" + appDir + "/face_tracker.bin\"";
+
+        // 构造命令
+        QString commandStr = QString("%1 --chip ESP32-S3 --port %2 --baud 921600 --before default_reset --after hard_reset write_flash 0x0000 %3 0x8000 %4 0x10000 %5")
+            .arg(esptoolPath, port.c_str(), bootloaderPath, partitionPath, firmwarePath);
+        LOG_INFO("执行命令: " + commandStr.toStdString());
+
+        // 创建进度窗口
+        QProgressDialog progress("正在刷写固件，请稍候...", "取消", 0, 0, window);
+        progress.setWindowTitle("固件刷写");
+        progress.setWindowModality(Qt::WindowModal);
+        progress.setMinimumDuration(0);
+        progress.setValue(0);
+        progress.setMaximum(0); // 设置为0表示未知进度
+
+        // 使用QProcess执行命令
+        QProcess process;
+
+        // 捕获标准输出和错误输出
+        window->connect(&process, &QProcess::readyReadStandardOutput, [&]() {
+            QString output = process.readAllStandardOutput();
+            LOG_INFO(output.trimmed().toStdString());
+        });
+
+        window->connect(&process, &QProcess::readyReadStandardError, [&]() {
+            QString error = process.readAllStandardError();
+            LOG_ERROR("错误: " + error.trimmed().toStdString());
+        });
+
+        // 绑定取消按钮
+        window->connect(&progress, &QProgressDialog::canceled, [&]() {
+            process.kill();
+            LOG_WARN("用户取消了固件刷写");
+        });
+
+        // 启动进程
+        process.start(commandStr);
+
+        // 等待进程启动
+        if (!process.waitForStarted(3000)) {
+            LOG_ERROR("无法启动esptool.exe: " + process.errorString().toStdString());
+            QMessageBox::critical(window, "启动失败", "无法启动esptool.exe: " + process.errorString());
+            return;
+        }
+        LOG_INFO("刷写进程已启动，请等待完成...");
+
+        // 使用事件循环等待进程完成，同时保持UI响应
+        QEventLoop loop;
+        window->connect(&process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), &loop, &QEventLoop::quit);
+        loop.exec();
+
+        // 进程完成
+        progress.setValue(100);
+
+        // 处理结果
+        if (process.exitCode() == 0) {
+            LOG_INFO("固件刷写成功！");
+            QMessageBox::information(window, "刷写完成", "ESP32固件刷写成功！");
+        } else {
+            LOG_ERROR("固件刷写失败，退出码: " + std::to_string(process.exitCode()));
+            QMessageBox::critical(window, "刷写失败", "ESP32固件刷写失败，请检查连接和固件文件！");
+        }
+        init();
+        start();
+    } catch (const std::exception& e) {
+        LOG_ERROR("发生异常: " + e.what());
+        QMessageBox::critical(window, "错误", "刷写过程中发生异常: " + QString(e.what()));
+    }
+}
+
+void SerialPortManager::restartESP32(QWidget* window)
+{
+    if (m_status == SerialStatus::FAILED)
+    {
+        LOG_INFO("串口未连接，重启失败");
+        QMessageBox::critical(window, "启动失败", "串口未连接");
+        return ;
+    }
+    // 记录操作
+    LOG_INFO("准备重启ESP32设备...");
+    stop();
+
+    try {
+        // 从SerialPortManager获取端口名
+        std::string port = FindEsp32S3Port();
+        if (port.empty()) {
+            port = "COM2"; // 默认端口
+        }
+
+        LOG_INFO("使用端口: " + port);
+
+        // 构造完整的命令路径
+        QString appDir = QCoreApplication::applicationDirPath();
+
+        // 构造重启命令 - 只执行重启操作
+        QString commandStr = QString("\"%1/esptool.exe\" --port %2 run")
+            .arg(appDir, port.c_str());
+        LOG_INFO("执行重启命令: " + commandStr.toStdString());
+
+        // 创建进度窗口
+        QProgressDialog progress("正在重启设备，请稍候...", "取消", 0, 0, window);
+        progress.setWindowTitle("设备重启");
+        progress.setWindowModality(Qt::WindowModal);
+        progress.setMinimumDuration(0);
+        progress.setValue(0);
+        progress.setMaximum(0); // 设置为0表示未知进度
+
+        // 使用QProcess执行命令
+        QProcess process;
+
+        // 捕获标准输出和错误输出
+        window->connect(&process, &QProcess::readyReadStandardOutput, [&]() {
+            QString output = process.readAllStandardOutput();
+            LOG_INFO(output.trimmed().toStdString());
+        });
+
+        window->connect(&process, &QProcess::readyReadStandardError, [&]() {
+            QString error = process.readAllStandardError();
+            LOG_ERROR("错误： " + error.trimmed().toStdString());
+        });
+
+        // 绑定取消按钮
+        window->connect(&progress, &QProgressDialog::canceled, [&]() {
+            process.kill();
+            LOG_INFO("用户取消了设备重启");
+        });
+
+        // 启动进程
+        process.start(commandStr);
+
+        // 等待进程启动
+        if (!process.waitForStarted(3000)) {
+            LOG_ERROR("无法启动esptool.exe: " + process.errorString().toStdString());
+            QMessageBox::critical(window, "启动失败", "无法启动esptool.exe: " + process.errorString());
+            return;
+        }
+
+        LOG_INFO("重启进程已启动，请等待完成...");
+
+        // 使用事件循环等待进程完成，同时保持UI响应
+        QEventLoop loop;
+        window->connect(&process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), &loop, &QEventLoop::quit);
+        loop.exec();
+
+        // 进程完成
+        progress.setValue(100);
+
+        // 处理结果
+        if (process.exitCode() == 0) {
+            LOG_INFO("设备重启成功！");
+            QMessageBox::information(window, "重启完成", "ESP32设备重启成功！");
+        } else {
+            LOG_ERROR("设备重启失败，退出码: " + std::to_string(process.exitCode()));
+            QMessageBox::critical(window, "重启失败", "ESP32设备重启失败，请检查连接！");
+        }
+
+        // 重新初始化和启动串口
+        init();
+        start();
+    } catch (const std::exception& e) {
+        LOG_ERROR("重启过程发生异常: " + e.what());
+        QMessageBox::critical(window, "错误", "重启过程中发生异常: " + QString(e.what()));
+    }
+}

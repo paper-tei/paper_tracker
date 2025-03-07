@@ -38,7 +38,7 @@ else()
 endif ()
 find_package(OpenCV CONFIG REQUIRED)
 find_package(CURL CONFIG REQUIRED)
-find_package(Qt6 COMPONENTS Core Gui Widgets Network WebSockets REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Network WebSockets SerialPort REQUIRED)
 
 IF(WIN32)
     set(IpSystemTypePath ip/win32)
@@ -137,7 +137,7 @@ target_include_directories(
 target_link_libraries(
     transfer
     PUBLIC
-    Qt6::Core Qt6::WebSockets  Qt6::Network
+    Qt6::Core Qt6::WebSockets  Qt6::Network Qt6::SerialPort
     ${OpenCV_LIBS}
     onnxruntime
     oscpack
@@ -167,9 +167,7 @@ target_include_directories(
 target_link_libraries(
     ui
     PUBLIC
-    Qt6::Core
-    Qt6::Gui
-    Qt6::Widgets
+    Qt6::Core Qt6::Gui Qt6::Widgets Qt6::SerialPort
     ${OpenCV_LIBS}
     onnxruntime
     oscpack
@@ -204,6 +202,7 @@ target_link_libraries(PaperTracker PRIVATE
     Qt6::Widgets
     Qt6::Network
     Qt6::WebSockets
+    Qt6::SerialPort
     onnxruntime
     oscpack
     ${LIBS}
@@ -254,7 +253,7 @@ if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
                 "${QT_INSTALL_PATH}/plugins/platforms/qwindows${DEBUG_SUFFIX}.dll"
                 "$<TARGET_FILE_DIR:${PROJECT_NAME}>/plugins/platforms/")
     endif()
-    foreach(QT_LIB Core Gui Widgets Network Websockets)
+    foreach(QT_LIB Core Gui Widgets Network Websockets SerialPort)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
                 "${QT_INSTALL_PATH}/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll"
