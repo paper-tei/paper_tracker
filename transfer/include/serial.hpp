@@ -136,7 +136,7 @@ public:
 
     void start() const;
 
-    void stop() const;
+    void stop();
 
     void write_data(const std::string& data) const;
 

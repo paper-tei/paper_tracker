@@ -219,8 +219,12 @@ void SerialPortManager::start() const
     writerThread->start();
 }
 
-void SerialPortManager::stop() const
+void SerialPortManager::stop()
 {
+    if (m_status == SerialStatus::CLOSED)
+    {
+        return ;
+    }
     if (reader)
     {
         readerThread->quit();
@@ -240,6 +244,7 @@ void SerialPortManager::stop() const
         serialPort->close();
         delete serialPort;
     }
+    m_status = SerialStatus::CLOSED;
 }
 
 // 处理接收到的数据
