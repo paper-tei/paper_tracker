@@ -29,7 +29,10 @@ ESP32VideoStream::ESP32VideoStream(QObject *parent)
 
 ESP32VideoStream::~ESP32VideoStream()
 {
-    stop();
+    if (isRunning)
+    {
+        stop();
+    }
 }
 
 bool ESP32VideoStream::init(const std::string& url)
@@ -71,7 +74,7 @@ bool ESP32VideoStream::init(const std::string& url)
 
 void ESP32VideoStream::sendHeartbeat()
 {
-    if (image_not_receive_count++ > 200)
+    if (image_not_receive_count++ > 50)
     {
         isRunning = false;
     }
@@ -104,7 +107,7 @@ bool ESP32VideoStream::start()
     LOG_INFO("开始连接WebSocket: " + currentStreamUrl);
     webSocket->open(QUrl(QString::fromStdString(currentStreamUrl)));
 
-    heartbeatTimer->start(2);  // 每 10 秒发送一次心跳
+    heartbeatTimer->start(50);
     return true;
 }
 
@@ -122,8 +125,11 @@ void ESP32VideoStream::stop()
     // 关闭WebSocket
     if (webSocket)
     {
-        webSocket->close();
-        delete webSocket;
+        if (webSocket->state() != QAbstractSocket::UnconnectedState)
+        {
+            QMetaObject::invokeMethod(webSocket, "close", Qt::QueuedConnection);
+        }
+        webSocket->deleteLater();
     }
 
     // 清空图像队列
@@ -191,6 +197,7 @@ void ESP32VideoStream::onError(QAbstractSocket::SocketError error)
 
 void ESP32VideoStream::onBinaryMessageReceived(const QByteArray &message)
 {
+    isRunning = true;
     image_not_receive_count = 0;
     try {
         // 打印接收到的数据长度以进行调试

@@ -85,7 +85,10 @@ void SerialPortManager::init()
 
 SerialPortManager::~SerialPortManager()
 {
-    stop();
+    if (m_status == SerialStatus::OPENED)
+    {
+        stop();
+    }
 }
 
 std::string SerialPortManager::FindEsp32S3Port() {

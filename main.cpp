@@ -195,31 +195,43 @@ struct RestartWorker : public QThread
     img_downloader(img_downloader) {}
 
 public slots:
-    void run()
+    void run() override
     {
         while (!isInterruptionRequested()) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
             if (serial_port_manager->status() == SerialStatus::FAILED)
             {
-                serial_port_manager->stop();
-                serial_port_manager->init();
-                serial_port_manager->start();
+                QMetaObject::invokeMethod(window, [this]() {
+                    window->setSerialStatusLabel("串口连接失败");
+                    serial_port_manager->stop();
+                    serial_port_manager->init();
+                    serial_port_manager->start();
+                });
                 while (serial_port_manager->status() == SerialStatus::CLOSED);
                 if (serial_port_manager->status() == SerialStatus::OPENED)
                 {
-                    LOG_INFO("串口已重新连接");
-                    window->setSerialStatusLabel("串口连接成功");
+                    QMetaObject::invokeMethod(window, [this]()
+                    {
+                        LOG_INFO("串口已重新连接");
+                        window->setSerialStatusLabel("串口连接成功");
+                    });
                 }
             }
             if (!img_downloader->isStreaming())
             {
-                img_downloader->stop();
-                img_downloader->start();
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                QMetaObject::invokeMethod(window, [this]()
+                {
+                    img_downloader->stop();
+                    img_downloader->start();
+                });
                 if (img_downloader->isStreaming())
                 {
-                    LOG_INFO("Wifi已重新连接");
-                    window->setSerialStatusLabel("Wifi连接成功");
+                    QMetaObject::invokeMethod(window, [this]()
+                    {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                        LOG_INFO("Wifi已重新连接");
+                        window->setSerialStatusLabel("Wifi连接成功");
+                    });
                 }
             }
         }
