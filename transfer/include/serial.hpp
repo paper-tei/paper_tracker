@@ -44,18 +44,22 @@ public:
     }
 public slots:
     void onReadyRead() {
-        if (!serialPort)
+        while (*status == SerialStatus::OPENED)
         {
-            *status = SerialStatus::FAILED;
-            return;
+            if (!serialPort)
+            {
+                *status = SerialStatus::FAILED;
+                return;
+            }
+            QByteArray data = serialPort->readAll();
+            if (data.isEmpty())
+            {
+                continue;
+            }
+            auto receivedData = QString::fromLocal8Bit(data).toStdString();
+            processReceivedData(receivedData);
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        QByteArray data = serialPort->readAll();
-        if (data.isEmpty())
-        {
-            return;
-        }
-        auto receivedData = QString::fromLocal8Bit(data).toStdString();
-        processReceivedData(receivedData);
     }
 
 private:
@@ -102,8 +106,15 @@ public slots:
             }
 
             if (serialPort && serialPort->isOpen()) {
-                serialPort->write(data);
+                auto bytesRead = serialPort->write(data);
+                if (bytesRead < 0) {
+                    *status = SerialStatus::FAILED;
+                }
                 serialPort->flush();
+                if (!serialPort->waitForBytesWritten(100))
+                {
+                    *status = SerialStatus::FAILED;
+                }
             } else
             {
                 *status = SerialStatus::FAILED;
