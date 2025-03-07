@@ -32,9 +32,9 @@ public:
     // 检查流是否正在运行
     bool isStreaming() const { return isRunning; }
 
-    private slots:
-        // WebSocket连接成功的槽函数
-        void onConnected();
+private slots:
+    // WebSocket连接成功的槽函数
+    void onConnected();
 
     // WebSocket连接关闭的槽函数
     void onDisconnected();
@@ -44,6 +44,8 @@ public:
 
     // 处理接收到的二进制消息(JPEG图片)
     void onBinaryMessageReceived(const QByteArray &message);
+
+    void sendHeartbeat();
 
 private:
     // 将QImage转换为cv::Mat
@@ -58,4 +60,8 @@ private:
     QWebSocket* webSocket;
     mutable QMutex mutex;
     std::queue<cv::Mat> image_buffer_queue;
+
+    int image_not_receive_count = 0;
+
+    QTimer* heartbeatTimer;
 };

@@ -20,14 +20,19 @@
 #include <opencv2/imgproc.hpp>
 #include <QUrl>
 #include <QMutexLocker>
+#include <QTimer>
 
 ESP32VideoStream::ESP32VideoStream(QObject *parent)
-    : QObject(parent), isRunning(false), webSocket(nullptr)
-{}
+    : QObject(parent), isRunning(false), webSocket(nullptr), heartbeatTimer(nullptr)
+{
+}
 
 ESP32VideoStream::~ESP32VideoStream()
 {
-    stop();
+    if (isRunning)
+    {
+        stop();
+    }
 }
 
 bool ESP32VideoStream::init(const std::string& url)
@@ -54,7 +59,7 @@ bool ESP32VideoStream::init(const std::string& url)
             // 确保URL有正确的端口和路径
             if (currentStreamUrl.find(':') == std::string::npos) {
                 // 如果没有端口，添加默认端口81
-                currentStreamUrl += ":81";
+                currentStreamUrl += ":80";
             }
             if (currentStreamUrl.find("/ws") == std::string::npos) {
                 // 如果没有/ws路径，添加它
@@ -67,9 +72,19 @@ bool ESP32VideoStream::init(const std::string& url)
     return true;
 }
 
+void ESP32VideoStream::sendHeartbeat()
+{
+    if (image_not_receive_count++ > 50)
+    {
+        isRunning = false;
+    }
+}
+
 bool ESP32VideoStream::start()
 {
     webSocket = new QWebSocket();
+    // 禁用代理设置，避免代理相关错误
+    webSocket->setProxy(QNetworkProxy::NoProxy);
 
     connect(webSocket, &QWebSocket::connected,
         this, &ESP32VideoStream::onConnected);
@@ -80,35 +95,41 @@ bool ESP32VideoStream::start()
     connect(webSocket, &QWebSocket::binaryMessageReceived,
             this, &ESP32VideoStream::onBinaryMessageReceived);
 
+    heartbeatTimer = new QTimer();
+    connect(heartbeatTimer, &QTimer::timeout, this, &ESP32VideoStream::sendHeartbeat);
+
     if (isRunning) {
         LOG_WARN("视频流已经在运行中");
         return false;
     }
 
-    // 禁用代理设置，避免代理相关错误
-    webSocket->setProxy(QNetworkProxy::NoProxy);
-
     // 连接WebSocket
     LOG_INFO("开始连接WebSocket: " + currentStreamUrl);
     webSocket->open(QUrl(QString::fromStdString(currentStreamUrl)));
 
+    heartbeatTimer->start(50);
     return true;
 }
 
 void ESP32VideoStream::stop()
 {
-    if (!isRunning) {
-        return;
-    }
-
     LOG_INFO("停止WebSocket视频流");
     isRunning = false;
+
+    if (heartbeatTimer)
+    {
+        heartbeatTimer->stop();
+        delete heartbeatTimer;
+    }
 
     // 关闭WebSocket
     if (webSocket)
     {
-        webSocket->close();
-        delete webSocket;
+        if (webSocket->state() != QAbstractSocket::UnconnectedState)
+        {
+            QMetaObject::invokeMethod(webSocket, "close", Qt::QueuedConnection);
+        }
+        webSocket->deleteLater();
     }
 
     // 清空图像队列
@@ -176,6 +197,8 @@ void ESP32VideoStream::onError(QAbstractSocket::SocketError error)
 
 void ESP32VideoStream::onBinaryMessageReceived(const QByteArray &message)
 {
+    isRunning = true;
+    image_not_receive_count = 0;
     try {
         // 打印接收到的数据长度以进行调试
         // LOG_DEBUG("接收到WebSocket数据: " + std::to_string(message.size()) + " 字节");
@@ -209,6 +232,7 @@ void ESP32VideoStream::onBinaryMessageReceived(const QByteArray &message)
 
                 if (!frame.empty()) {
                     QMutexLocker locker(&mutex);
+                    image_not_receive_count = 0;
                     if (image_buffer_queue.empty()) {
                         image_buffer_queue.push(std::move(frame));
                     } else {

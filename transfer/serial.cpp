@@ -66,8 +66,8 @@ void SerialPortManager::init()
     writer = new SerialWriter(serialPort, &m_status);
     // 读取线程实现
     reader->moveToThread(readerThread);
-    connect(serialPort, &QSerialPort::readyRead, reader, &SerialReader::onReadyRead);
-    // connect(readerThread, &QThread::started, reader, &SerialReader::onReadyRead);  // 确保读取线程开始后读取数据
+    // connect(serialPort, &QSerialPort::readyRead, reader, &SerialReader::onReadyRead);
+    connect(readerThread, &QThread::started, reader, &SerialReader::onReadyRead);  // 确保读取线程开始后读取数据
 
     // 创建和管理写入线程
     writer->moveToThread(writerThread);
@@ -85,7 +85,10 @@ void SerialPortManager::init()
 
 SerialPortManager::~SerialPortManager()
 {
-    stop();
+    if (m_status == SerialStatus::OPENED)
+    {
+        stop();
+    }
 }
 
 std::string SerialPortManager::FindEsp32S3Port() {
