@@ -109,7 +109,8 @@ public:
         page->setObjectName("page");
         ImageLabel = new QLabel(page);
         ImageLabel->setObjectName("ImageLabel");
-        ImageLabel->setGeometry(QRect(0, 0, 280, 280));
+        ImageLabel->setGeometry(QRect(10, 10, 280, 280));
+        ImageLabel->setTextInteractionFlags(Qt::TextInteractionFlag::NoTextInteraction);
         SSIDText = new QPlainTextEdit(page);
         SSIDText->setObjectName("SSIDText");
         SSIDText->setGeometry(QRect(310, 10, 221, 41));
@@ -176,6 +177,25 @@ public:
         label_18->setObjectName("label_18");
         label_18->setGeometry(QRect(310, 170, 81, 21));
         stackedWidget->addWidget(page);
+        SSIDText->raise();
+        PasswordText->raise();
+        BrightnessBar->raise();
+        label->raise();
+        wifi_send_Button->raise();
+        FlashFirmwareButton->raise();
+        LogText->raise();
+        label_2->raise();
+        textEdit->raise();
+        label_16->raise();
+        restart_Button->raise();
+        SerialConnectLabel->raise();
+        WifiConnectLabel->raise();
+        label_17->raise();
+        RotateImageBar->raise();
+        UseFilterBox->raise();
+        EnergyModeBox->raise();
+        label_18->raise();
+        ImageLabel->raise();
         page_2 = new QWidget();
         page_2->setObjectName("page_2");
         scrollArea = new QScrollArea(page_2);
@@ -355,7 +375,7 @@ public:
     void retranslateUi(QWidget *PaperTrackerMainWindow)
     {
         PaperTrackerMainWindow->setWindowTitle(QCoreApplication::translate("PaperTrackerMainWindow", "PaperTrack", nullptr));
-        ImageLabel->setText(QString());
+        ImageLabel->setText(QCoreApplication::translate("PaperTrackerMainWindow", "                         \346\262\241\346\234\211\345\233\276\345\203\217\350\276\223\345\205\245", nullptr));
         SSIDText->setPlainText(QCoreApplication::translate("PaperTrackerMainWindow", "\350\257\267\350\276\223\345\205\245WIFI\345\220\215\345\255\227\357\274\210\344\273\205\346\224\257\346\214\2012.4ghz\357\274\211", nullptr));
         PasswordText->setPlainText(QCoreApplication::translate("PaperTrackerMainWindow", "\350\257\267\350\276\223\345\205\245WIFI\345\257\206\347\240\201", nullptr));
         label->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\344\272\256\345\272\246\350\260\203\346\225\264", nullptr));

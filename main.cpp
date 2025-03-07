@@ -37,9 +37,7 @@ void start_image_download(ESP32VideoStream& image_downloader, const std::string&
 void update_ui(
     PaperTrackMainWindow& window,
     SerialPortManager& serial_port_manager,
-    ESP32VideoStream& image_downloader,
-    Inference& inference,
-    OscManager& osc_manager
+    ESP32VideoStream& image_downloader
 )
 {
     cv::Mat frame;
@@ -96,13 +94,6 @@ void update_ui(
             if (!frame.empty())
             {
                 show_image = frame;
-            //    cv::putText(show_image, "FPS: " + std::to_string(fps), cv::Point(10, 50), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(255, 255, 0), 2);
-            } else
-            {
-                // default image which displays: "没有图像载入“
-                show_image = cv::Mat::zeros(280, 280, CV_8UC3);
-                show_image = cv::Scalar(255, 255, 255);
-                cv::putText(show_image, "No Image", cv::Point(10, 100), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 0), 2);
             }
             window.setVideoImage(show_image);
             // 控制帧率
@@ -441,7 +432,7 @@ int main(int argc, char *argv[]) {
     LOG_INFO("正在启动视频处理线程...");
     window.set_update_thread([ &window, &image_downloader, &inference, &osc_manager, &serial_port_manager] ()
     {
-        update_ui(window, serial_port_manager, image_downloader, inference, osc_manager);
+        update_ui(window, serial_port_manager, image_downloader);
     });
     window.set_inference_thread([ &window, &image_downloader, &inference, &osc_manager] ()
     {
