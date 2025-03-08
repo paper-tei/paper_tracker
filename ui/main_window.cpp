@@ -157,7 +157,7 @@ void PaperTrackMainWindow::setVideoImage(const cv::Mat& image)
 {
     if (image.empty())
     {
-        QMetaObject::invokeMethod(this, [this]() {
+        // QMetaObject::invokeMethod(this, [this]() {
             if (ui.stackedWidget->currentIndex() == 0) {
                 ui.ImageLabel->clear(); // 清除图片
                 ui.ImageLabel->setText("                         没有图像输入"); // 恢复默认文本
@@ -165,12 +165,12 @@ void PaperTrackMainWindow::setVideoImage(const cv::Mat& image)
                 ui.ImageLabelCal->clear(); // 清除图片
                 ui.ImageLabelCal->setText("                         没有图像输入");
             }
-        }, Qt::QueuedConnection);
+        // }, Qt::QueuedConnection);
         return ;
     }
     auto qimage = QImage(image.data, image.cols, image.rows, image.step, QImage::Format_RGB888);
     // 使用Qt的线程安全方式更新UI
-    QMetaObject::invokeMethod(this, [this, qimage]() {
+    // QMetaObject::invokeMethod(this, [this, qimage]() {
         auto pix_map = QPixmap::fromImage(qimage);
         if (ui.stackedWidget->currentIndex() == 0)
         {
@@ -182,7 +182,7 @@ void PaperTrackMainWindow::setVideoImage(const cv::Mat& image)
             ui.ImageLabelCal->setScaledContents(true);
             ui.ImageLabelCal->update();
         }
-    }, Qt::QueuedConnection);
+    // }, Qt::QueuedConnection);
 }
 
 PaperTrackMainWindow::~PaperTrackMainWindow() = default;

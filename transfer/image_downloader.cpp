@@ -218,7 +218,7 @@ void ESP32VideoStream::onBinaryMessageReceived(const QByteArray &message)
         cv::Mat rawFrame = cv::imdecode(buffer, cv::IMREAD_COLOR);
 
         if (!rawFrame.empty()) {
-            // LOG_DEBUG("成功解码图像，尺寸: " + std::to_string(rawFrame.cols) + "x" + std::to_string(rawFrame.rows));
+            LOG_DEBUG("成功解码图像，尺寸: " + std::to_string(rawFrame.cols) + "x" + std::to_string(rawFrame.rows));
 
             QMutexLocker locker(&mutex);
             if (image_buffer_queue.empty()) {
