@@ -9,6 +9,8 @@
 #include <QWebSocket>
 #include <QObject>
 #include <QMutex>
+#include <QTimer>
+
 #include "logger.hpp"
 
 class ESP32VideoStream : public QObject {
@@ -32,6 +34,26 @@ public:
     // 检查流是否正在运行
     bool isStreaming() const { return isRunning; }
 
+    void stop_heartbeat_timer()
+    {
+        if (heartbeatTimer && heartbeatTimer->isActive())
+        {
+            heartbeatTimer->stop();
+        }
+    }
+
+    void start_heartbeat_timer()
+    {
+        if (!heartbeatTimer)
+        {
+            heartbeatTimer = new QTimer();
+        }
+        if (!heartbeatTimer->isActive())
+        {
+            heartbeatTimer->start(50);
+        }
+    }
+
 private slots:
     // WebSocket连接成功的槽函数
     void onConnected();
@@ -45,7 +67,7 @@ private slots:
     // 处理接收到的二进制消息(JPEG图片)
     void onBinaryMessageReceived(const QByteArray &message);
 
-    void sendHeartbeat();
+    void checkHeartBeat();
 
 private:
     // 将QImage转换为cv::Mat
