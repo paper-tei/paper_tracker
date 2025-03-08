@@ -43,7 +43,7 @@ SerialPortManager::SerialPortManager(QObject* parent) : QObject(parent), serialP
 
 void SerialPortManager::init()
 {
-    LOG_INFO("正在搜索ESP32-S3设备...");
+    LOG_DEBUG("正在搜索ESP32-S3设备...");
     std::string portName = FindEsp32S3Port();
     serialPort = new QSerialPort(nullptr);
     serialPort->setBaudRate(QSerialPort::Baud115200);
@@ -52,10 +52,9 @@ void SerialPortManager::init()
     serialPort->setFlowControl(QSerialPort::NoFlowControl);
     serialPort->setStopBits(QSerialPort::OneStop);
     if (portName.empty()) {
-        LOG_WARN("无法找到ESP32-S3设备，尝试使用默认端口COM101");
+        LOG_DEBUG("无法找到ESP32-S3设备，尝试使用默认端口");
         serialPort->setPortName(COM_PORT);
     } else {
-        // portName = "COM5";
         currentPort = portName;
         LOG_INFO("尝试连接到端口:" + portName);
         serialPort->setPortName(QString::fromStdString(portName));
@@ -75,7 +74,7 @@ void SerialPortManager::init()
         m_status = SerialStatus::OPENED;
     } else
     {
-        LOG_ERROR("串口打开失败: " + serialPort->errorString().toStdString());
+        //LOG_ERROR("串口打开失败: " + serialPort->errorString().toStdString());
         m_status = SerialStatus::FAILED;
     }
     if (!heartBeatTimer->isActive())
@@ -93,10 +92,6 @@ SerialPortManager::~SerialPortManager()
 }
 
 std::string SerialPortManager::FindEsp32S3Port() {
-    if (!currentPort.empty())
-    {
-        return currentPort;
-    }
 
     std::string targetPort;
 
@@ -170,7 +165,7 @@ std::string SerialPortManager::FindEsp32S3Port() {
     // 调试：遍历所有可用的COM端口
     SP_DEVINFO_DATA devInfoData2;
     devInfoData2.cbSize = sizeof(SP_DEVINFO_DATA);
-    LOG_INFO("系统中所有可用的COM端口: ");
+    LOG_DEBUG("系统中所有可用的COM端口: ");
     for (DWORD i = 0; SetupDiEnumDeviceInfo(hDevInfo, i, &devInfoData2); i++) {
         HKEY hKey = SetupDiOpenDevRegKey(
             hDevInfo,
@@ -211,7 +206,7 @@ std::string SerialPortManager::FindEsp32S3Port() {
     SetupDiDestroyDeviceInfoList(hDevInfo);
 
     if (targetPort.empty()) {
-        LOG_ERROR("未找到ESP32-S3设备的COM端口");
+        LOG_DEBUG("未找到ESP32-S3设备的COM端口");
     }
 
     return targetPort;
@@ -286,10 +281,10 @@ void SerialPortManager::processReceivedData(std::string& receivedData) const
             LOG_INFO("[WiFi 配置成功]");
             break;
         case PACKET_WIFI_ERROR:
-            LOG_INFO("[WiFi 配置错误] SSID 或密码错误");
+            //LOG_INFO("[WiFi 配置错误] SSID 或密码错误");
             break;
         case PACKET_DEVICE_STATUS:
-            LOG_INFO("[设备状态] 更新设备信息...");
+            LOG_DEBUG("[设备状态] 更新设备信息...");
             break;
         case PACKET_LIGHT_CONTROL:
             LOG_INFO("[补光灯设置] 调整亮度");
@@ -374,8 +369,16 @@ PacketType SerialPortManager::parsePacket(const std::string& packet) const
 
         case '4': // 数据包4：A4SSID[SSID内容]PWD[PWD]B4
             if (std::regex_match(trimmedPacket, match, std::regex("^A4SSID(.*?)PWD(.*?)B4$"))) {
-                LOG_DEBUG("匹配到包类型4 (WiFi 配置错误): SSID = " +
-                          match[1].str() + ", PWD = " + match[2].str());
+                if (match[1].str() == "paper")
+                {
+                    LOG_INFO("未进行WiFi配置，请输入WIFI信息并点击发送。");
+                }
+                else
+                {
+                    LOG_INFO("(WiFi 配置错误): 当前WIFI为" +
+                          match[1].str() + ", 密码为" + match[2].str() + "请检查是否有误");
+                }
+
                 return PACKET_WIFI_ERROR;
             }
             break;
