@@ -737,3 +737,13 @@ cv::Mat PaperTrackMainWindow::getVideoImage() const
 {
     return std::move(image_downloader->getLatestFrame());
 }
+
+void PaperTrackMainWindow::onCheckFirmwareVersionClicked()
+{
+
+}
+
+void PaperTrackMainWindow::onCheckClientVersionClicked()
+{
+
+}
