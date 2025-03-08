@@ -414,7 +414,10 @@ void PaperTrackMainWindow::onRestartButtonClicked()
 
 void PaperTrackMainWindow::onUseFilterClicked(int value) const
 {
-    onUseFilterClickedFunc(value);
+    QTimer::singleShot(10, this, [this, value] {
+        while (onUseFilterClickedFunc == nullptr) {}
+        onUseFilterClickedFunc(value);
+    });
 }
 
 void PaperTrackMainWindow::onFlashButtonClicked()
