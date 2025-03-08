@@ -255,8 +255,16 @@ int main(int argc, char *argv[]) {
             QMessageBox::critical(&window, "错误", "无法获取最新客户端版本信息，请检查网络连接");
             return ;
         }
-        //
+        if (remote_version.value().version.tag != version.value().version.tag)
+        {
+            auto reply = QMessageBox::question(&window, "版本检查",
+                QString::fromStdString("当前客户端版本不是最新版本是否更新？\n版本更新信息如下：\n" + remote_version.value().version.description),
+                QMessageBox::Yes | QMessageBox::No);
 
+        } else
+        {
+            QMessageBox::information(&window, "版本检查", "当前客户端版本已是最新版本");
+        }
     });
 
 
