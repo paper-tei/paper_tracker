@@ -27,8 +27,8 @@
 #include <QCoreApplication>
 #include <roi_event.hpp>
 
-PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
-    : QWidget(parent)
+PaperTrackMainWindow::PaperTrackMainWindow(const PaperTrackerConfig& config, QWidget *parent)
+    : QWidget(parent), config(config)
 {
     // 基本UI设置
     setFixedSize(848, 538);

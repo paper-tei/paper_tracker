@@ -175,7 +175,10 @@ int main(int argc, char *argv[]) {
         box.exec();
     }
 
-    PaperTrackMainWindow window;
+    ConfigWriter config_writer("./config.json");
+    auto config = std::move(config_writer.get_config<PaperTrackerConfig>());
+
+    PaperTrackMainWindow window(config);
     window.setWindowIcon(icon);  // 设置窗口图标
     window.show();
 
@@ -184,12 +187,6 @@ int main(int argc, char *argv[]) {
     VideoReader video_reader;
     Inference inference;
     OscManager osc_manager;
-    PaperTrackerConfig config;
-    ConfigWriter config_writer("./config.json");
-
-    LOG_INFO("读取配置文件中...");
-    config = std::move(config_writer.get_config<PaperTrackerConfig>());
-    LOG_INFO("读取配置文件成功");
 
     window.setBeforeStop([&osc_manager] ()
     {
@@ -240,8 +237,6 @@ int main(int argc, char *argv[]) {
         LOG_ERROR("OSC初始化失败，请检查网络连接");
     }
 
-
-
     LOG_INFO("正在启动视频处理线程...");
     window.set_update_thread([ &window] ()
     {
@@ -251,18 +246,6 @@ int main(int argc, char *argv[]) {
     {
         inference_image(window, inference, osc_manager);
     });
-
-    // auto restart_worker = new RestartWorker(
-    //     &window,
-    //     &serial_port_manager,
-    //     &image_downloader
-    // );
-    // QObject::connect(qApp, &QCoreApplication::aboutToQuit, [=]() {
-    //     restart_worker->requestInterruption();
-    //     restart_worker->wait();
-    // });
-
-    // restart_worker->start();
 
     int status = QApplication::exec();
 
@@ -279,64 +262,3 @@ int main(int argc, char *argv[]) {
 
     return status;
 }
-
-
-// #include <QCoreApplication>
-// #include <QSerialPort>
-// #include <QSerialPortInfo>
-// #include <QDebug>
-//
-// class SerialHandler : public QObject {
-// public:
-//     SerialHandler(QObject *parent = nullptr) : QObject(parent) {
-//         serialPort = new QSerialPort(this);
-//
-//         // 设置串口名称（根据实际情况修改）
-//         serialPort->setPortName("COM6");  // Windows: COMx, Linux/macOS: /dev/ttyUSBx
-//         serialPort->setBaudRate(QSerialPort::Baud115200);
-//         serialPort->setDataBits(QSerialPort::Data8);
-//         serialPort->setParity(QSerialPort::NoParity);
-//         serialPort->setStopBits(QSerialPort::OneStop);
-//         serialPort->setFlowControl(QSerialPort::NoFlowControl);
-//
-//         // 打开串口
-//         if (!serialPort->open(QIODevice::ReadWrite)) {
-//             qDebug() << "无法打开串口:" << serialPort->errorString();
-//             return;
-//         }
-//         qDebug() << "串口已打开";
-//
-//         // 连接信号槽：当串口收到数据时调用 readData()
-//         connect(serialPort, &QSerialPort::readyRead, this, &SerialHandler::readData);
-//
-//     }
-//
-//     ~SerialHandler() {
-//         if (serialPort->isOpen()) {
-//             serialPort->close();
-//             qDebug() << "串口已关闭";
-//         }
-//     }
-//
-// private slots:
-//     void readData() {
-//         QByteArray data = serialPort->readAll();
-//         qDebug() << "收到数据:" << data;
-//         // 发送数据
-//         qint64 bytesWritten = serialPort->write(data);
-//         if (bytesWritten == -1) {
-//             qDebug() << "发送失败:" << serialPort->errorString();
-//         } else {
-//             qDebug() << "已发送" << bytesWritten << "字节";
-//         }
-//     }
-//
-// private:
-//     QSerialPort *serialPort;
-// };
-//
-// int main(int argc, char *argv[]) {
-//     QCoreApplication a(argc, argv);
-//     SerialHandler serialHandler;
-//     return a.exec();
-// }

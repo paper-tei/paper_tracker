@@ -66,7 +66,7 @@ private:
     // UI组件
     Ui::PaperTrackerMainWindow ui{};
 public:
-    explicit PaperTrackMainWindow(QWidget *parent = nullptr);
+    explicit PaperTrackMainWindow(const PaperTrackerConfig& config = {}, QWidget *parent = nullptr);
     ~PaperTrackMainWindow() override;
 
     void setSerialStatusLabel(const std::string& text) const;
