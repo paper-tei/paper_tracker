@@ -78,7 +78,7 @@ void update_ui(PaperTrackMainWindow& window)
             {
                 show_image = frame;
             }
-            window.setVideoImage(show_image.clone());
+            window.setVideoImage(show_image);
             // 控制帧率
         } catch (const std::exception& e) {
             // 使用Qt方式记录日志，而不是minilog
