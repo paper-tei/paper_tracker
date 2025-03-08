@@ -40,10 +40,10 @@ struct Rect
     cv::Rect rect;
     bool is_roi_end = true;
 
-    int x{};
-    int y{};
-    int width{};
-    int height{};
+    int x{0};
+    int y{0};
+    int width{0};
+    int height{0};
 
     REFLECT(x, y, width, height);
 };
@@ -74,7 +74,7 @@ public:
     void setIPText(const std::string& text) const;
 
     QPlainTextEdit* getLogText() const;
-    Rect getRoiRect() const;
+    Rect getRoiRect();
     float getRotateAngle() const;
     std::string getSSID() const;
     std::string getPassword() const;
@@ -174,7 +174,6 @@ private:
     std::shared_ptr<ESP32VideoStream> image_downloader;
 
     PaperTrackerConfig config;
-
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 };

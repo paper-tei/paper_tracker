@@ -63,7 +63,7 @@ public:
 
             Version version;
             if (res != CURLE_OK) {
-                // LOG_ERROR("curl_easy_perform() failed: " + std::string(curl_easy_strerror(res)));
+                 LOG_ERROR("curl_easy_perform() failed: " + std::string(curl_easy_strerror(res)));
             } else {
                 std::string json_buffer(chunk.memory, chunk.size);
                 version = reflect::json_decode<Version>(json_buffer);
@@ -77,11 +77,12 @@ public:
         }
     }
 
-    std::optional<Version> getCurrentVersion()
+    std::optional<Version> getCurrentVersion(QWidget* window)
     {
         std::ifstream file;
         file.open("version.json");
         if (!file) {
+            LOG_ERROR("无法打开文件: version.json");
             return std::nullopt;
         }
         std::string version;
@@ -90,11 +91,11 @@ public:
         return reflect::json_decode<Version>(version);
     }
 
-    void downloadAppToLocal()
+    void downloadAppToLocal(QWidget* window)
     {
         auto version = getClientVersion();
         if (!version.has_value()) {
-            std::cerr << "无法获取版本信息" << std::endl;
+            QMessageBox::critical(window, "错误", "无法获取版本信息");
             return;
         }
         std::string url = "http://47.116.163.1/downloads/" + version->version.tag;
@@ -102,7 +103,7 @@ public:
 
         std::ofstream outputFile(outputFilename, std::ios::binary); // 以二进制模式打开文件
         if (!outputFile) {
-            std::cerr << "无法创建文件: " << outputFilename << std::endl;
+            QMessageBox::critical(window, "错误", "无法创建文件");
             return ;
         }
 
@@ -112,11 +113,11 @@ public:
 
         CURLcode res = curl_easy_perform(curl_handle);
         if (res != CURLE_OK) {
-            std::cerr << "下载失败: " << curl_easy_strerror(res) << std::endl;
+            QMessageBox::critical(window, "错误", "下载失败: " + std::string(curl_easy_strerror(res)));
             return ;
         }
 
-        std::cout << "文件下载成功: " << outputFilename << std::endl;
+        QMessageBox::information(window, "成功", "文件下载成功");
         return ;
     }
 
