@@ -484,7 +484,7 @@ void SerialPortManager::flashESP32(QWidget* window)
         QMessageBox::critical(window, "启动失败", "串口未连接");
         return ;
     }
-
+    heartBeatTimer->stop();
     stop();
     // 不再调用stop()，而是手动关闭程序持有的串口句柄
     // 这样可以释放COM端口而不会导致其他部分的问题
@@ -563,6 +563,7 @@ void SerialPortManager::flashESP32(QWidget* window)
             QMessageBox::critical(window, "刷写失败", "ESP32固件刷写失败，请检查连接和固件文件！");
         }
         init();
+        heartBeatTimer->start(20);
     } catch (const std::exception& e) {
         LOG_ERROR("发生异常: " + e.what());
         QMessageBox::critical(window, "错误", "刷写过程中发生异常: " + QString(e.what()));
@@ -579,6 +580,7 @@ void SerialPortManager::restartESP32(QWidget* window)
     }
     // 记录操作
     LOG_INFO("准备重启ESP32设备...");
+    heartBeatTimer->stop();
     stop();
 
     try {
@@ -650,13 +652,13 @@ void SerialPortManager::restartESP32(QWidget* window)
         if (process.exitCode() == 0) {
             LOG_INFO("设备重启成功！");
             // 重新初始化和启动串口
-            init();
             QMessageBox::information(window, "重启完成", "ESP32设备重启成功！");
         } else {
             LOG_ERROR("设备重启失败，退出码: " + std::to_string(process.exitCode()));
             QMessageBox::critical(window, "重启失败", "ESP32设备重启失败，请检查连接！");
         }
-
+        init();
+        heartBeatTimer->start(20);
     } catch (const std::exception& e) {
         LOG_ERROR("重启过程发生异常: " + e.what());
         QMessageBox::critical(window, "错误", "重启过程中发生异常: " + QString(e.what()));
