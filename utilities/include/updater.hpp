@@ -77,6 +77,19 @@ public:
         }
     }
 
+    std::optional<Version> getCurrentVersion()
+    {
+        std::ifstream file;
+        file.open("version.json");
+        if (!file) {
+            return std::nullopt;
+        }
+        std::string version;
+        std::getline(file, version);
+        file.close();
+        return reflect::json_decode<Version>(version);
+    }
+
     void downloadAppToLocal()
     {
         auto version = getClientVersion();
@@ -97,16 +110,7 @@ public:
         curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, &Updater::writeData);
         curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &outputFile);
 
-        // 可选：如果服务器需要身份验证或特殊请求头，可以设置
-        struct curl_slist *headers = nullptr;
-        headers = curl_slist_append(headers, "X-Download-Token: my_secret_token");
-        curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-
         CURLcode res = curl_easy_perform(curl_handle);
-
-        // 释放请求头列表
-        curl_slist_free_all(headers);
-
         if (res != CURLE_OK) {
             std::cerr << "下载失败: " << curl_easy_strerror(res) << std::endl;
             return ;
@@ -114,7 +118,6 @@ public:
 
         std::cout << "文件下载成功: " << outputFilename << std::endl;
         return ;
-
     }
 
 private:
@@ -137,7 +140,7 @@ private:
     }
 
     static size_t writeData(void *buffer, size_t size, size_t nmemb, void *userp) {
-        std::ofstream *outputFile = static_cast<std::ofstream *>(userp);
+        auto *outputFile = static_cast<std::ofstream *>(userp);
         outputFile->write(static_cast<const char *>(buffer), size * nmemb);
         return size * nmemb;
     }
