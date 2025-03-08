@@ -67,7 +67,7 @@ add_library(
 
 target_link_libraries(
     utilities PUBLIC
-    Qt6::Core Qt6::Gui Qt6::Widgets
+    Qt6::Core Qt6::Gui Qt6::Widgets CURL::libcurl
 )
 
 target_include_directories(
