@@ -78,7 +78,7 @@ void update_ui(PaperTrackMainWindow& window)
             {
                 show_image = frame;
             }
-            window.setVideoImage(show_image);
+            window.setVideoImage(show_image.clone());
             // 控制帧率
         } catch (const std::exception& e) {
             // 使用Qt方式记录日志，而不是minilog
@@ -162,6 +162,8 @@ void inference_image(
 int main(int argc, char *argv[]) {
     // Create ui application
     QApplication app(argc, argv);
+
+    curl_global_init(CURL_GLOBAL_ALL);
 
     QFile qssFile("./resources/material.qss"); // 使用资源路径
     QIcon icon("./resources/window_icon.png");
@@ -263,3 +265,4 @@ int main(int argc, char *argv[]) {
 
     return status;
 }
+

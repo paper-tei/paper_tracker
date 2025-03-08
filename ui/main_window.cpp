@@ -58,28 +58,45 @@ PaperTrackMainWindow::PaperTrackMainWindow(const PaperTrackerConfig& config, QWi
     // 添加ROI事件
     auto *roiFilter = new ROIEventFilter([this] (QRect rect, bool isEnd)
     {
+        int x = rect.x ();
+        int y = rect.y ();
+        int width = rect.width ();
+        int height = rect.height ();
+
+        // 规范化宽度和高度为正值
+        if (width < 0) {
+            x += width;
+            width = -width;
+        }
+        if (height < 0) {
+            y += height;
+            height = -height;
+        }
+
+        // 裁剪坐标到图像边界内
+        if (x < 0) {
+            width += x;  // 减少宽度
+            x = 0;       // 将 x 设为 0
+        }
+        if (y < 0) {
+            height += y; // 减少高度
+            y = 0;       // 将 y 设为 0
+        }
+
+        // 确保 ROI 不超出图像边界
+        if (x + width > 280) {
+            width = 280 - x;
+        }
+        if (y + height > 280) {
+            height = 280 - y;
+        }
+        // 确保最终的宽度和高度为正值
+        width = max(0, width);
+        height = max(0, height);
+
+        // 更新 roi_rect
         roi_rect.is_roi_end = isEnd;
-        roi_rect = Rect(rect.x(), rect.y(), rect.width(), rect.height());
-        // if end point is out of image, move rect
-        if (roi_rect.rect.x < 0)
-        {
-            roi_rect.rect.width += rect.x();
-            roi_rect.rect.x = 0;
-        }
-        if (roi_rect.rect.y < 0)
-        {
-            roi_rect.rect.height += rect.y();
-            roi_rect.rect.y = 0;
-        }
-        // if roi is bigger than image, resize rect
-        if (roi_rect.rect.x + roi_rect.rect.width > 280)
-        {
-            roi_rect.rect.width = 280 - roi_rect.rect.x;
-        }
-        if (roi_rect.rect.y + roi_rect.rect.height > 280)
-        {
-            roi_rect.rect.height = 280 - roi_rect.rect.y;
-        }
+        roi_rect = Rect (x, y, width, height);
     },ui.ImageLabel);
     ui.ImageLabel->installEventFilter(roiFilter);
     ui.ImageLabelCal->installEventFilter(roiFilter);
@@ -157,32 +174,27 @@ void PaperTrackMainWindow::setVideoImage(const cv::Mat& image)
 {
     if (image.empty())
     {
-        // QMetaObject::invokeMethod(this, [this]() {
-            if (ui.stackedWidget->currentIndex() == 0) {
-                ui.ImageLabel->clear(); // 清除图片
-                ui.ImageLabel->setText("                         没有图像输入"); // 恢复默认文本
-            } else if (ui.stackedWidget->currentIndex() == 1) {
-                ui.ImageLabelCal->clear(); // 清除图片
-                ui.ImageLabelCal->setText("                         没有图像输入");
-            }
-        // }, Qt::QueuedConnection);
+        if (ui.stackedWidget->currentIndex() == 0) {
+            ui.ImageLabel->clear(); // 清除图片
+            ui.ImageLabel->setText("                         没有图像输入"); // 恢复默认文本
+        } else if (ui.stackedWidget->currentIndex() == 1) {
+            ui.ImageLabelCal->clear(); // 清除图片
+            ui.ImageLabelCal->setText("                         没有图像输入");
+        }
         return ;
     }
     auto qimage = QImage(image.data, image.cols, image.rows, image.step, QImage::Format_RGB888);
-    // 使用Qt的线程安全方式更新UI
-    // QMetaObject::invokeMethod(this, [this, qimage]() {
-        auto pix_map = QPixmap::fromImage(qimage);
-        if (ui.stackedWidget->currentIndex() == 0)
-        {
-            ui.ImageLabel->setPixmap(pix_map);
-            ui.ImageLabel->setScaledContents(true);
-            ui.ImageLabel->update();
-        } else if (ui.stackedWidget->currentIndex() == 1) {
-            ui.ImageLabelCal->setPixmap(pix_map);
-            ui.ImageLabelCal->setScaledContents(true);
-            ui.ImageLabelCal->update();
-        }
-    // }, Qt::QueuedConnection);
+    auto pix_map = QPixmap::fromImage(qimage);
+    if (ui.stackedWidget->currentIndex() == 0)
+    {
+        ui.ImageLabel->setPixmap(pix_map);
+        ui.ImageLabel->setScaledContents(true);
+        ui.ImageLabel->update();
+    } else if (ui.stackedWidget->currentIndex() == 1) {
+        ui.ImageLabelCal->setPixmap(pix_map);
+        ui.ImageLabelCal->setScaledContents(true);
+        ui.ImageLabelCal->update();
+    }
 }
 
 PaperTrackMainWindow::~PaperTrackMainWindow() = default;
@@ -357,7 +369,7 @@ QPlainTextEdit* PaperTrackMainWindow::getLogText() const
     return ui.LogText;
 }
 
-Rect PaperTrackMainWindow::getRoiRect() const
+Rect PaperTrackMainWindow::getRoiRect()
 {
     return roi_rect;
 }
