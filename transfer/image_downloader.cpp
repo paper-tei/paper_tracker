@@ -76,7 +76,10 @@ void ESP32VideoStream::sendHeartbeat()
 {
     if (image_not_receive_count++ > 50)
     {
+        image_not_receive_count = 0;
         isRunning = false;
+        stop();
+        start();
     }
 }
 

@@ -61,6 +61,12 @@ void SerialPortManager::init()
         serialPort->setPortName(QString::fromStdString(portName));
     }
 
+    if (heartBeatTimer)
+    {
+        heartBeatTimer->stop();
+        delete heartBeatTimer;
+    }
+
     heartBeatTimer = new QTimer();
     connect(heartBeatTimer, &QTimer::timeout, this, &SerialPortManager::heartBeatTimeout);
     connect(serialPort, &QSerialPort::readyRead, this, &SerialPortManager::onReadyRead);  // 确保读取线程开始后读取数据
@@ -74,21 +80,6 @@ void SerialPortManager::init()
         LOG_ERROR("串口打开失败: " + serialPort->errorString().toStdString());
         m_status = SerialStatus::FAILED;
     }
-
-    if (serialPort->isWritable())
-    {
-        for (int i = 0; i < 10; i++)
-        {
-            serialPort->write("junk data");
-            serialPort->flush();
-            if (!serialPort->waitForBytesWritten(1000))
-            {
-                m_status = SerialStatus::FAILED;
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        }
-    }
-
     heartBeatTimer->start(20);
 }
 
@@ -311,6 +302,10 @@ void SerialPortManager::processReceivedData(std::string& receivedData) const
 
 void SerialPortManager::write_data(const std::string& data)
 {
+    if (!serialPort || !serialPort->isOpen())
+    {
+        return ;
+    }
     QMetaObject::invokeMethod(serialPort, [this, data]() {
         std::lock_guard<std::mutex> lock(write_lock);
         serialPort->write(data.c_str(), data.size());
@@ -683,12 +678,11 @@ void SerialPortManager::onReadyRead()
     {
         m_status = SerialStatus::FAILED;
     }
-    write_data("junk data");
 }
 
 void SerialPortManager::heartBeatTimeout()
 {
-    if (timeout_count++ > 1000)
+    if (timeout_count++ > 100)
     {
         timeout_count = 0;
         stop();
