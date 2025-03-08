@@ -34,33 +34,16 @@ void start_image_download(ESP32VideoStream& image_downloader, const std::string&
     image_downloader.start();
 }
 
-void update_ui(
-    PaperTrackMainWindow& window,
-    SerialPortManager& serial_port_manager,
-    ESP32VideoStream& image_downloader
-)
+void update_ui(PaperTrackMainWindow& window)
 {
-    cv::Mat frame;
     auto last_time = std::chrono::high_resolution_clock::now();
     double fps_total = 0;
     double fps_count = 0;
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     while (window.is_running())
     {
-        if (image_downloader.isStreaming())
-        {
-            window.setWifiStatusLabel("Wifi已连接");
-        } else
-        {
-            window.setWifiStatusLabel("Wifi连接失败");
-        }
-        if (serial_port_manager.status() == SerialStatus::OPENED)
-        {
-            window.setSerialStatusLabel("串口已连接");
-        } else
-        {
-            window.setSerialStatusLabel("串口连接失败");
-        }
+        window.updateWifiLabel();
+        window.updateSerialLabel();
         auto start_time = std::chrono::high_resolution_clock::now();
         try {
             if (fps_total > 1000)
@@ -76,7 +59,7 @@ void update_ui(
             fps_total += fps;
             fps_count += 1;
             fps = fps_total/fps_count;
-            frame = image_downloader.getLatestFrame();
+            cv::Mat frame = window.getVideoImage();
             if (!frame.empty())
             {
                 auto rotate_angle = window.getRotateAngle();
@@ -114,12 +97,10 @@ void update_ui(
 
 void inference_image(
     PaperTrackMainWindow& window,
-    ESP32VideoStream& image_downloader,
     Inference& inference,
     OscManager& osc_manager
 )
 {
-    cv::Mat frame;
     auto last_time = std::chrono::high_resolution_clock::now();
 
     double fps_total = 0;
@@ -144,7 +125,7 @@ void inference_image(
 
         auto start_time = std::chrono::high_resolution_clock::now();
 
-        frame = image_downloader.getLatestFrame();
+        auto frame = window.getVideoImage();
         // 推理处理
         if (!frame.empty())
         {
@@ -178,65 +159,6 @@ void inference_image(
     }
 }
 
-struct RestartWorker : public QThread
-{
-    explicit RestartWorker(PaperTrackMainWindow* window,
-        SerialPortManager* serial_port_manager,
-        ESP32VideoStream* img_downloader, QObject *parent = nullptr) :
-    QThread(parent), window(window), serial_port_manager(serial_port_manager),
-    img_downloader(img_downloader) {}
-
-public slots:
-    void run() override
-    {
-        while (!isInterruptionRequested()) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            if (serial_port_manager->status() == SerialStatus::FAILED)
-            {
-                QMetaObject::invokeMethod(window, [this]() {
-                    window->setSerialStatusLabel("串口连接失败");
-                    serial_port_manager->stop();
-                    serial_port_manager->init();
-                    serial_port_manager->start();
-                });
-                while (serial_port_manager->status() == SerialStatus::CLOSED);
-                if (serial_port_manager->status() == SerialStatus::OPENED)
-                {
-                    QMetaObject::invokeMethod(window, [this]()
-                    {
-                        LOG_INFO("串口已重新连接");
-                        window->setSerialStatusLabel("串口连接成功");
-                    });
-                }
-            }
-            if (!img_downloader->isStreaming())
-            {
-                QMetaObject::invokeMethod(window, [this]()
-                {
-                    img_downloader->stop();
-                    img_downloader->start();
-                });
-                if (img_downloader->isStreaming())
-                {
-                    QMetaObject::invokeMethod(window, [this]()
-                    {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                        LOG_INFO("Wifi已重新连接");
-                        window->setSerialStatusLabel("Wifi连接成功");
-                    });
-                }
-            }
-        }
-    }
-
-public:
-    PaperTrackMainWindow* window;
-    SerialPortManager* serial_port_manager;
-    ESP32VideoStream* img_downloader;
-    bool stop = false;
-};
-
-
 int main(int argc, char *argv[]) {
     // Create ui application
     QApplication app(argc, argv);
@@ -254,87 +176,25 @@ int main(int argc, char *argv[]) {
         box.exec();
     }
 
-    PaperTrackMainWindow window;
+    ConfigWriter config_writer("./config.json");
+    auto config = std::move(config_writer.get_config<PaperTrackerConfig>());
+
+    PaperTrackMainWindow window(config);
     window.setWindowIcon(icon);  // 设置窗口图标
     window.show();
 
     curl_easy_init();
 
     VideoReader video_reader;
-    SerialPortManager serial_port_manager;
-    ESP32VideoStream image_downloader;
     Inference inference;
     OscManager osc_manager;
-    PaperTrackerConfig config;
-    ConfigWriter config_writer("./config.json");
 
-    LOG_INFO("读取配置文件中...");
-    config = std::move(config_writer.get_config<PaperTrackerConfig>());
-    LOG_INFO("读取配置文件成功");
-
-    window.setBeforeStop([&image_downloader, &serial_port_manager, &osc_manager] ()
+    window.setBeforeStop([&osc_manager] ()
     {
-        serial_port_manager.stop();
-        image_downloader.stop();
         osc_manager.close();
     });
 
     // bound callback
-    window.setOnSendButtonClickedFunc(
-        [&serial_port_manager, &window] ()
-        {
-            // 获取SSID和密码
-            auto ssid = window.getSSID();
-            auto password = window.getPassword();
-
-            // 输入验证
-            if (ssid == "请输入WIFI名字（仅支持2.4ghz）" || ssid.empty()) {
-                QMessageBox::warning(&window, "输入错误", "请输入有效的WIFI名字");
-                return;
-            }
-
-            if (password == "请输入WIFI密码" || password.empty()) {
-                QMessageBox::warning(&window, "输入错误", "请输入有效的密码");
-                return;
-            }
-
-            // 构建并发送数据包
-            std::string packet = "A2SSID" + ssid + "PWD" + password + "B2";
-            serial_port_manager.write_data(packet);
-
-            // 记录操作
-            LOG_INFO("已发送WiFi配置: SSID=" + ssid + ", PWD=" + password);
-
-            LOG_INFO("开始自动重启ESP32...");
-            //延时
-            std::this_thread::sleep_for(std::chrono::microseconds(200));
-        }
-    );
-    window.setSendBrightnessValueFunc([&serial_port_manager] (int value)
-    {
-        // 发送亮度控制命令 - 确保亮度值为三位数字
-        std::string brightness_str = std::to_string(value);
-        // 补齐三位数字，前面加0
-        while (brightness_str.length() < 3) {
-            brightness_str = std::string("0") + brightness_str;
-        }
-        std::string packet = "A6" + brightness_str + "B6";
-        serial_port_manager.write_data(packet);
-        // 记录操作
-        LOG_INFO("已设置亮度: " + std::to_string(value));
-    });
-    window.setOnRestartButtonClickedFunc([&serial_port_manager, &window, &image_downloader] ()
-    {
-        serial_port_manager.restartESP32(&window);
-        image_downloader.stop();
-        image_downloader.start();
-    });
-    window.setOnFlashButtonClickedFunc([&serial_port_manager, &window, &image_downloader] ()
-    {
-        serial_port_manager.flashESP32(&window);
-        image_downloader.stop();
-        image_downloader.start();
-    });
     window.setOnUseFilterClickedFunc([&inference] (int value)
     {
         inference.set_use_filter(value);
@@ -356,29 +216,7 @@ int main(int argc, char *argv[]) {
         inference.set_amp_map(window.getAmpMap());
     });
 
-    std::string camera_ip;
-
-    LOG_INFO("初始化串口");
-    serial_port_manager.init();
-    // init serial port manager
-    serial_port_manager.setDeviceStatusCallback([&window, &camera_ip, &image_downloader, &config]
-                                                        (const std::string& ip, int brightness, int power, int version) {
-        // 使用Qt的线程安全方式更新UI
-        QMetaObject::invokeMethod(&window, [&window, ip, brightness, power, version, &camera_ip, &image_downloader, &config]() {
-            // 只在 IP 地址变化时更新显示
-            if (camera_ip != ip)
-            {
-                camera_ip = ip;
-                config.wifi_ip = "http://" + camera_ip;
-                // 更新IP地址显示，添加 http:// 前缀
-                window.setIPText("http://" + ip);
-                LOG_INFO("IP地址已更新: http://" + ip);
-                start_image_download(image_downloader, "http://" + camera_ip);
-                window.set_config(config);
-            }
-            // 可以添加其他状态更新的日志，如果需要的话
-        }, Qt::QueuedConnection);
-    });
+    window.set_config(config);
 
     // Load model
     LOG_INFO("正在加载推理模型...");
@@ -400,57 +238,15 @@ int main(int argc, char *argv[]) {
         LOG_ERROR("OSC初始化失败，请检查网络连接");
     }
 
-    LOG_INFO("尝试连接串口");
-    serial_port_manager.start();
-
-    LOG_INFO("等待串口状态响应");
-    while (serial_port_manager.status() == SerialStatus::CLOSED) {}
-    LOG_INFO("串口状态响应完毕");
-
-    if (serial_port_manager.status() == SerialStatus::FAILED)
-    {
-        window.setSerialStatusLabel("串口连接失败");
-        LOG_WARN("串口未连接，尝试从配置文件中读取地址...");
-        if (!config.wifi_ip.empty())
-        {
-            LOG_INFO("从配置文件中读取地址成功");
-            camera_ip = config.wifi_ip;
-            window.set_config(config);
-            start_image_download(image_downloader, camera_ip);
-        } else
-        {
-            QMessageBox msgBox;
-            msgBox.setWindowIcon(icon);
-            msgBox.setText("未找到配置文件信息，请将面捕通过数据线连接到电脑进行首次配置");
-            msgBox.exec();
-        }
-    } else
-    {
-        LOG_INFO("串口连接成功");
-        window.setSerialStatusLabel("串口连接成功");
-    }
-
     LOG_INFO("正在启动视频处理线程...");
-    window.set_update_thread([ &window, &image_downloader, &inference, &osc_manager, &serial_port_manager] ()
+    window.set_update_thread([ &window] ()
     {
-        update_ui(window, serial_port_manager, image_downloader);
+        update_ui(window);
     });
-    window.set_inference_thread([ &window, &image_downloader, &inference, &osc_manager] ()
+    window.set_inference_thread([ &window, &inference, &osc_manager] ()
     {
-        inference_image(window, image_downloader, inference, osc_manager);
+        inference_image(window, inference, osc_manager);
     });
-
-    auto restart_worker = new RestartWorker(
-        &window,
-        &serial_port_manager,
-        &image_downloader
-    );
-    QObject::connect(qApp, &QCoreApplication::aboutToQuit, [=]() {
-        restart_worker->requestInterruption();
-        restart_worker->wait();
-    });
-
-    restart_worker->start();
 
     int status = QApplication::exec();
 

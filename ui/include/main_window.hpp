@@ -8,6 +8,7 @@
 #include <future>
 #include <atomic>
 #include <algorithm>
+#include <image_downloader.hpp>
 #include <QTimer>
 
 #include "ui_main_window.h"
@@ -65,7 +66,7 @@ private:
     // UI组件
     Ui::PaperTrackerMainWindow ui{};
 public:
-    explicit PaperTrackMainWindow(QWidget *parent = nullptr);
+    explicit PaperTrackMainWindow(const PaperTrackerConfig& config = {}, QWidget *parent = nullptr);
     ~PaperTrackMainWindow() override;
 
     void setSerialStatusLabel(const std::string& text) const;
@@ -88,11 +89,7 @@ public:
     using FuncWithoutArgs = std::function<void()>;
     using FuncWithVal = std::function<void(int)>;
     // let user decide what to do with these action
-    void setSendBrightnessValueFunc(FuncWithVal func);
-    void setOnSendButtonClickedFunc(FuncWithoutArgs func);
     void setOnUseFilterClickedFunc(FuncWithVal func);
-    void setOnRestartButtonClickedFunc(FuncWithoutArgs func);
-    void setOnFlashButtonClickedFunc(FuncWithoutArgs func);
     void setOnSaveConfigButtonClickedFunc(FuncWithoutArgs func);
     void setOnAmpMapChangedFunc(FuncWithoutArgs func);
 
@@ -113,11 +110,16 @@ public:
 
     std::unordered_map<std::string, int> getAmpMap() const;
 
+    void updateWifiLabel() const;
+    void updateSerialLabel() const;
+
+    cv::Mat getVideoImage() const;
+
 private slots:
     void onBrightnessChanged(int value);
     void onSendBrightnessValue() const;
     void onRotateAngleChanged(int value);
-    void onSendButtonClicked() const;
+    void onSendButtonClicked();
     void onRestartButtonClicked();
     void onUseFilterClicked(int value) const;
     void onFlashButtonClicked();
@@ -137,20 +139,18 @@ private slots:
     void onTongueUpChanged(int value);
     void onTongueDownChanged(int value);
 private:
+    void start_image_download() const;
+
     QProcess* vrcftProcess;
 
     FuncWithoutArgs beforeStopFunc;
 
-    FuncWithoutArgs onSendButtonClickedFunc;
-    FuncWithVal sendBrightnessValueFunc;
     FuncWithVal onRotateAngleChangedFunc;
-    FuncWithoutArgs onRestartButtonClickedFunc;
     FuncWithVal onUseFilterClickedFunc;
-    FuncWithoutArgs onFlashButtonClickedFunc;
     FuncWithoutArgs onSaveConfigButtonClickedFunc;
     FuncWithoutArgs onAmpMapChangedFunc;
 
-    QTimer* brightness_timer{};
+    std::shared_ptr<QTimer> brightness_timer;
 
     int current_brightness;
     int current_rotate_angle = 0;
@@ -166,6 +166,12 @@ private:
     std::thread inference_thread;
     bool app_is_running = true;
     int max_fps = 38;
+
+    std::shared_ptr<SerialPortManager> serial_port_manager;
+    std::shared_ptr<ESP32VideoStream> image_downloader;
+
+    PaperTrackerConfig config;
+
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 };

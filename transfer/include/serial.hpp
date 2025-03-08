@@ -14,13 +14,16 @@
 #include <QWaitCondition>
 #include <QQueue>
 #include <QThread>
+#include <QTimer>
+
 #include "logger.hpp"
 
 enum SerialStatus
 {
     CLOSED = 0,
     OPENED,
-    FAILED
+    FAILED,
+    RESTARTING
 };
 
 // 定义数据包类型
@@ -43,94 +46,14 @@ public:
         deviceStatusCallback = std::move(callback);
     }
 public slots:
-    void onReadyRead() {
-        while (*status == SerialStatus::OPENED)
-        {
-            if (!serialPort)
-            {
-                *status = SerialStatus::FAILED;
-                return;
-            }
-            QByteArray data = serialPort->readAll();
-            if (data.isEmpty())
-            {
-                continue;
-            }
-            auto receivedData = QString::fromLocal8Bit(data).toStdString();
-            processReceivedData(receivedData);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-    }
 
 private:
-    // 解析接收的数据包
-    PacketType parsePacket(const std::string& packet) const;
-
-    // 处理接收到的数据
-    void processReceivedData(std::string& receivedData) const;
 
     QSerialPort* serialPort;
     SerialStatus* status;
     // 添加回调函数成员
     DeviceStatusCallback deviceStatusCallback;
 };
-
-class SerialWriter : public QObject {
-public:
-    explicit SerialWriter(QSerialPort* port, SerialStatus* status, QObject* parent = nullptr)
-        : QObject(parent), serialPort(port), stop(false), status(status) {}
-
-    void sendData(const QByteArray& data) {
-        QMutexLocker locker(&mutex);
-        writeQueue.enqueue(data);
-        cond.wakeOne();  // 唤醒写入线程
-    }
-
-    void stopWriting() {
-        QMutexLocker locker(&mutex);
-        stop = true;
-        cond.wakeOne();  // 唤醒线程确保它能够退出
-    }
-
-public slots:
-    void processWriteQueue() {
-        while (!stop) {
-            QByteArray data;
-            {
-                QMutexLocker locker(&mutex);
-                if (writeQueue.isEmpty()) {
-                    cond.wait(&mutex);  // 没数据时等待
-                    continue;
-                }
-                data = writeQueue.dequeue();
-            }
-
-            if (serialPort && serialPort->isOpen()) {
-                auto bytesRead = serialPort->write(data);
-                if (bytesRead < 0) {
-                    *status = SerialStatus::FAILED;
-                }
-                serialPort->flush();
-                if (!serialPort->waitForBytesWritten(100))
-                {
-                    *status = SerialStatus::FAILED;
-                }
-            } else
-            {
-                *status = SerialStatus::FAILED;
-            }
-            QThread::msleep(50);  // 控制写入频率，避免 CPU 过载
-        }
-    }
-private:
-    QSerialPort* serialPort;
-    QQueue<QByteArray> writeQueue;
-    QMutex mutex;
-    QWaitCondition cond;
-    bool stop;
-    SerialStatus* status;
-};
-
 
 class SerialPortManager : public QObject {
 public:
@@ -140,24 +63,22 @@ public:
 
     void setDeviceStatusCallback(DeviceStatusCallback callback)
     {
-        reader->setDeviceStatusCallback(callback);
+        this->callback = std::move(callback);
     }
 
     void init();
 
-    void start();
-
     void stop();
 
-    void write_data(const std::string& data) const;
+    void write_data(const std::string& data);
 
     SerialStatus status() const;
 
     // 发送WiFi配置信息
-    void sendWiFiConfig(const std::string& ssid, const std::string& pwd) const;
+    void sendWiFiConfig(const std::string& ssid, const std::string& pwd);
     
     // 发送补光灯控制命令
-    void sendLightControl(int brightness) const;
+    void sendLightControl(int brightness);
 
     void restartESP32(QWidget* window);
 
@@ -165,15 +86,46 @@ public:
 
     // 查找ESP32-S3设备串口
     std::string FindEsp32S3Port();
+
+    void stop_heartbeat_timer()
+    {
+        if (heartBeatTimer && heartBeatTimer->isActive())
+        {
+            heartBeatTimer->stop();
+        }
+    }
+
+    void start_heartbeat_timer()
+    {
+        if (!heartBeatTimer)
+        {
+            heartBeatTimer = new QTimer();
+        }
+        if (!heartBeatTimer->isActive())
+        {
+            heartBeatTimer->start(20);
+        }
+    }
+private slots:
+    void onReadyRead();
+
+    void heartBeatTimeout();
+
 private:
+    // 解析接收的数据包
+    PacketType parsePacket(const std::string& packet) const;
+
+    // 处理接收到的数据
+    void processReceivedData(std::string& receivedData) const;
+
     std::string currentPort; // 默认端口
     QSerialPort* serialPort;
     SerialStatus m_status;
 
-    SerialReader* reader{};
-    SerialWriter* writer{};
-    QThread* readerThread{};
-    QThread* writerThread{};
+    std::mutex write_lock;
 
-    std::thread junk_data_thread;
+    QTimer* heartBeatTimer;
+    int timeout_count = 0;
+
+    DeviceStatusCallback callback;
 };
