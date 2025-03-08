@@ -138,8 +138,6 @@ private slots:
     void onTongueRightChanged(int value);
     void onTongueUpChanged(int value);
     void onTongueDownChanged(int value);
-
-    void restartCheck();
 private:
     void start_image_download() const;
 
@@ -153,7 +151,6 @@ private:
     FuncWithoutArgs onAmpMapChangedFunc;
 
     std::shared_ptr<QTimer> brightness_timer;
-    std::shared_ptr<QTimer> restart_check_timer;
 
     int current_brightness;
     int current_rotate_angle = 0;

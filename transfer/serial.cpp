@@ -71,7 +71,7 @@ void SerialPortManager::init()
         m_status = SerialStatus::OPENED;
     } else
     {
-        LOG_ERROR("串口打开失败");
+        LOG_ERROR("串口打开失败: " + serialPort->errorString().toStdString());
         m_status = SerialStatus::FAILED;
     }
 
@@ -232,8 +232,11 @@ void SerialPortManager::stop()
         return ;
     }
     m_status = SerialStatus::CLOSED;
-    if (serialPort && serialPort->isOpen() && serialPort->isWritable()) {
-        serialPort->close();
+    if (serialPort) {
+        if (serialPort->isOpen())
+        {
+            serialPort->close();
+        }
         delete serialPort;
     }
 }
@@ -315,6 +318,7 @@ void SerialPortManager::write_data(const std::string& data)
         if (!serialPort->waitForBytesWritten(1000)) {
             m_status = SerialStatus::FAILED;
             LOG_ERROR("发送数据失败: " + data);
+            // timeout_count = 1000;
         } else {
             m_status = SerialStatus::OPENED;
         }
@@ -645,14 +649,14 @@ void SerialPortManager::restartESP32(QWidget* window)
         // 处理结果
         if (process.exitCode() == 0) {
             LOG_INFO("设备重启成功！");
+            // 重新初始化和启动串口
+            init();
             QMessageBox::information(window, "重启完成", "ESP32设备重启成功！");
         } else {
             LOG_ERROR("设备重启失败，退出码: " + std::to_string(process.exitCode()));
             QMessageBox::critical(window, "重启失败", "ESP32设备重启失败，请检查连接！");
         }
 
-        // 重新初始化和启动串口
-        init();
     } catch (const std::exception& e) {
         LOG_ERROR("重启过程发生异常: " + e.what());
         QMessageBox::critical(window, "错误", "重启过程中发生异常: " + QString(e.what()));
@@ -682,8 +686,10 @@ void SerialPortManager::onReadyRead()
 
 void SerialPortManager::heartBeatTimeout()
 {
-    if (timeout_count++ > 200)
+    if (timeout_count++ > 1000)
     {
-        m_status = SerialStatus::FAILED;
+        timeout_count = 0;
+        stop();
+        init();
     }
 }

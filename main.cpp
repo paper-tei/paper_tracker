@@ -323,12 +323,12 @@ int main(int argc, char *argv[]) {
 //         QByteArray data = serialPort->readAll();
 //         qDebug() << "收到数据:" << data;
 //         // 发送数据
-//         // qint64 bytesWritten = serialPort->write(data);
-//         // if (bytesWritten == -1) {
-//         //     qDebug() << "发送失败:" << serialPort->errorString();
-//         // } else {
-//         //     qDebug() << "已发送" << bytesWritten << "字节";
-//         // }
+//         qint64 bytesWritten = serialPort->write(data);
+//         if (bytesWritten == -1) {
+//             qDebug() << "发送失败:" << serialPort->errorString();
+//         } else {
+//             qDebug() << "已发送" << bytesWritten << "字节";
+//         }
 //     }
 //
 // private:

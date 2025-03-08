@@ -151,8 +151,6 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         LOG_INFO("串口连接成功");
         setSerialStatusLabel("串口连接成功");
     }
-
-    // restart_check_timer->start(1000);
 }
 
 void PaperTrackMainWindow::setVideoImage(const cv::Mat& image)
@@ -300,8 +298,6 @@ void PaperTrackMainWindow::connect_callbacks()
 {
     brightness_timer = std::make_shared<QTimer>();
     brightness_timer->setSingleShot(true);
-    restart_check_timer = std::make_shared<QTimer>();
-    connect(restart_check_timer.get(), &QTimer::timeout, this, &PaperTrackMainWindow::restartCheck);
     connect(brightness_timer.get(), &QTimer::timeout, this, &PaperTrackMainWindow::onSendBrightnessValue);
     // functions
     connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
@@ -399,8 +395,8 @@ void PaperTrackMainWindow::onSendButtonClicked()
     LOG_INFO("等待数据被发送后开始自动重启ESP32...");
     serial_port_manager->sendWiFiConfig(ssid, password);
 
-    QTimer::singleShot(4000, this, [this] {
-        // 4秒后自动重启ESP32
+    QTimer::singleShot(3000, this, [this] {
+        // 3秒后自动重启ESP32
         onRestartButtonClicked();
     });
 }
@@ -482,11 +478,6 @@ void PaperTrackMainWindow::stop()
     if (inference_thread.joinable())
     {
         inference_thread.join();
-    }
-    if (restart_check_timer)
-    {
-        restart_check_timer->stop();
-        restart_check_timer.reset();
     }
     if (brightness_timer) {
         brightness_timer->stop();
@@ -720,42 +711,4 @@ void PaperTrackMainWindow::updateSerialLabel() const
 cv::Mat PaperTrackMainWindow::getVideoImage() const
 {
     return std::move(image_downloader->getLatestFrame());
-}
-
-void PaperTrackMainWindow::restartCheck()
-{
-    if (serial_port_manager->status() == SerialStatus::FAILED)
-    {
-        QMetaObject::invokeMethod(this, [this]() {
-            setSerialStatusLabel("串口连接失败");
-            serial_port_manager->stop();
-            serial_port_manager->init();
-        });
-        while (serial_port_manager->status() == SerialStatus::CLOSED);
-        if (serial_port_manager->status() == SerialStatus::OPENED)
-        {
-            QMetaObject::invokeMethod(this, [this]()
-            {
-                LOG_INFO("串口已重新连接");
-                setSerialStatusLabel("串口连接成功");
-            });
-        }
-    }
-    if (!image_downloader->isStreaming())
-    {
-        QMetaObject::invokeMethod(this, [this]()
-        {
-            image_downloader->stop();
-            image_downloader->start();
-        });
-        if (image_downloader->isStreaming())
-        {
-            QMetaObject::invokeMethod(this, [this]()
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                LOG_INFO("Wifi已重新连接");
-                setSerialStatusLabel("Wifi连接成功");
-            });
-        }
-    }
 }
