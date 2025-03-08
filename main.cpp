@@ -88,7 +88,8 @@ void update_ui(PaperTrackMainWindow& window)
         }
         auto end_time = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count ();
-        int delay_ms = max(0, static_cast<int>(1000.0 / min(window.get_max_fps() + 30, 60) - elapsed));
+        int delay_ms = max(0, static_cast<int>(1000.0 / min(window.get_max_fps() + 30, 50) - elapsed));
+        LOG_DEBUG("UIFPS:" +  std::to_string(min(window.get_max_fps() + 30, 60)));
         std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
     }
 }

@@ -205,7 +205,32 @@ void ESP32VideoStream::onBinaryMessageReceived(const QByteArray &message)
     image_not_receive_count = 0;
     try {
         // 打印接收到的数据长度以进行调试
-        // LOG_DEBUG("接收到WebSocket数据: " + std::to_string(message.size()) + " 字节");
+        //LOG_DEBUG("接收到WebSocket数据: " + std::to_string(message.size()) + " 字节");
+
+        // 帧率计算
+        static std::deque<std::chrono::steady_clock::time_point> frame_timestamps;
+        static auto last_fps_log_time = std::chrono::steady_clock::now();
+
+        auto current_time = std::chrono::steady_clock::now();
+        frame_timestamps.push_back(current_time);
+
+        // 保持窗口大小，移除过旧的时间戳
+        while (frame_timestamps.size() > 30) {
+            frame_timestamps.pop_front();
+        }
+
+        // 每隔1秒记录一次帧率
+        if (frame_timestamps.size() >= 2 &&
+            std::chrono::duration_cast<std::chrono::seconds>(current_time - last_fps_log_time).count() >= 1) {
+
+            // 计算帧率
+            float duration = std::chrono::duration<float>(
+                frame_timestamps.back() - frame_timestamps.front()).count();
+            float fps = (frame_timestamps.size() - 1) / duration;
+
+            LOG_DEBUG("当前WebSocket帧率: " + std::to_string(fps) + " FPS");
+            last_fps_log_time = current_time;
+        }
 
         // 检查数据是否足够长
         if (message.size() < 10) {
