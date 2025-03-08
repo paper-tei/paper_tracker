@@ -196,7 +196,6 @@ public slots:
                     window->setSerialStatusLabel("串口连接失败");
                     serial_port_manager->stop();
                     serial_port_manager->init();
-                    serial_port_manager->start();
                 });
                 while (serial_port_manager->status() == SerialStatus::CLOSED);
                 if (serial_port_manager->status() == SerialStatus::OPENED)
@@ -298,15 +297,10 @@ int main(int argc, char *argv[]) {
             }
 
             // 构建并发送数据包
-            std::string packet = "A2SSID" + ssid + "PWD" + password + "B2";
-            serial_port_manager.write_data(packet);
-
+            LOG_INFO("等待数据被发送后开始自动重启ESP32...");
+            serial_port_manager.sendWiFiConfig(ssid, password);
             // 记录操作
             LOG_INFO("已发送WiFi配置: SSID=" + ssid + ", PWD=" + password);
-
-            LOG_INFO("一秒后开始自动重启ESP32...");
-            //延时
-            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     );
     window.setSendBrightnessValueFunc([&serial_port_manager] (int value)
@@ -399,9 +393,6 @@ int main(int argc, char *argv[]) {
         LOG_ERROR("OSC初始化失败，请检查网络连接");
     }
 
-    LOG_INFO("尝试连接串口");
-    serial_port_manager.start();
-
     LOG_INFO("等待串口状态响应");
     while (serial_port_manager.status() == SerialStatus::CLOSED) {}
     LOG_INFO("串口状态响应完毕");
@@ -449,7 +440,7 @@ int main(int argc, char *argv[]) {
         restart_worker->wait();
     });
 
-    restart_worker->start();
+    // restart_worker->start();
 
     int status = QApplication::exec();
 
@@ -466,3 +457,64 @@ int main(int argc, char *argv[]) {
 
     return status;
 }
+
+
+// #include <QCoreApplication>
+// #include <QSerialPort>
+// #include <QSerialPortInfo>
+// #include <QDebug>
+//
+// class SerialHandler : public QObject {
+// public:
+//     SerialHandler(QObject *parent = nullptr) : QObject(parent) {
+//         serialPort = new QSerialPort(this);
+//
+//         // 设置串口名称（根据实际情况修改）
+//         serialPort->setPortName("COM6");  // Windows: COMx, Linux/macOS: /dev/ttyUSBx
+//         serialPort->setBaudRate(QSerialPort::Baud115200);
+//         serialPort->setDataBits(QSerialPort::Data8);
+//         serialPort->setParity(QSerialPort::NoParity);
+//         serialPort->setStopBits(QSerialPort::OneStop);
+//         serialPort->setFlowControl(QSerialPort::NoFlowControl);
+//
+//         // 打开串口
+//         if (!serialPort->open(QIODevice::ReadWrite)) {
+//             qDebug() << "无法打开串口:" << serialPort->errorString();
+//             return;
+//         }
+//         qDebug() << "串口已打开";
+//
+//         // 连接信号槽：当串口收到数据时调用 readData()
+//         connect(serialPort, &QSerialPort::readyRead, this, &SerialHandler::readData);
+//
+//     }
+//
+//     ~SerialHandler() {
+//         if (serialPort->isOpen()) {
+//             serialPort->close();
+//             qDebug() << "串口已关闭";
+//         }
+//     }
+//
+// private slots:
+//     void readData() {
+//         QByteArray data = serialPort->readAll();
+//         qDebug() << "收到数据:" << data;
+//         // 发送数据
+//         // qint64 bytesWritten = serialPort->write(data);
+//         // if (bytesWritten == -1) {
+//         //     qDebug() << "发送失败:" << serialPort->errorString();
+//         // } else {
+//         //     qDebug() << "已发送" << bytesWritten << "字节";
+//         // }
+//     }
+//
+// private:
+//     QSerialPort *serialPort;
+// };
+//
+// int main(int argc, char *argv[]) {
+//     QCoreApplication a(argc, argv);
+//     SerialHandler serialHandler;
+//     return a.exec();
+// }

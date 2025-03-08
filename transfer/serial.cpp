@@ -29,6 +29,7 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QProgressDialog>
+#include <QTimer>
 #include <thread>
 
 #define COM_PORT "COM101"  // 指定要打开的串口号
@@ -36,7 +37,7 @@
 
 
 // 修改SerialPortManager的构造函数
-SerialPortManager::SerialPortManager(QObject* parent) : QObject(parent), serialPort(new QSerialPort(parent)) {
+SerialPortManager::SerialPortManager(QObject* parent) : QObject(parent), serialPort(new QSerialPort(parent)), heartBeatTimer(nullptr) {
     m_status = SerialStatus::CLOSED;
 }
 
@@ -58,20 +59,12 @@ void SerialPortManager::init()
         currentPort = portName;
         LOG_INFO("尝试连接到端口:" + portName);
         serialPort->setPortName(QString::fromStdString(portName));
-        // 使用FILE_FLAG_OVERLAPPED打开串口   以启用异步I/O
     }
-    readerThread = new QThread;
-    reader = new SerialReader(serialPort, &m_status);
-    writerThread = new QThread;
-    writer = new SerialWriter(serialPort, &m_status);
-    // 读取线程实现
-    reader->moveToThread(readerThread);
-    // connect(serialPort, &QSerialPort::readyRead, reader, &SerialReader::onReadyRead);
-    connect(readerThread, &QThread::started, reader, &SerialReader::onReadyRead);  // 确保读取线程开始后读取数据
 
-    // 创建和管理写入线程
-    writer->moveToThread(writerThread);
-    connect(writerThread, &QThread::started, writer, &SerialWriter::processWriteQueue);
+    heartBeatTimer = new QTimer();
+    connect(heartBeatTimer, &QTimer::timeout, this, &SerialPortManager::heartBeatTimeout);
+    connect(serialPort, &QSerialPort::readyRead, this, &SerialPortManager::onReadyRead);  // 确保读取线程开始后读取数据
+
     if (serialPort->open(QIODevice::ReadWrite))
     {
         LOG_INFO("串口打开成功");
@@ -81,6 +74,22 @@ void SerialPortManager::init()
         LOG_ERROR("串口打开失败");
         m_status = SerialStatus::FAILED;
     }
+
+    if (serialPort->isWritable())
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            serialPort->write("junk data");
+            serialPort->flush();
+            if (!serialPort->waitForBytesWritten(1000))
+            {
+                m_status = SerialStatus::FAILED;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+    }
+
+    heartBeatTimer->start(20);
 }
 
 SerialPortManager::~SerialPortManager()
@@ -216,20 +225,6 @@ std::string SerialPortManager::FindEsp32S3Port() {
     return targetPort;
 }
 
-void SerialPortManager::start()
-{
-    readerThread->start();
-    writerThread->start();
-    junk_data_thread = std::thread([this]() {
-        while (m_status == SerialStatus::OPENED) {
-            // 发送垃圾数据以保持串口连接
-            write_data("A0B0");
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-    });
-
-}
-
 void SerialPortManager::stop()
 {
     if (m_status == SerialStatus::CLOSED)
@@ -237,33 +232,14 @@ void SerialPortManager::stop()
         return ;
     }
     m_status = SerialStatus::CLOSED;
-    if (reader)
-    {
-        readerThread->quit();
-        readerThread->wait();
-        delete readerThread;
-        delete reader;
-    }
-    if (writer)
-    {
-        writer->stopWriting();
-        writerThread->quit();
-        writerThread->wait();
-        delete writerThread;
-        delete writer;
-    }
-    if (serialPort) {
+    if (serialPort && serialPort->isOpen() && serialPort->isWritable()) {
         serialPort->close();
         delete serialPort;
-    }
-    if (junk_data_thread.joinable())
-    {
-        junk_data_thread.join();
     }
 }
 
 // 处理接收到的数据
-void SerialReader::processReceivedData(std::string& receivedData) const
+void SerialPortManager::processReceivedData(std::string& receivedData) const
 {
     // 处理粘包问题 - 循环处理所有可能的完整数据包
     while (true) {
@@ -329,12 +305,20 @@ void SerialReader::processReceivedData(std::string& receivedData) const
         }
     }
 }
-void SerialPortManager::write_data(const std::string& data) const
+
+void SerialPortManager::write_data(const std::string& data)
 {
-    if (writer)
-    {
-        writer->sendData(QByteArray::fromStdString(data));
-    }
+    QMetaObject::invokeMethod(serialPort, [this, data]() {
+        std::lock_guard<std::mutex> lock(write_lock);
+        serialPort->write(data.c_str(), data.size());
+        serialPort->flush();
+        if (!serialPort->waitForBytesWritten(1000)) {
+            m_status = SerialStatus::FAILED;
+            LOG_ERROR("发送数据失败: " + data);
+        } else {
+            m_status = SerialStatus::OPENED;
+        }
+    }, Qt::QueuedConnection);
 }
 
 static std::string trim(const std::string& str) {
@@ -346,7 +330,7 @@ static std::string trim(const std::string& str) {
     return str.substr(start, end - start + 1);
 }
 
-PacketType SerialReader::parsePacket(const std::string& packet) const
+PacketType SerialPortManager::parsePacket(const std::string& packet) const
 {
     // 先将收到的字符串去除首尾空白（例如换行符、空格）
     std::string trimmedPacket = trim(packet);
@@ -419,11 +403,11 @@ PacketType SerialReader::parsePacket(const std::string& packet) const
                     std::to_string(std::stoi(paddedIp.substr(3, 3))) + "." +
                     std::to_string(std::stoi(paddedIp.substr(0, 3)));
                 // 调用回调函数
-                if (deviceStatusCallback) {
+                if (callback) {
                     int brightness = std::stoi(match[1]);
                     int power = std::stoi(match[3]);
                     int version = std::stoi(match[4]);
-                    deviceStatusCallback(formattedIp, brightness, power, version);
+                    callback(formattedIp, brightness, power, version);
                 }
             } catch (const std::exception& e) {
                 LOG_ERROR("IP格式转换失败: " + e.what());
@@ -449,7 +433,7 @@ PacketType SerialReader::parsePacket(const std::string& packet) const
     //LOG_DEBUG("未匹配任何数据包类型: " + QString(packetType));
     return PACKET_UNKNOWN;
 }
-void SerialPortManager::sendWiFiConfig(const std::string& ssid, const std::string& pwd) const
+void SerialPortManager::sendWiFiConfig(const std::string& ssid, const std::string& pwd)
 {
     std::string packet = "A2SSID" + ssid + "PWD" + pwd + "B2";
     write_data(packet);
@@ -474,7 +458,7 @@ std::string formatIpAddress(const std::string& ipRaw) {
     return formattedIp;
 }
 
-void SerialPortManager::sendLightControl(int brightness) const
+void SerialPortManager::sendLightControl(int brightness)
 {
     std::string packet = "A6" + std::to_string(brightness) + "B6";
     write_data(packet);
@@ -575,7 +559,6 @@ void SerialPortManager::flashESP32(QWidget* window)
             QMessageBox::critical(window, "刷写失败", "ESP32固件刷写失败，请检查连接和固件文件！");
         }
         init();
-        start();
     } catch (const std::exception& e) {
         LOG_ERROR("发生异常: " + e.what());
         QMessageBox::critical(window, "错误", "刷写过程中发生异常: " + QString(e.what()));
@@ -670,9 +653,37 @@ void SerialPortManager::restartESP32(QWidget* window)
 
         // 重新初始化和启动串口
         init();
-        start();
     } catch (const std::exception& e) {
         LOG_ERROR("重启过程发生异常: " + e.what());
         QMessageBox::critical(window, "错误", "重启过程中发生异常: " + QString(e.what()));
+    }
+}
+
+void SerialPortManager::onReadyRead()
+{
+    if (!serialPort)
+    {
+        m_status = SerialStatus::FAILED;
+        return;
+    }
+    timeout_count = 0;
+    QByteArray data = serialPort->readAll();
+    if (!data.isEmpty())
+    {
+        m_status = SerialStatus::OPENED;
+        auto receivedData = QString::fromLocal8Bit(data).toStdString();
+        processReceivedData(receivedData);
+    } else
+    {
+        m_status = SerialStatus::FAILED;
+    }
+    write_data("junk data");
+}
+
+void SerialPortManager::heartBeatTimeout()
+{
+    if (timeout_count++ > 200)
+    {
+        m_status = SerialStatus::FAILED;
     }
 }
