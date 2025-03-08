@@ -160,7 +160,7 @@ void ESP32VideoStream::onConnected()
 
 void ESP32VideoStream::onDisconnected()
 {
-    LOG_INFO("WebSocket连接已关闭");
+    LOG_DEBUG("WebSocket连接已关闭");
     isRunning = false;
 }
 
@@ -168,13 +168,13 @@ void ESP32VideoStream::onError(QAbstractSocket::SocketError error)
 {
     QString errorString = webSocket->errorString();
     int errorCode = static_cast<int>(error);
-    LOG_ERROR("WebSocket错误: " + std::to_string(errorCode) +
+    LOG_DEBUG("WebSocket错误: " + std::to_string(errorCode) +
               " - " + errorString.toStdString() +
               " (URL: " + currentStreamUrl + ")");
-
+    LOG_ERROR("无线连接失败，请确保面捕已经开机且连接上WIFI");
     // 输出更多连接信息
-    LOG_ERROR("连接状态: " + std::to_string(static_cast<int>(webSocket->state())));
-    LOG_ERROR("代理类型: " + std::to_string(static_cast<int>(webSocket->proxy().type())));
+    LOG_DEBUG("连接状态: " + std::to_string(static_cast<int>(webSocket->state())));
+    LOG_DEBUG("代理类型: " + std::to_string(static_cast<int>(webSocket->proxy().type())));
 
     // 如果是代理错误，尝试重新连接一次，使用不同的URL格式
     if (error == QAbstractSocket::ProxyProtocolError) {

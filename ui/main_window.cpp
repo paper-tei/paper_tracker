@@ -94,9 +94,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(const PaperTrackerConfig& config, QWi
     connect(vrcftProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
         [this](int exitCode, QProcess::ExitStatus exitStatus) {
         if (exitStatus == QProcess::NormalExit) {
-            LOG_INFO("VRCFT已正常退出，退出码: " + std::to_string(exitCode));
+            LOG_DEBUG("VRCFT已正常退出，退出码: " + std::to_string(exitCode));
         } else {
-            LOG_INFO("VRCFT异常退出");
+            LOG_ERROR("VRCFT异常退出");
         }
     });
 
