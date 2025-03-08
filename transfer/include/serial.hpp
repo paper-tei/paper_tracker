@@ -20,7 +20,8 @@ enum SerialStatus
 {
     CLOSED = 0,
     OPENED,
-    FAILED
+    FAILED,
+    RESTARTING
 };
 
 // 定义数据包类型

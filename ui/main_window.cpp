@@ -39,6 +39,8 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     // 初始化串口连接状态
     ui.SerialConnectLabel->setText("串口未连接");
     ui.WifiConnectLabel->setText("Wifi未连接");
+    // 初始化页面导航
+    bound_pages();
 
     // 初始化亮度控制相关成员
     current_brightness = 0;
@@ -81,10 +83,6 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
     },ui.ImageLabel);
     ui.ImageLabel->installEventFilter(roiFilter);
     ui.ImageLabelCal->installEventFilter(roiFilter);
-
-    // 初始化页面导航
-    bound_pages();
-
     LOG_INFO("系统初始化完成, 正在启动VRCFT");
 
     vrcftProcess = new QProcess(this);
@@ -101,6 +99,60 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
             LOG_INFO("VRCFT异常退出");
         }
     });
+
+    // 初始化串口和wifi
+    serial_port_manager = std::make_shared<SerialPortManager>();
+    image_downloader = std::make_shared<ESP32VideoStream>();
+    LOG_INFO("初始化串口");
+    serial_port_manager->init();
+    // init serial port manager
+    serial_port_manager->setDeviceStatusCallback([this]
+                                                        (const std::string& ip, int brightness, int power, int version) {
+        // 使用Qt的线程安全方式更新UI
+        QMetaObject::invokeMethod(this, [ip, brightness, power, version, this]() {
+            // 只在 IP 地址变化时更新显示
+            if (current_ip_ != ip)
+            {
+                current_ip_ = "http://" + ip;
+                // 更新IP地址显示，添加 http:// 前缀
+                this->setIPText(current_ip_);
+                LOG_INFO("IP地址已更新: " + current_ip_);
+
+
+                start_image_download();
+            }
+            // 可以添加其他状态更新的日志，如果需要的话
+        }, Qt::QueuedConnection);
+    });
+
+    LOG_INFO("等待串口状态响应");
+    while (serial_port_manager->status() == SerialStatus::CLOSED) {}
+    LOG_INFO("串口状态响应完毕");
+
+    if (serial_port_manager->status() == SerialStatus::FAILED)
+    {
+        setSerialStatusLabel("串口连接失败");
+        LOG_WARN("串口未连接，尝试从配置文件中读取地址...");
+        if (!config.wifi_ip.empty())
+        {
+            LOG_INFO("从配置文件中读取地址成功");
+            current_ip_ = config.wifi_ip;
+            set_config(config);
+            start_image_download();
+        } else
+        {
+            QMessageBox msgBox;
+            msgBox.setWindowIcon(this->windowIcon());
+            msgBox.setText("未找到配置文件信息，请将面捕通过数据线连接到电脑进行首次配置");
+            msgBox.exec();
+        }
+    } else
+    {
+        LOG_INFO("串口连接成功");
+        setSerialStatusLabel("串口连接成功");
+    }
+
+    // restart_check_timer->start(1000);
 }
 
 void PaperTrackMainWindow::setVideoImage(const cv::Mat& image)
@@ -246,9 +298,11 @@ void PaperTrackMainWindow::updateCalibrationProgressBars(
 
 void PaperTrackMainWindow::connect_callbacks()
 {
-    brightness_timer = new QTimer(this);
+    brightness_timer = std::make_shared<QTimer>();
     brightness_timer->setSingleShot(true);
-    connect(brightness_timer, &QTimer::timeout, this, &PaperTrackMainWindow::onSendBrightnessValue);
+    restart_check_timer = std::make_shared<QTimer>();
+    connect(restart_check_timer.get(), &QTimer::timeout, this, &PaperTrackMainWindow::restartCheck);
+    connect(brightness_timer.get(), &QTimer::timeout, this, &PaperTrackMainWindow::onSendBrightnessValue);
     // functions
     connect(ui.BrightnessBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onBrightnessChanged);
     connect(ui.RotateImageBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onRotateAngleChanged);
@@ -281,30 +335,10 @@ float PaperTrackMainWindow::getRotateAngle() const
     return rotate_angle;
 }
 
-void PaperTrackMainWindow::setSendBrightnessValueFunc(FuncWithVal func)
-{
-    sendBrightnessValueFunc = std::move(func);
-    // need to bound with timer after setting the function
-}
-
-void PaperTrackMainWindow::setOnFlashButtonClickedFunc(FuncWithoutArgs func)
-{
-    onFlashButtonClickedFunc = std::move(func);
-}
 
 void PaperTrackMainWindow::setOnUseFilterClickedFunc(FuncWithVal func)
 {
     onUseFilterClickedFunc = std::move(func);
-}
-
-void PaperTrackMainWindow::setOnSendButtonClickedFunc(FuncWithoutArgs func)
-{
-    onSendButtonClickedFunc = std::move(func);
-}
-
-void PaperTrackMainWindow::setOnRestartButtonClickedFunc(FuncWithoutArgs func)
-{
-    onRestartButtonClickedFunc = std::move(func);
 }
 
 void PaperTrackMainWindow::setSerialStatusLabel(const std::string& text) const
@@ -342,16 +376,40 @@ std::string PaperTrackMainWindow::getPassword() const
     return ui.PasswordText->toPlainText().toStdString();
 }
 
-void PaperTrackMainWindow::onSendButtonClicked() const
+void PaperTrackMainWindow::onSendButtonClicked()
 {
-    onSendButtonClickedFunc();
-    // need to restart esp32 after sending Wi-Fi config
-    onRestartButtonClickedFunc();
+    // onSendButtonClickedFunc();
+    // 获取SSID和密码
+    auto ssid = getSSID();
+    auto password = getPassword();
+
+    // 输入验证
+    if (ssid == "请输入WIFI名字（仅支持2.4ghz）" || ssid.empty()) {
+        QMessageBox::warning(this, "输入错误", "请输入有效的WIFI名字");
+        return;
+    }
+
+    if (password == "请输入WIFI密码" || password.empty()) {
+        QMessageBox::warning(this, "输入错误", "请输入有效的密码");
+        return;
+    }
+
+    // 构建并发送数据包
+    LOG_INFO("已发送WiFi配置: SSID=" + ssid + ", PWD=" + password);
+    LOG_INFO("等待数据被发送后开始自动重启ESP32...");
+    serial_port_manager->sendWiFiConfig(ssid, password);
+
+    QTimer::singleShot(4000, this, [this] {
+        // 4秒后自动重启ESP32
+        onRestartButtonClicked();
+    });
 }
 
 void PaperTrackMainWindow::onRestartButtonClicked()
 {
-    onRestartButtonClickedFunc();
+    serial_port_manager->restartESP32(this);
+    image_downloader->stop();
+    image_downloader->start();
 }
 
 void PaperTrackMainWindow::onUseFilterClicked(int value) const
@@ -361,7 +419,10 @@ void PaperTrackMainWindow::onUseFilterClicked(int value) const
 
 void PaperTrackMainWindow::onFlashButtonClicked()
 {
-    onFlashButtonClickedFunc();
+    // onFlashButtonClickedFunc();
+    serial_port_manager->flashESP32(this);
+    image_downloader->stop();
+    image_downloader->start();
 }
 
 void PaperTrackMainWindow::onBrightnessChanged(int value) {
@@ -378,7 +439,16 @@ void PaperTrackMainWindow::onRotateAngleChanged(int value)
 
 void PaperTrackMainWindow::onSendBrightnessValue() const
 {
-    sendBrightnessValueFunc(current_brightness);
+    // 发送亮度控制命令 - 确保亮度值为三位数字
+    std::string brightness_str = std::to_string(current_brightness);
+    // 补齐三位数字，前面加0
+    while (brightness_str.length() < 3) {
+        brightness_str = std::string("0") + brightness_str;
+    }
+    std::string packet = "A6" + brightness_str + "B6";
+    serial_port_manager->write_data(packet);
+    // 记录操作
+    LOG_INFO("已设置亮度: " + std::to_string(current_brightness));
 }
 
 void PaperTrackMainWindow::setBeforeStop(FuncWithoutArgs func)
@@ -413,10 +483,17 @@ void PaperTrackMainWindow::stop()
     {
         inference_thread.join();
     }
+    if (restart_check_timer)
+    {
+        restart_check_timer->stop();
+        restart_check_timer.reset();
+    }
     if (brightness_timer) {
         brightness_timer->stop();
-        delete brightness_timer;
+        brightness_timer.reset();
     }
+    serial_port_manager->stop();
+    image_downloader->stop();
     if (beforeStopFunc)
     {
         beforeStopFunc();
@@ -600,4 +677,85 @@ std::unordered_map<std::string, int> PaperTrackMainWindow::getAmpMap() const
         {"tongueLeft", ui.TongueLeftBar->value()},
         {"tongueRight", ui.TongueRightBar->value()},
     };
+}
+
+void PaperTrackMainWindow::start_image_download() const
+{
+    // 开始下载图片 - 修改为支持WebSocket协议
+    // 检查URL格式
+    const std::string& url = current_ip_;
+    if (url.substr(0, 7) == "http://" || url.substr(0, 8) == "https://" ||
+        url.substr(0, 5) == "ws://" || url.substr(0, 6) == "wss://") {
+        // URL已经包含协议前缀，直接使用
+        image_downloader->init(url);
+        } else {
+            // 添加默认ws://前缀
+            image_downloader->init("ws://" + url);
+        }
+    image_downloader->start();
+}
+
+void PaperTrackMainWindow::updateWifiLabel() const
+{
+    if (image_downloader->isStreaming())
+    {
+        setWifiStatusLabel("Wifi已连接");
+    } else
+    {
+        setWifiStatusLabel("Wifi连接失败");
+    }
+}
+
+void PaperTrackMainWindow::updateSerialLabel() const
+{
+    if (serial_port_manager->status() == SerialStatus::OPENED)
+    {
+        setSerialStatusLabel("串口已连接");
+    } else
+    {
+        setSerialStatusLabel("串口连接失败");
+    }
+}
+
+cv::Mat PaperTrackMainWindow::getVideoImage() const
+{
+    return std::move(image_downloader->getLatestFrame());
+}
+
+void PaperTrackMainWindow::restartCheck()
+{
+    if (serial_port_manager->status() == SerialStatus::FAILED)
+    {
+        QMetaObject::invokeMethod(this, [this]() {
+            setSerialStatusLabel("串口连接失败");
+            serial_port_manager->stop();
+            serial_port_manager->init();
+        });
+        while (serial_port_manager->status() == SerialStatus::CLOSED);
+        if (serial_port_manager->status() == SerialStatus::OPENED)
+        {
+            QMetaObject::invokeMethod(this, [this]()
+            {
+                LOG_INFO("串口已重新连接");
+                setSerialStatusLabel("串口连接成功");
+            });
+        }
+    }
+    if (!image_downloader->isStreaming())
+    {
+        QMetaObject::invokeMethod(this, [this]()
+        {
+            image_downloader->stop();
+            image_downloader->start();
+        });
+        if (image_downloader->isStreaming())
+        {
+            QMetaObject::invokeMethod(this, [this]()
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                LOG_INFO("Wifi已重新连接");
+                setSerialStatusLabel("Wifi连接成功");
+            });
+        }
+    }
 }
