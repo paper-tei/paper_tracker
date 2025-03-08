@@ -134,10 +134,9 @@ PaperTrackMainWindow::PaperTrackMainWindow(const PaperTrackerConfig& config, QWi
                 // 更新IP地址显示，添加 http:// 前缀
                 this->setIPText(current_ip_);
                 LOG_INFO("IP地址已更新: " + current_ip_);
-
-
                 start_image_download();
             }
+            firmware_version = std::to_string(version);
             // 可以添加其他状态更新的日志，如果需要的话
         }, Qt::QueuedConnection);
     });
@@ -338,6 +337,10 @@ void PaperTrackMainWindow::connect_callbacks()
     connect(ui.TongueDownBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onTongueDownChanged);
     connect(ui.CheekPuffLeftBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffLeftChanged);
     connect(ui.CheekPuffRightBar, &QScrollBar::valueChanged, this, &PaperTrackMainWindow::onCheeckPuffRightChanged);
+
+    // update
+    connect(ui.CheckClientVersionButton, &QPushButton::clicked, this, &PaperTrackMainWindow::onCheckClientVersionClicked);
+    connect(ui.CheckFirmwareVersionButton, &QPushButton::clicked, this, &PaperTrackMainWindow::onCheckFirmwareVersionClicked);
 }
 
 float PaperTrackMainWindow::getRotateAngle() const
@@ -745,10 +748,30 @@ cv::Mat PaperTrackMainWindow::getVideoImage() const
 
 void PaperTrackMainWindow::onCheckFirmwareVersionClicked()
 {
-
+    onCheckFirmwareVersionClickedFunc();
 }
 
 void PaperTrackMainWindow::onCheckClientVersionClicked()
 {
+    onCheckClientVersionClickedFunc();
+}
 
+void PaperTrackMainWindow::setOnCheckFirmwareVersionClickedFunc(FuncWithoutArgs func)
+{
+    onCheckFirmwareVersionClickedFunc = std::move(func);
+}
+
+void PaperTrackMainWindow::setOnCheckClientVersionClickedFunc(FuncWithoutArgs func)
+{
+    onCheckClientVersionClickedFunc = std::move(func);
+}
+
+std::string PaperTrackMainWindow::getFirmwareVersion() const
+{
+    return firmware_version;
+}
+
+SerialStatus PaperTrackMainWindow::getSerialStatus() const
+{
+    return serial_port_manager->status();
 }

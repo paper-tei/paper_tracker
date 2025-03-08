@@ -77,7 +77,7 @@ public:
         }
     }
 
-    std::optional<Version> getCurrentVersion(QWidget* window)
+    std::optional<Version> getCurrentVersion()
     {
         std::ifstream file;
         file.open("version.json");
@@ -113,7 +113,7 @@ public:
 
         CURLcode res = curl_easy_perform(curl_handle);
         if (res != CURLE_OK) {
-            QMessageBox::critical(window, "错误", "下载失败: " + std::string(curl_easy_strerror(res)));
+            QMessageBox::critical(window, "错误", "下载失败: " + QString::fromStdString(std::string(curl_easy_strerror(res))));
             return ;
         }
 

@@ -92,6 +92,8 @@ public:
     void setOnUseFilterClickedFunc(FuncWithVal func);
     void setOnSaveConfigButtonClickedFunc(FuncWithoutArgs func);
     void setOnAmpMapChangedFunc(FuncWithoutArgs func);
+    void setOnCheckFirmwareVersionClickedFunc(FuncWithoutArgs func);
+    void setOnCheckClientVersionClickedFunc(FuncWithoutArgs func);
 
 
     void setBeforeStop(FuncWithoutArgs func);
@@ -114,6 +116,9 @@ public:
     void updateSerialLabel() const;
 
     cv::Mat getVideoImage() const;
+    std::string getFirmwareVersion() const;
+
+    SerialStatus getSerialStatus() const;
 
 private slots:
     void onBrightnessChanged(int value);
@@ -153,6 +158,9 @@ private:
     FuncWithoutArgs onSaveConfigButtonClickedFunc;
     FuncWithoutArgs onAmpMapChangedFunc;
 
+    FuncWithoutArgs onCheckClientVersionClickedFunc;
+    FuncWithoutArgs onCheckFirmwareVersionClickedFunc;
+
     std::shared_ptr<QTimer> brightness_timer;
 
     int current_brightness;
@@ -174,6 +182,8 @@ private:
     std::shared_ptr<ESP32VideoStream> image_downloader;
 
     PaperTrackerConfig config;
+
+    std::string firmware_version;
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 };

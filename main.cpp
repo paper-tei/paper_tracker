@@ -13,6 +13,7 @@
 #include <coroutine>
 #include <QCoreApplication>
 #include <QThread>
+#include <updater.hpp>
 
 void start_image_download(ESP32VideoStream& image_downloader, const std::string& camera_ip)
 {
@@ -190,6 +191,7 @@ int main(int argc, char *argv[]) {
     VideoReader video_reader;
     Inference inference;
     OscManager osc_manager;
+    Updater updater;
 
     window.setBeforeStop([&osc_manager] ()
     {
@@ -217,6 +219,46 @@ int main(int argc, char *argv[]) {
     {
         inference.set_amp_map(window.getAmpMap());
     });
+    window.setOnCheckFirmwareVersionClickedFunc([&window, &updater] ()
+    {
+        if (window.getSerialStatus() != SerialStatus::OPENED)
+        {
+            QMessageBox::information(&window, "固件版本", "串口未连接，无法获取固件版本");
+            return ;
+        }
+        auto version = updater.getCurrentVersion();
+        if (version.has_value())
+        {
+            if (version.value().version.firmware == window.getFirmwareVersion())
+            {
+                QMessageBox::information(&window, "固件版本", "固件版本已是最新");
+            } else
+            {
+                QMessageBox::information(&window, "固件版本", "固件版本不是最新，建议烧录最新固件");
+            }
+        } else
+        {
+            QMessageBox::critical(&window, "错误", "无法获取最新固件版本信息");
+        }
+    });
+    window.setOnCheckClientVersionClickedFunc([&window, &updater] ()
+    {
+        auto version = updater.getCurrentVersion();
+        if (!version.has_value())
+        {
+            QMessageBox::critical(&window, "错误", "无法获取当前客户端版本信息");
+            return ;
+        }
+        auto remote_version = updater.getClientVersion();
+        if (!remote_version.has_value())
+        {
+            QMessageBox::critical(&window, "错误", "无法获取最新客户端版本信息，请检查网络连接");
+            return ;
+        }
+        //
+
+    });
+
 
     window.set_config(config);
 
