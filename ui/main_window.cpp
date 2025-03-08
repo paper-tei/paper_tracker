@@ -415,14 +415,16 @@ void PaperTrackMainWindow::onRestartButtonClicked()
 void PaperTrackMainWindow::onUseFilterClicked(int value) const
 {
     QTimer::singleShot(10, this, [this, value] {
-        while (onUseFilterClickedFunc == nullptr) {}
+        while (onUseFilterClickedFunc == nullptr)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
         onUseFilterClickedFunc(value);
     });
 }
 
 void PaperTrackMainWindow::onFlashButtonClicked()
 {
-    // onFlashButtonClickedFunc();
     serial_port_manager->stop_heartbeat_timer();
     image_downloader->stop_heartbeat_timer();
     serial_port_manager->flashESP32(this);
