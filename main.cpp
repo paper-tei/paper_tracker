@@ -114,7 +114,8 @@ void update_ui(
         }
         auto end_time = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count ();
-        int delay_ms = max(0, static_cast<int>(1000.0 / min(window.get_max_fps() + 30, 60) - elapsed));
+        int delay_ms = max(0, static_cast<int>(1000.0 / min(window.get_max_fps() + 30, 50) - elapsed));
+        LOG_DEBUG("UIFPS:" +  std::to_string(min(window.get_max_fps() + 30, 60)));
         std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
     }
 }
@@ -313,9 +314,9 @@ int main(int argc, char *argv[]) {
             // 记录操作
             LOG_INFO("已发送WiFi配置: SSID=" + ssid + ", PWD=" + password);
 
-            LOG_INFO("一秒后开始自动重启ESP32...");
+            LOG_INFO("开始自动重启ESP32...");
             //延时
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::microseconds(200));
         }
     );
     window.setSendBrightnessValueFunc([&serial_port_manager] (int value)
