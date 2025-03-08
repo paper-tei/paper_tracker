@@ -138,6 +138,9 @@ private slots:
     void onTongueRightChanged(int value);
     void onTongueUpChanged(int value);
     void onTongueDownChanged(int value);
+
+    void onCheckFirmwareVersionClicked();
+    void onCheckClientVersionClicked();
 private:
     void start_image_download() const;
 

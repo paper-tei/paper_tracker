@@ -93,6 +93,8 @@ public:
     QLabel *label_3;
     QLabel *label_4;
     QLabel *label_19;
+    QPushButton *CheckFirmwareVersionButton;
+    QPushButton *CheckClientVersionButton;
     QPushButton *MainPageButton;
     QPushButton *CalibrationPageButton;
 
@@ -356,6 +358,12 @@ public:
         label_19 = new QLabel(page_2);
         label_19->setObjectName("label_19");
         label_19->setGeometry(QRect(130, 10, 61, 16));
+        CheckFirmwareVersionButton = new QPushButton(page_2);
+        CheckFirmwareVersionButton->setObjectName("CheckFirmwareVersionButton");
+        CheckFirmwareVersionButton->setGeometry(QRect(510, 80, 131, 41));
+        CheckClientVersionButton = new QPushButton(page_2);
+        CheckClientVersionButton->setObjectName("CheckClientVersionButton");
+        CheckClientVersionButton->setGeometry(QRect(510, 130, 131, 41));
         stackedWidget->addWidget(page_2);
         MainPageButton = new QPushButton(PaperTrackerMainWindow);
         MainPageButton->setObjectName("MainPageButton");
@@ -410,6 +418,8 @@ public:
         label_3->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\224\276\345\244\247\345\200\215\347\216\207", nullptr));
         label_4->setText(QCoreApplication::translate("PaperTrackerMainWindow", "x3", nullptr));
         label_19->setText(QCoreApplication::translate("PaperTrackerMainWindow", "x1", nullptr));
+        CheckFirmwareVersionButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\243\200\346\237\245\345\233\272\344\273\266\346\233\264\346\226\260", nullptr));
+        CheckClientVersionButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\243\200\346\237\245\345\256\242\346\210\267\347\253\257\346\233\264\346\226\260", nullptr));
         MainPageButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\344\270\273\351\241\265\351\235\242", nullptr));
         CalibrationPageButton->setText(QCoreApplication::translate("PaperTrackerMainWindow", "\346\240\207\345\256\232\351\241\265\351\235\242", nullptr));
     } // retranslateUi
