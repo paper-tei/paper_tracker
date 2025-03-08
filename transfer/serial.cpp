@@ -397,10 +397,10 @@ PacketType SerialPortManager::parsePacket(const std::string& packet) const
                 // 以3位一组分割，然后转换为标准IPv4格式
                 // 修改IP格式化逻辑，反转四组数字的顺序
                 formattedIp =
-                    std::to_string(std::stoi(paddedIp.substr(9, 3))) + "." +
-                    std::to_string(std::stoi(paddedIp.substr(6, 3))) + "." +
+                    std::to_string(std::stoi(paddedIp.substr(0, 3))) + "." +
                     std::to_string(std::stoi(paddedIp.substr(3, 3))) + "." +
-                    std::to_string(std::stoi(paddedIp.substr(0, 3)));
+                    std::to_string(std::stoi(paddedIp.substr(6, 3))) + "." +
+                    std::to_string(std::stoi(paddedIp.substr(9, 3)));
                 // 调用回调函数
                 if (callback) {
                     int brightness = std::stoi(match[1]);
