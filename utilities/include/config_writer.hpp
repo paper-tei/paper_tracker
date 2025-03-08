@@ -10,6 +10,7 @@
 #include <optional>
 #include <reflect.hpp>
 #include <utility>
+#include "logger.hpp"
 
 class ConfigWriter {
 public:

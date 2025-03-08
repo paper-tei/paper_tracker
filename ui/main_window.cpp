@@ -174,27 +174,32 @@ void PaperTrackMainWindow::setVideoImage(const cv::Mat& image)
 {
     if (image.empty())
     {
-        if (ui.stackedWidget->currentIndex() == 0) {
-            ui.ImageLabel->clear(); // 清除图片
-            ui.ImageLabel->setText("                         没有图像输入"); // 恢复默认文本
-        } else if (ui.stackedWidget->currentIndex() == 1) {
-            ui.ImageLabelCal->clear(); // 清除图片
-            ui.ImageLabelCal->setText("                         没有图像输入");
-        }
+        QMetaObject::invokeMethod(this, [this]()
+        {
+            if (ui.stackedWidget->currentIndex() == 0) {
+                ui.ImageLabel->clear(); // 清除图片
+                ui.ImageLabel->setText("                         没有图像输入"); // 恢复默认文本
+            } else if (ui.stackedWidget->currentIndex() == 1) {
+                ui.ImageLabelCal->clear(); // 清除图片
+                ui.ImageLabelCal->setText("                         没有图像输入");
+            }
+        }, Qt::QueuedConnection);
         return ;
     }
-    auto qimage = QImage(image.data, image.cols, image.rows, image.step, QImage::Format_RGB888);
-    auto pix_map = QPixmap::fromImage(qimage);
-    if (ui.stackedWidget->currentIndex() == 0)
-    {
-        ui.ImageLabel->setPixmap(pix_map);
-        ui.ImageLabel->setScaledContents(true);
-        ui.ImageLabel->update();
-    } else if (ui.stackedWidget->currentIndex() == 1) {
-        ui.ImageLabelCal->setPixmap(pix_map);
-        ui.ImageLabelCal->setScaledContents(true);
-        ui.ImageLabelCal->update();
-    }
+    QMetaObject::invokeMethod(this, [this, image = image.clone()]() {
+        auto qimage = QImage(image.data, image.cols, image.rows, image.step, QImage::Format_RGB888);
+        auto pix_map = QPixmap::fromImage(qimage);
+        if (ui.stackedWidget->currentIndex() == 0)
+        {
+            ui.ImageLabel->setPixmap(pix_map);
+            ui.ImageLabel->setScaledContents(true);
+            ui.ImageLabel->update();
+        } else if (ui.stackedWidget->currentIndex() == 1) {
+            ui.ImageLabelCal->setPixmap(pix_map);
+            ui.ImageLabelCal->setScaledContents(true);
+            ui.ImageLabelCal->update();
+        }
+    }, Qt::QueuedConnection);
 }
 
 PaperTrackMainWindow::~PaperTrackMainWindow() = default;
@@ -736,4 +741,14 @@ void PaperTrackMainWindow::updateSerialLabel() const
 cv::Mat PaperTrackMainWindow::getVideoImage() const
 {
     return std::move(image_downloader->getLatestFrame());
+}
+
+void PaperTrackMainWindow::onCheckFirmwareVersionClicked()
+{
+
+}
+
+void PaperTrackMainWindow::onCheckClientVersionClicked()
+{
+
 }

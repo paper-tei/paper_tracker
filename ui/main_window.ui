@@ -895,6 +895,32 @@
       <string>x1</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="CheckFirmwareVersionButton">
+     <property name="geometry">
+      <rect>
+       <x>510</x>
+       <y>80</y>
+       <width>131</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>检查固件更新</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="CheckClientVersionButton">
+     <property name="geometry">
+      <rect>
+       <x>510</x>
+       <y>130</y>
+       <width>131</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>检查客户端更新</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QPushButton" name="MainPageButton">
