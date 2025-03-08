@@ -61,14 +61,12 @@ void SerialPortManager::init()
         serialPort->setPortName(QString::fromStdString(portName));
     }
 
-    if (heartBeatTimer)
+    if (!heartBeatTimer)
     {
-        heartBeatTimer->stop();
-        delete heartBeatTimer;
+        heartBeatTimer = new QTimer();
+        connect(heartBeatTimer, &QTimer::timeout, this, &SerialPortManager::heartBeatTimeout);
     }
 
-    heartBeatTimer = new QTimer();
-    connect(heartBeatTimer, &QTimer::timeout, this, &SerialPortManager::heartBeatTimeout);
     connect(serialPort, &QSerialPort::readyRead, this, &SerialPortManager::onReadyRead);  // 确保读取线程开始后读取数据
 
     if (serialPort->open(QIODevice::ReadWrite))
@@ -80,7 +78,10 @@ void SerialPortManager::init()
         LOG_ERROR("串口打开失败: " + serialPort->errorString().toStdString());
         m_status = SerialStatus::FAILED;
     }
-    heartBeatTimer->start(20);
+    if (!heartBeatTimer->isActive())
+    {
+        heartBeatTimer->start(20);
+    }
 }
 
 SerialPortManager::~SerialPortManager()
@@ -479,7 +480,6 @@ void SerialPortManager::flashESP32(QWidget* window)
         QMessageBox::critical(window, "启动失败", "串口未连接");
         return ;
     }
-    heartBeatTimer->stop();
     stop();
     // 不再调用stop()，而是手动关闭程序持有的串口句柄
     // 这样可以释放COM端口而不会导致其他部分的问题
@@ -558,7 +558,6 @@ void SerialPortManager::flashESP32(QWidget* window)
             QMessageBox::critical(window, "刷写失败", "ESP32固件刷写失败，请检查连接和固件文件！");
         }
         init();
-        heartBeatTimer->start(20);
     } catch (const std::exception& e) {
         LOG_ERROR("发生异常: " + e.what());
         QMessageBox::critical(window, "错误", "刷写过程中发生异常: " + QString(e.what()));
@@ -575,7 +574,6 @@ void SerialPortManager::restartESP32(QWidget* window)
     }
     // 记录操作
     LOG_INFO("准备重启ESP32设备...");
-    heartBeatTimer->stop();
     stop();
 
     try {
@@ -653,7 +651,6 @@ void SerialPortManager::restartESP32(QWidget* window)
             QMessageBox::critical(window, "重启失败", "ESP32设备重启失败，请检查连接！");
         }
         init();
-        heartBeatTimer->start(20);
     } catch (const std::exception& e) {
         LOG_ERROR("重启过程发生异常: " + e.what());
         QMessageBox::critical(window, "错误", "重启过程中发生异常: " + QString(e.what()));

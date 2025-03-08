@@ -72,7 +72,7 @@ bool ESP32VideoStream::init(const std::string& url)
     return true;
 }
 
-void ESP32VideoStream::sendHeartbeat()
+void ESP32VideoStream::checkHeartBeat()
 {
     if (image_not_receive_count++ > 50)
     {
@@ -98,8 +98,12 @@ bool ESP32VideoStream::start()
     connect(webSocket, &QWebSocket::binaryMessageReceived,
             this, &ESP32VideoStream::onBinaryMessageReceived);
 
-    heartbeatTimer = new QTimer();
-    connect(heartbeatTimer, &QTimer::timeout, this, &ESP32VideoStream::sendHeartbeat);
+    if (!heartbeatTimer)
+    {
+        heartbeatTimer = new QTimer();
+        connect(heartbeatTimer, &QTimer::timeout, this, &ESP32VideoStream::checkHeartBeat);
+    }
+
 
     if (isRunning) {
         LOG_WARN("视频流已经在运行中");
@@ -110,7 +114,10 @@ bool ESP32VideoStream::start()
     LOG_INFO("开始连接WebSocket: " + currentStreamUrl);
     webSocket->open(QUrl(QString::fromStdString(currentStreamUrl)));
 
-    heartbeatTimer->start(50);
+    if (!heartbeatTimer->isActive())
+    {
+        heartbeatTimer->start(50);
+    }
     return true;
 }
 
@@ -118,12 +125,6 @@ void ESP32VideoStream::stop()
 {
     LOG_INFO("停止WebSocket视频流");
     isRunning = false;
-
-    if (heartbeatTimer)
-    {
-        heartbeatTimer->stop();
-        delete heartbeatTimer;
-    }
 
     // 关闭WebSocket
     if (webSocket)

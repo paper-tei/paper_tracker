@@ -14,6 +14,8 @@
 #include <QWaitCondition>
 #include <QQueue>
 #include <QThread>
+#include <QTimer>
+
 #include "logger.hpp"
 
 enum SerialStatus
@@ -84,6 +86,26 @@ public:
 
     // 查找ESP32-S3设备串口
     std::string FindEsp32S3Port();
+
+    void stop_heartbeat_timer()
+    {
+        if (heartBeatTimer && heartBeatTimer->isActive())
+        {
+            heartBeatTimer->stop();
+        }
+    }
+
+    void start_heartbeat_timer()
+    {
+        if (!heartBeatTimer)
+        {
+            heartBeatTimer = new QTimer();
+        }
+        if (!heartBeatTimer->isActive())
+        {
+            heartBeatTimer->start(20);
+        }
+    }
 private slots:
     void onReadyRead();
 

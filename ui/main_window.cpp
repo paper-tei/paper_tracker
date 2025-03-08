@@ -111,7 +111,7 @@ PaperTrackMainWindow::PaperTrackMainWindow(QWidget *parent)
         // 使用Qt的线程安全方式更新UI
         QMetaObject::invokeMethod(this, [ip, brightness, power, version, this]() {
             // 只在 IP 地址变化时更新显示
-            if (current_ip_ != ip)
+            if (current_ip_ != "http://" + ip)
             {
                 current_ip_ = "http://" + ip;
                 // 更新IP地址显示，添加 http:// 前缀
@@ -403,9 +403,13 @@ void PaperTrackMainWindow::onSendButtonClicked()
 
 void PaperTrackMainWindow::onRestartButtonClicked()
 {
+    serial_port_manager->stop_heartbeat_timer();
+    image_downloader->stop_heartbeat_timer();
     serial_port_manager->restartESP32(this);
+    serial_port_manager->start_heartbeat_timer();
     image_downloader->stop();
     image_downloader->start();
+    image_downloader->start_heartbeat_timer();
 }
 
 void PaperTrackMainWindow::onUseFilterClicked(int value) const
@@ -416,9 +420,13 @@ void PaperTrackMainWindow::onUseFilterClicked(int value) const
 void PaperTrackMainWindow::onFlashButtonClicked()
 {
     // onFlashButtonClickedFunc();
+    serial_port_manager->stop_heartbeat_timer();
+    image_downloader->stop_heartbeat_timer();
     serial_port_manager->flashESP32(this);
+    serial_port_manager->start_heartbeat_timer();
     image_downloader->stop();
     image_downloader->start();
+    image_downloader->start_heartbeat_timer();
 }
 
 void PaperTrackMainWindow::onBrightnessChanged(int value) {
